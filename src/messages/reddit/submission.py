@@ -1,6 +1,12 @@
 from .. import Message
 
+from util.constants.reddit import SubmissionConstants as SC
+
+
 class SubmissionMessage(Message):
+    fields = [SC.ID, SC.SUBREDDIT, SC.TITLE, SC.CREATED_UTC, SC.NAME, SC.SELFTEXT, SC.AUTHOR, SC.IS_ORIGINAL_CONTENT,
+              SC.IS_TEXT, SC.NSFW, SC.NUM_COMMENTS, SC.PERMALINK, SC.UPVOTES, SC.UPVOTE_RATIO, SC.URL]
+
     def __init__(
         self,
         submission_id: str,

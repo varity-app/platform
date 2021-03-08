@@ -39,7 +39,6 @@ class RedditScraper(Scraper):
             TargetArn=arn,
             Message=SNSMessage.serialize(message),
             MessageStructure=SNS.JSON,
-            MessageGroupId=SNS.DEFAULT,
         )
 
     async def scrape_comments(self):
