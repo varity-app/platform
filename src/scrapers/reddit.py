@@ -35,11 +35,12 @@ class RedditScraper(Scraper):
 
     def publish(self, arn, message):
         """Serialize a message and publish it to AWS SNS"""
-        response = self.sns.publish(
-            TargetArn=arn,
-            Message=SNSMessage.serialize(message),
-            MessageStructure=SNS.JSON,
-        )
+        # response = self.sns.publish(
+        #     TargetArn=arn,
+        #     Message=SNSMessage.serialize(message),
+        #     MessageStructure=SNS.JSON,
+        # )
+        pass
 
     async def scrape_comments(self):
         """Scrape newest comments from Reddit"""
@@ -144,6 +145,7 @@ class RedditScraper(Scraper):
         return sub_obj
 
     async def run(self):
+        self.memory_reset_cursor()
         if self.mode == "submissions":
             num_results = await self.scrape_submissions()
         else:

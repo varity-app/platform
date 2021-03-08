@@ -10,5 +10,8 @@ class Scraper:
     def memory_contains(self, data):
         return self.memory.contains(data)
 
+    def memory_reset_cursor(self):
+        self.memory.reset_cursor()
+
     def run(self):
         pass

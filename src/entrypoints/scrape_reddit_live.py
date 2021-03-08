@@ -19,7 +19,7 @@ def parse_args():
     parser.add_argument('mode', choices=[Misc.COMMENTS, Misc.SUBMISSIONS])
     parser.add_argument('-s', '--subreddits', default='wallstreetbets')
     parser.add_argument('--sleep', default=60, type=int)
-    parser.add_argument('--limit', default=750, type=int)
+    parser.add_argument('--limit', default=200, type=int)
 
     args = parser.parse_args()
 
