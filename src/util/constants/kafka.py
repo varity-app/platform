@@ -20,3 +20,7 @@ class Topics:
     REDDIT_COMMENTS = 'reddit-comments'
     TICKER_MENTIONS = 'ticker-mentions'
     SCRAPED_POSTS = 'scraped-posts'
+
+class Groups:
+    SUBMISSION_CONSUMERS = 'submission-consumers'
+    COMMENT_CONSUMERS = 'comment-consumers'
