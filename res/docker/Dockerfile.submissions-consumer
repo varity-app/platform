@@ -23,9 +23,9 @@ RUN python -V
 RUN python -m pip install -r /tmp/requirements.txt
 
 RUN mkdir /app
-COPY src/entrypoints/scrape_reddit_live.py /app
+COPY src/entrypoints/kafka/consume_submissions.py /app
 COPY src/util /app/util
-COPY src/scrapers /app/scrapers
+COPY src/consumers /app/consumers
 COPY src/messages /app/messages
 COPY entrypoint.sh /app
 
