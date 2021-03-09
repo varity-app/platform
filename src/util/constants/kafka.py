@@ -8,7 +8,7 @@ class Config:
     SASL_PASSWORD = os.environ.get("SASL_PASSWORD")
 
     OBJ = {
-        'boostrap.servers': BOOTSTRAP_SERVERS,
+        'bootstrap.servers': BOOTSTRAP_SERVERS,
         'sasl.mechanism': SASL_MECHANISM,
         'security.protocol': SECURITY_PROTOCOL,
         'sasl.username': SASL_USERNAME,
@@ -17,3 +17,6 @@ class Config:
 
 class Topics:
     REDDIT_SUBMISSIONS = 'reddit-submissions'
+    REDDIT_COMMENTS = 'reddit-comments'
+    TICKER_MENTIONS = 'ticker-mentions'
+    SCRAPED_POSTS = 'scraped-posts'

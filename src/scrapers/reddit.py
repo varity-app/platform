@@ -1,13 +1,15 @@
 import asyncpraw
 from datetime import datetime
-import boto3
+from confluent_kafka import Producer
+import logging
 
 from util.constants.reddit import Config as RC, CommentConstants as CC, SubmissionConstants as SC, Misc
-from util.constants.aws import SNS
+from util.constants.kafka import Config, Topics
 from messages.reddit.submission import SubmissionMessage
 from messages.reddit.comment import CommentMessage
-from messages.sns import SNSMessage
 from . import Scraper
+
+logger = logging.getLogger(__name__)
 
 
 class RedditScraper(Scraper):
@@ -31,16 +33,20 @@ class RedditScraper(Scraper):
             password=RC.REDDIT_PASSWORD,
         )
 
-        self.sns = boto3.client('sns')
+        if enable_publish:
+            self.publisher = Producer(Config.OBJ)
 
-    def publish(self, arn, message):
-        """Serialize a message and publish it to AWS SNS"""
-        # response = self.sns.publish(
-        #     TargetArn=arn,
-        #     Message=SNSMessage.serialize(message),
-        #     MessageStructure=SNS.JSON,
-        # )
-        pass
+    def callback(self, err, msg):
+        """Kafka publisher callback"""
+        if err is not None:
+            logger.error(f"Failed to deliver message: {err}")
+        else:
+            logger.debug(
+                f"Produced record to topic {msg.topic()} partition [{msg.partition()}] @ offset {msg.offset()}")
+
+    def publish(self, topic, message):
+        """Serialize a message and publish it to Kafka"""
+        self.publisher.produce(topic, value=message.serialize())
 
     async def scrape_comments(self):
         """Scrape newest comments from Reddit"""
@@ -57,7 +63,7 @@ class RedditScraper(Scraper):
             # Save Comment
             comment = self.parse_comment(comment)
             if self.enable_publish:
-                self.publish(SNS.REDDIT_COMMENTS, comment)
+                self.publish(Topics.REDDIT_COMMENTS, comment)
 
             comment_count += 1
 
@@ -98,7 +104,7 @@ class RedditScraper(Scraper):
             # Save Submission
             submission = self.parse_submission(submission)
             if self.enable_publish:
-                self.publish(SNS.REDDIT_SUBMISSIONS, submission)
+                self.publish(Topics.REDDIT_SUBMISSIONS, submission)
 
             submission_count += 1
 
@@ -146,9 +152,12 @@ class RedditScraper(Scraper):
 
     async def run(self):
         self.memory_reset_cursor()
+
         if self.mode == "submissions":
             num_results = await self.scrape_submissions()
         else:
             num_results = await self.scrape_comments()
+
+        self.publisher.flush()
 
         return num_results

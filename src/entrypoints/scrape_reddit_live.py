@@ -7,10 +7,13 @@ from datetime import datetime
 import sys
 import gc
 from asyncprawcore.exceptions import RequestException
+import logging
 
 from scrapers.reddit import RedditScraper
 from util.constants.reddit import Misc
 
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 def parse_args():
     '''Parse arguments from command line'''
@@ -42,21 +45,18 @@ async def main():
 
     while True:
         for subreddit, scraper in zip(subreddits, scrapers):
-            print(f'Scraping for new {mode} on r/{subreddit} at {datetime.now()}...')
-            sys.stdout.flush()
+            logger.info(f'Scraping for new {mode} on r/{subreddit} at {datetime.now()}...')
 
             try:
                 num_results = await scraper.run()
             except RequestException:
-                print(f'Error scraping on r/{subreddit}')
+                logger.info(f'Error scraping on r/{subreddit}')
                 continue
 
-            print(f'Saved {num_results} {mode}')
-            sys.stdout.flush()
+            logger.info(f'Saved {num_results} {mode}')
 
         gc.collect()
-        print(f'Sleeping for {sleep_interval} seconds...')
-        sys.stdout.flush()
+        logger.info(f'Sleeping for {sleep_interval} seconds...')
         sleep(sleep_interval)
 
 
