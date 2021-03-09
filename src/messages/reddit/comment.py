@@ -1,5 +1,8 @@
 from .. import Message
 
+from util.constants.reddit import CommentConstants as CC
+
+
 class CommentMessage(Message):
     def __init__(
         self,

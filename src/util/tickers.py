@@ -9,10 +9,66 @@ def parse_tickers(text, all_tickers=[]):
     if all_tickers:
         tickers = [ticker for ticker in tickers if ticker in all_tickers]
 
+    tickers = [ticker for ticker in tickers if ticker not in black_list]
+
     # Remove duplicates
     tickers = list(set(tickers))
 
     return tickers
+
+black_list = """
+WSB
+USA
+TENDIES
+FUCK
+YOLO
+UK
+DD
+WTF
+IPO
+FV
+TD
+CEO
+IM
+IMO
+AF
+OK
+ATM
+BS
+EU
+US
+NY
+NYSE
+NYC
+GOP
+GG
+HK
+AWS
+ETF
+GTA
+EK
+RH
+TDA
+ITM
+OTM
+IG
+TV
+USD
+EUR
+LY
+NG
+EV
+QA
+OG
+AMA
+LMAO
+FD
+PC
+FCF
+DCF
+PE
+PEG
+"""
 
 
 all_tickers = """
