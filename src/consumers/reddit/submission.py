@@ -9,6 +9,7 @@ from messages.ticker_mention import TickerMentionMessage
 from util.tickers import parse_tickers, all_tickers
 from util.constants.scraping import DataSources as DS, ParentSources as PS
 from util.constants.kafka import Config, Topics, Groups
+from util.constants import MentionTypes
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +38,8 @@ class SubmissionConsumer(object):
 
     def publish(self, topic, message):
         """Serialize a message and publish it to Kafka"""
-        self.publisher.produce(topic, value=message.serialize())
+        self.publisher.produce(
+            topic, value=message.serialize(), callback=self.callback)
 
     def parse_publish_tickers(self, submission: SubmissionMessage):
         """Parse tickers from selftext and title fields to TickerMention messages and publish them to Kafka"""
@@ -46,6 +48,7 @@ class SubmissionConsumer(object):
         )
         title_tickers = parse_tickers(
             submission.title, all_tickers=all_tickers)
+
         for ticker in selftext_tickers:
             mention = TickerMentionMessage(
                 ticker,
@@ -53,6 +56,7 @@ class SubmissionConsumer(object):
                 PS.SUBMISSION_SELFTEXT,
                 submission.submission_id,
                 submission.created_utc,
+                MentionTypes.TICKER,
             )
             if self.enable_publish:
                 self.publish(Topics.TICKER_MENTIONS, mention)
@@ -64,6 +68,7 @@ class SubmissionConsumer(object):
                 PS.SUBMISSION_TITLE,
                 submission.submission_id,
                 submission.created_utc,
+                MentionTypes.TICKER,
             )
             if self.enable_publish:
                 self.publish(Topics.TICKER_MENTIONS, mention)
@@ -73,15 +78,16 @@ class SubmissionConsumer(object):
 
     def parse_publish_text(self, submission: SubmissionMessage):
         """Parse selftext and title fields to ScrapedPost messages and publish them to Kafka"""
-        selftext_post = ScrapedPostMessage(
-            submission.selftext,
-            DS.REDDIT,
-            PS.SUBMISSION_SELFTEXT,
-            submission.submission_id,
-            submission.created_utc,
-        )
-        if self.enable_publish:
-            self.publish(Topics.SCRAPED_POSTS, selftext_post)
+        if submission.selftext:
+            selftext_post = ScrapedPostMessage(
+                submission.selftext,
+                DS.REDDIT,
+                PS.SUBMISSION_SELFTEXT,
+                submission.submission_id,
+                submission.created_utc,
+            )
+            if self.enable_publish:
+                self.publish(Topics.SCRAPED_POSTS, selftext_post)
 
         title_post = ScrapedPostMessage(
             submission.title,

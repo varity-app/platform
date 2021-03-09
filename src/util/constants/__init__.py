@@ -1,9 +1,10 @@
 class ScrapedPostConstants:
     DATA_SOURCE = "data_source"
     PARENT_SOURCE = "parent_source"
-    ID = "id"
+    PARENT_ID = "parent_id"
     TEXT = "text"
     TIMESTAMP = "timestamp"
+
 
 class TickerMentionsConstants:
     ID = "mention_id"
@@ -12,3 +13,7 @@ class TickerMentionsConstants:
     PARENT_ID = "parent_id"
     DATA_SOURCE = "data_source"
     CREATED_UTC = "created_utc"
+    MENTION_TYPE = "mention_id"
+
+class MentionTypes:
+    TICKER = 'ticker'

@@ -9,6 +9,7 @@ from messages.ticker_mention import TickerMentionMessage
 from util.tickers import parse_tickers, all_tickers
 from util.constants.scraping import DataSources as DS, ParentSources as PS
 from util.constants.kafka import Config, Topics, Groups
+from util.constants import MentionTypes
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +38,7 @@ class CommentConsumer(object):
 
     def publish(self, topic, message):
         """Serialize a message and publish it to Kafka"""
-        self.publisher.produce(topic, value=message.serialize())
+        self.publisher.produce(topic, value=message.serialize(), callback=self.callback)
 
     def parse_publish_tickers(self, comment: CommentMessage):
         """Parse tickers from body to TickerMention messages and publish to Kafka"""
@@ -51,6 +52,7 @@ class CommentConsumer(object):
                 PS.COMMENT_BODY,
                 comment.comment_id,
                 comment.created_utc,
+                MentionTypes.TICKER,
             )
             if self.enable_publish:
                 self.publish(Topics.TICKER_MENTIONS, mention)
@@ -66,6 +68,7 @@ class CommentConsumer(object):
             PS.COMMENT_BODY,
             comment.comment_id,
             comment.created_utc,
+            MentionTypes.TICKER,
         )
         if self.enable_publish:
             self.publish(Topics.SCRAPED_POSTS, body_post)

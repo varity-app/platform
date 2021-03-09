@@ -20,7 +20,9 @@ class Topics:
     REDDIT_COMMENTS = 'reddit-comments'
     TICKER_MENTIONS = 'ticker-mentions'
     SCRAPED_POSTS = 'scraped-posts'
+    POST_SENTIMENT = 'post-sentiment'
 
 class Groups:
     SUBMISSION_CONSUMERS = 'submission-consumers'
     COMMENT_CONSUMERS = 'comment-consumers'
+    SENTIMENT_ESTIMATORS = 'sentiment-estimators'
