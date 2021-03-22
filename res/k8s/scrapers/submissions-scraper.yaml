@@ -55,7 +55,7 @@ spec:
                 name: confluent-cloud-creds
                 key: secret
           - name: BOOTSTRAP_SERVERS
-            value: pkc-ep9mm.us-east-2.aws.confluent.cloud:9092
+            value: pkc-43n10.us-central1.gcp.confluent.cloud:9092
           - name: MODE
             value: submissions
           - name: SUBREDDITS
