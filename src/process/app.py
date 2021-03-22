@@ -17,6 +17,6 @@ app = faust.App(
     Constants.APP_NAME,
     broker=f"kafka://{KafkaConfig.BOOTSTRAP_SERVERS}",
     broker_credentials=broker_credentials,
-    autodiscover=True,
+    # autodiscover=True,
     origin="process"
 )
