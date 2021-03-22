@@ -11,8 +11,6 @@ from ..ticker_mentions.models import TickerMention
 from ..scraped_posts.views import scraped_posts_topic
 from ..scraped_posts.models import ScrapedPost
 
-ENABLE_PUBLISH = False
-
 
 async def parse_ticker_fields(submission) -> bool:
     """Parse tickers from selftext and title fields to TickerMention messages and publish them to Kafka"""
@@ -80,4 +78,5 @@ async def parse_posts(submission):
 async def process_submission(submissions):
     async for submission in submissions:
         has_tickers = await parse_ticker_fields(submission)
-        await parse_posts(submission)
+        if has_tickers:
+            await parse_posts(submission)
