@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sentiment-estimator-deployment
+  labels:
+    app: sentiment-estimator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sentiment-estimator
+  template:
+    metadata:
+      labels:
+        app: sentiment-estimator
+    spec:
+      containers:
+      - name: sentiment-estimator
+        image: cgundlach13/sentiment-estimator:0.2.0
+        imagePullPolicy: Always
+        env:
+          - name: SASL_USERNAME
+            valueFrom:
+              secretKeyRef:
+                name: confluent-cloud-creds
+                key: key
+          - name: SASL_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: confluent-cloud-creds
+                key: secret
+          - name: BOOTSTRAP_SERVERS
+            value: pkc-ep9mm.us-east-2.aws.confluent.cloud:9092
+        resources:
+          requests:
+            memory: ".25Gi"
+            cpu: ".25"
+          limits:
+            memory: ".25Gi"
+            cpu: ".25"

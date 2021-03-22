@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: comment-consumer-deployment
+  labels:
+    app: comment-consumer
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: comment-consumer
+  template:
+    metadata:
+      labels:
+        app: comment-consumer
+    spec:
+      containers:
+      - name: comment-consumer
+        image: cgundlach13/comments-consumer:0.2.0
+        imagePullPolicy: Always
+        env:
+          - name: SASL_USERNAME
+            valueFrom:
+              secretKeyRef:
+                name: confluent-cloud-creds
+                key: key
+          - name: SASL_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: confluent-cloud-creds
+                key: secret
+          - name: BOOTSTRAP_SERVERS
+            value: pkc-ep9mm.us-east-2.aws.confluent.cloud:9092
+        resources:
+          requests:
+            memory: ".125Gi"
+            cpu: ".125"
+          limits:
+            memory: ".125Gi"
+            cpu: ".125"

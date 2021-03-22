@@ -1,0 +1,71 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: submissions-scraper-deployment
+  labels:
+    app: submissions-scraper
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: submissions-scraper
+  template:
+    metadata:
+      labels:
+        app: submissions-scraper
+    spec:
+      containers:
+      - name: submissions-scraper
+        image: cgundlach13/reddit-scraper:0.2.0
+        imagePullPolicy: Always
+        env:
+          - name: REDDIT_USERNAME
+            valueFrom:
+              secretKeyRef:
+                name: reddit-creds
+                key: username
+          - name: REDDIT_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: reddit-creds
+                key: password
+          - name: REDDIT_CLIENT_ID
+            valueFrom:
+              secretKeyRef:
+                name: reddit-creds
+                key: client_id
+          - name: REDDIT_CLIENT_SECRET
+            valueFrom:
+              secretKeyRef:
+                name: reddit-creds
+                key: client_secret
+          - name: REDDIT_USER_AGENT
+            valueFrom:
+              secretKeyRef:
+                name: reddit-creds
+                key: user_agent
+          - name: SASL_USERNAME
+            valueFrom:
+              secretKeyRef:
+                name: confluent-cloud-creds
+                key: key
+          - name: SASL_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: confluent-cloud-creds
+                key: secret
+          - name: BOOTSTRAP_SERVERS
+            value: pkc-ep9mm.us-east-2.aws.confluent.cloud:9092
+          - name: MODE
+            value: submissions
+          - name: SUBREDDITS
+            value: wallstreetbets,smallstreetbets,stocks,ValueInvesting,SecurityAnalysis,investing
+          - name: SLEEP
+            value: "120"
+        resources:
+          requests:
+            memory: ".25Gi"
+            cpu: ".25"
+          limits:
+            memory: ".25Gi"
+            cpu: ".25"

@@ -68,7 +68,6 @@ class CommentConsumer(object):
             PS.COMMENT_BODY,
             comment.comment_id,
             comment.created_utc,
-            MentionTypes.TICKER,
         )
         if self.enable_publish:
             self.publish(Topics.SCRAPED_POSTS, body_post)
