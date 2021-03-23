@@ -25,23 +25,23 @@ async def parse_ticker_fields(submission) -> bool:
     # Publish to Kafka
     for ticker in selftext_tickers:
         mention = TickerMention(
-            ticker,
-            DS.REDDIT,
-            PS.SUBMISSION_SELFTEXT,
-            submission.submission_id,
-            submission.created_utc,
-            MentionTypes.TICKER,
+            stock_name=ticker,
+            data_source=DS.REDDIT,
+            parent_source=PS.SUBMISSION_SELFTEXT,
+            parent_id=submission.submission_id,
+            created_utc=submission.created_utc,
+            mention_type=MentionTypes.TICKER,
         )
         await ticker_mentions_topic.send(value=mention)
 
     for ticker in title_tickers:
         mention = TickerMention(
-            ticker,
-            DS.REDDIT,
-            PS.SUBMISSION_TITLE,
-            submission.submission_id,
-            submission.created_utc,
-            MentionTypes.TICKER,
+            stock_name=ticker,
+            data_source=DS.REDDIT,
+            parent_source=PS.SUBMISSION_TITLE,
+            parent_id=submission.submission_id,
+            created_utc=submission.created_utc,
+            mention_type=MentionTypes.TICKER,
         )
         await ticker_mentions_topic.send(value=mention)
 
@@ -55,21 +55,21 @@ async def parse_posts(submission):
     # Publish selftext if necessary
     if submission.selftext:
         selftext_post = ScrapedPost(
-            submission.selftext,
-            DS.REDDIT,
-            PS.SUBMISSION_SELFTEXT,
-            submission.submission_id,
-            submission.created_utc,
+            text=submission.selftext,
+            data_source=DS.REDDIT,
+            parent_source=PS.SUBMISSION_SELFTEXT,
+            parent_id=submission.submission_id,
+            timestamp=submission.created_utc,
         )
         await scraped_posts_topic.send(value=selftext_post)
 
     # Publish title
     title_post = ScrapedPost(
-        submission.title,
-        DS.REDDIT,
-        PS.SUBMISSION_TITLE,
-        submission.submission_id,
-        submission.created_utc,
+        text=submission.title,
+        data_source=DS.REDDIT,
+        parent_source=PS.SUBMISSION_TITLE,
+        parent_id=submission.submission_id,
+        timestamp=submission.created_utc,
     )
     await scraped_posts_topic.send(value=title_post)
 

@@ -23,12 +23,12 @@ async def parse_ticker_fields(comment: Comment) -> bool:
     # Publish to Kafka
     for ticker in body_tickers:
         mention = TickerMention(
-            ticker,
-            DS.REDDIT,
-            PS.COMMENT_BODY,
-            comment.comment_id,
-            comment.created_utc,
-            MentionTypes.TICKER,
+            stock_name=ticker,
+            data_source=DS.REDDIT,
+            parent_source=PS.COMMENT_BODY,
+            parent_id=comment.comment_id,
+            created_utc=comment.created_utc,
+            mention_type=MentionTypes.TICKER,
         )
         await ticker_mentions_topic.send(value=mention)
 
@@ -37,15 +37,17 @@ async def parse_ticker_fields(comment: Comment) -> bool:
     return has_tickers
 
 
-async def parse_post(comment: Comment):
+async def parse_post(comment: Comment) -> None:
     """Parse body field to ScrapedPost message and publish to Kafka"""
+    if not comment.created_utc:
+        print(comment)
     # Publish body
     body_post = ScrapedPost(
-        comment.body,
-        DS.REDDIT,
-        PS.COMMENT_BODY,
-        comment.comment_id,
-        comment.created_utc,
+        text=comment.body,
+        data_source=DS.REDDIT,
+        parent_source=PS.COMMENT_BODY,
+        parent_id=comment.comment_id,
+        timestamp=comment.created_utc,
     )
     await scraped_posts_topic.send(value=body_post)
 
