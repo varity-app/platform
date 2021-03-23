@@ -1,4 +1,6 @@
-import faust
+"""
+Faust Agents and helper methods for processing Reddit Comments
+"""
 
 from util.tickers import parse_tickers, all_tickers
 from util.constants.scraping import DataSources as DS, ParentSources as PS
@@ -15,14 +17,13 @@ from ..scraped_posts.models import ScrapedPost
 
 def parse_ticker_fields(comment: Comment) -> bool:
     """Parse tickers from body to TickerMention messages and publish to Kafka"""
-    body_tickers = parse_tickers(
-        comment.body, all_tickers=all_tickers
-    )
+    body_tickers = parse_tickers(comment.body, all_tickers=all_tickers)
 
     return body_tickers
 
 
 def create_mention_object(ticker: str, comment: Comment) -> TickerMention:
+    """Create a TickerMention object for a ticker"""
     mention = TickerMention(
         stock_name=ticker,
         data_source=DS.REDDIT,
@@ -44,19 +45,19 @@ def parse_post(comment: Comment) -> None:
         parent_id=comment.comment_id,
         timestamp=comment.created_utc,
     )
-    
+
     return body_post
 
 
 @app.agent(comments_topic)
 async def process_comment(comments) -> None:
-    """Parse a reddit comment for tickers and publish as a ScrapedPost"""
+    """Parse tickers and ScrapedPosts from Reddit Comments"""
 
     async for comment in comments:
         # Parse Tickers
         body_tickers = parse_ticker_fields(comment)
         for ticker in body_tickers:
-            ticker_mention = create_mention_object(ticker, comment)
+            mention = create_mention_object(ticker, comment)
             await ticker_mentions_topic.send(value=mention)
 
         # Publish as ScrapedPost if there are tickers

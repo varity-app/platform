@@ -1,4 +1,7 @@
-import faust
+"""
+Faust Agents and helper methods for processing Reddit Submissions
+"""
+
 from typing import List, Tuple
 
 from util.tickers import parse_tickers, all_tickers
@@ -17,17 +20,16 @@ from ..scraped_posts.models import ScrapedPost
 def parse_ticker_fields(submission: Submission) -> Tuple[List[str], List[str]]:
     """Parse tickers from selftext and title fields to TickerMention messages"""
     # Parse Tickers
-    selftext_tickers = parse_tickers(
-        submission.selftext, all_tickers=all_tickers
-    )
+    selftext_tickers = parse_tickers(submission.selftext, all_tickers=all_tickers)
 
-    title_tickers = parse_tickers(
-        submission.title, all_tickers=all_tickers)
+    title_tickers = parse_tickers(submission.title, all_tickers=all_tickers)
 
     return selftext_tickers, title_tickers
 
 
-def create_mention_object(ticker: str, submission: Submission, parent_source: str) -> TickerMention:
+def create_mention_object(
+    ticker: str, submission: Submission, parent_source: str
+) -> TickerMention:
     """Create a TickerMention object for a ticker"""
     mention = TickerMention(
         stock_name=ticker,
@@ -66,19 +68,19 @@ def parse_posts(submission: Submission) -> Tuple[ScrapedPost, ScrapedPost]:
 
 @app.agent(submissions_topic)
 async def process_submission(submissions):
+    """Parse tickers and ScrapedPosts from Reddit Submissions"""
+
     async for submission in submissions:
         # Parse tickers
         selftext_tickers, title_tickers = parse_ticker_fields(submission)
 
         # Publish to Kafka
         for ticker in selftext_tickers:
-            mention = create_mention_object(
-                ticker, submission, PS.SUBMISSION_SELFTEXT)
+            mention = create_mention_object(ticker, submission, PS.SUBMISSION_SELFTEXT)
             await ticker_mentions_topic.send(value=mention)
 
         for ticker in title_tickers:
-            mention = create_mention_object(
-                ticker, submission, PS.SUBMISSION_TITLE)
+            mention = create_mention_object(ticker, submission, PS.SUBMISSION_TITLE)
             await ticker_mentions_topic.send(value=mention)
 
         # Publish ScrapedPost if necessary

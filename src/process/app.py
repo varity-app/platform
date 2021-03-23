@@ -1,3 +1,7 @@
+"""
+Declare the Faust App so it can be important by submodules
+"""
+
 import faust
 from aiokafka.helpers import create_ssl_context
 
@@ -18,5 +22,5 @@ app = faust.App(
     broker=f"kafka://{KafkaConfig.BOOTSTRAP_SERVERS}",
     broker_credentials=broker_credentials,
     # autodiscover=True,
-    origin="process"
+    origin="process",
 )

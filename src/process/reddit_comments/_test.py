@@ -1,3 +1,7 @@
+"""
+Unit tests for processing Reddit Comments from Kafka
+"""
+
 import pytest
 
 from util.constants.scraping import DataSources as DS, ParentSources as PS
@@ -5,12 +9,11 @@ from util.constants import MentionTypes
 
 from .agents import parse_ticker_fields, create_mention_object, parse_post
 from .models import Comment
-from ..scraped_posts.models import ScrapedPost
-from ..ticker_mentions.models import TickerMention
 
 
 @pytest.fixture
 def comment_with_no_ticker():
+    """A comment with no tickers"""
     inp = Comment(
         comment_id="grrmy6c",
         submission_id="t3_maauj7",
@@ -25,13 +28,14 @@ def comment_with_no_ticker():
 
 @pytest.fixture
 def comment_with_one_ticker():
+    """A comment with one ticker"""
     inp = Comment(
         comment_id="grrmy6c",
         submission_id="t3_maauj7",
         subreddit="wallstreetbets",
         author="DaySwingTrade",
         created_utc="2021-03-23T03:21:46",
-        body="I just realized more people going to people tuning into GME earnings call than all the people that watched the Grammys this year... 🚀",
+        body="I just realized more people going to people tuning into GME earnings",
         upvotes=48,
     )
     return inp
@@ -39,6 +43,7 @@ def comment_with_one_ticker():
 
 @pytest.fixture
 def comment_with_many_tickers():
+    """A comment with many tickers"""
     inp = Comment(
         comment_id="grrmy6c",
         submission_id="t3_maauj7",
@@ -52,6 +57,7 @@ def comment_with_many_tickers():
 
 
 def test_parse_tickers_no_ticker(comment_with_no_ticker):
+    """Test ticker parsing for comment with no tickers"""
     comment = comment_with_no_ticker
     body_tickers = parse_ticker_fields(comment)
 
@@ -59,11 +65,11 @@ def test_parse_tickers_no_ticker(comment_with_no_ticker):
 
 
 def test_parse_tickers_one_ticker(comment_with_one_ticker):
+    """Test ticker parsing for comment with one ticker"""
     comment = comment_with_one_ticker
     body_tickers = parse_ticker_fields(comment)
-    GME = "GME"
 
-    assert body_tickers == [GME]
+    assert body_tickers == ["GME"]
 
     for ticker in body_tickers:
         ticker_mention = create_mention_object(ticker, comment)
@@ -77,6 +83,7 @@ def test_parse_tickers_one_ticker(comment_with_one_ticker):
 
 
 def test_parse_tickers_many_tickers(comment_with_many_tickers):
+    """Test ticker parsing for comment with many tickers"""
     comment = comment_with_many_tickers
     body_tickers = parse_ticker_fields(comment)
 
@@ -98,6 +105,7 @@ def test_parse_tickers_many_tickers(comment_with_many_tickers):
 
 
 def test_parse_post_no_ticker(comment_with_no_ticker):
+    """Test ScrapedPost parsing for comment with no tickers"""
     comment = comment_with_no_ticker
     post = parse_post(comment)
 
@@ -109,6 +117,7 @@ def test_parse_post_no_ticker(comment_with_no_ticker):
 
 
 def test_parse_post_one_ticker(comment_with_one_ticker):
+    """Test ScrapedPost parsing for comment with one ticker"""
     comment = comment_with_one_ticker
     post = parse_post(comment)
 

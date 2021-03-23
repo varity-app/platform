@@ -1,6 +1,13 @@
+"""
+Faust data models for Reddit Submissions
+"""
+
 import faust
 
+
 class Submission(faust.Record):
+    """Faust model for Reddit Submissions"""
+
     submission_id: str
     subreddit: str
     title: str

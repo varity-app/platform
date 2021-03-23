@@ -1,4 +1,6 @@
-import faust
+"""
+Faust stream declarations for Kafka Topics
+"""
 
 from util.constants.kafka import Topics
 
