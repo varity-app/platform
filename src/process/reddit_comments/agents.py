@@ -13,35 +13,30 @@ from ..scraped_posts.views import scraped_posts_topic
 from ..scraped_posts.models import ScrapedPost
 
 
-async def parse_ticker_fields(comment: Comment) -> bool:
+def parse_ticker_fields(comment: Comment) -> bool:
     """Parse tickers from body to TickerMention messages and publish to Kafka"""
-    # Parse Tickers
     body_tickers = parse_tickers(
         comment.body, all_tickers=all_tickers
     )
 
-    # Publish to Kafka
-    for ticker in body_tickers:
-        mention = TickerMention(
-            stock_name=ticker,
-            data_source=DS.REDDIT,
-            parent_source=PS.COMMENT_BODY,
-            parent_id=comment.comment_id,
-            created_utc=comment.created_utc,
-            mention_type=MentionTypes.TICKER,
-        )
-        await ticker_mentions_topic.send(value=mention)
-
-    # Return whether post has any tickers mentioned
-    has_tickers = len(body_tickers) > 0
-    return has_tickers
+    return body_tickers
 
 
-async def parse_post(comment: Comment) -> None:
-    """Parse body field to ScrapedPost message and publish to Kafka"""
-    if not comment.created_utc:
-        print(comment)
-    # Publish body
+def create_mention_object(ticker: str, comment: Comment) -> TickerMention:
+    mention = TickerMention(
+        stock_name=ticker,
+        data_source=DS.REDDIT,
+        parent_source=PS.COMMENT_BODY,
+        parent_id=comment.comment_id,
+        created_utc=comment.created_utc,
+        mention_type=MentionTypes.TICKER,
+    )
+
+    return mention
+
+
+def parse_post(comment: Comment) -> None:
+    """Parse body field to ScrapedPost message"""
     body_post = ScrapedPost(
         text=comment.body,
         data_source=DS.REDDIT,
@@ -49,12 +44,24 @@ async def parse_post(comment: Comment) -> None:
         parent_id=comment.comment_id,
         timestamp=comment.created_utc,
     )
-    await scraped_posts_topic.send(value=body_post)
+    
+    return body_post
 
 
 @app.agent(comments_topic)
-async def process_comment(comments):
+async def process_comment(comments) -> None:
+    """Parse a reddit comment for tickers and publish as a ScrapedPost"""
+
     async for comment in comments:
-        has_tickers = await parse_ticker_fields(comment)
+        # Parse Tickers
+        body_tickers = parse_ticker_fields(comment)
+        for ticker in body_tickers:
+            ticker_mention = create_mention_object(ticker, comment)
+            await ticker_mentions_topic.send(value=mention)
+
+        # Publish as ScrapedPost if there are tickers
+        has_tickers = len(body_tickers) > 0
+
         if has_tickers:
-            await parse_post(comment)
+            body_post = parse_post(comment)
+            await scraped_posts_topic.send(value=body_post)
