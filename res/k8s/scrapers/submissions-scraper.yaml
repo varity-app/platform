@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: submissions-scraper
-        image: cgundlach13/reddit-scraper:0.2.0
+        image: cgundlach13/reddit-scraper:0.3.0
         imagePullPolicy: Always
         env:
           - name: REDDIT_USERNAME

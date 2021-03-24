@@ -1,17 +1,17 @@
 class Misc:
-    REGION = 'us-east-2'
+    REGION = "us-east-2"
 
 
 class SNS:
-    ARN_PREFIX = f'arn:aws:sns:{Misc.REGION}:178852309825'
+    ARN_PREFIX = f"arn:aws:sns:{Misc.REGION}:178852309825"
 
-    REDDIT_COMMENTS = f'{ARN_PREFIX}:reddit-comments'
-    REDDIT_SUBMISSIONS = f'{ARN_PREFIX}:reddit-submissions'
-    SCRAPED_POSTS = f'{ARN_PREFIX}:scraped-posts'
-    TICKER_MENTIONS = f'{ARN_PREFIX}:ticker-mentions'
+    REDDIT_COMMENTS = f"{ARN_PREFIX}:reddit-comments"
+    REDDIT_SUBMISSIONS = f"{ARN_PREFIX}:reddit-submissions"
+    SCRAPED_POSTS = f"{ARN_PREFIX}:scraped-posts"
+    TICKER_MENTIONS = f"{ARN_PREFIX}:ticker-mentions"
 
-    JSON = 'json'
-    DEFAULT = 'default'
+    JSON = "json"
+    DEFAULT = "default"
 
 
 class S3:

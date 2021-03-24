@@ -1,5 +1,5 @@
 class DataSources:
-    REDDIT = 'reddit'
+    REDDIT = "reddit"
 
 
 class ParentSources:
