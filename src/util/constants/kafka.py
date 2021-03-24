@@ -1,5 +1,6 @@
 import os
 
+
 class Config:
     BOOTSTRAP_SERVERS = os.environ.get("BOOTSTRAP_SERVERS")
     SASL_MECHANISM = 'PLAIN'
@@ -15,12 +16,14 @@ class Config:
         'sasl.password': SASL_PASSWORD,
     }
 
+
 class Topics:
     REDDIT_SUBMISSIONS = 'reddit-submissions'
     REDDIT_COMMENTS = 'reddit-comments'
     TICKER_MENTIONS = 'ticker-mentions'
     SCRAPED_POSTS = 'scraped-posts'
     POST_SENTIMENT = 'post-sentiment'
+
 
 class Groups:
     SUBMISSION_CONSUMERS = 'submission-consumers'
