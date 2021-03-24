@@ -23,4 +23,6 @@ app = faust.App(
     broker_credentials=broker_credentials,
     # autodiscover=True,
     origin="process",
+    store="rocksdb://",
+    datadir=Constants.STORE_PATH,
 )
