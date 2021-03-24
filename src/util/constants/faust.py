@@ -3,6 +3,7 @@ Constants related to Faust
 """
 import os
 
+
 class Constants:
     APP_NAME = "varity-faust-app"
 

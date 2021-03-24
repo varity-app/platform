@@ -15,5 +15,6 @@ class TickerMentionsConstants:
     CREATED_UTC = "created_utc"
     MENTION_TYPE = "mention_id"
 
+
 class MentionTypes:
-    TICKER = 'ticker'
+    TICKER = "ticker"

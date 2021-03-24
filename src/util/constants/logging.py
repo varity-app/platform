@@ -2,6 +2,7 @@
 Custom logging-related constants
 """
 
+
 class Constants:
     """General Constants"""
 
@@ -15,6 +16,7 @@ class SourceTypes:
     """All the values for source_type"""
 
     PYTHON = "python"
+
 
 class Sources:
     """Values for source"""
