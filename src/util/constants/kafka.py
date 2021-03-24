@@ -1,7 +1,13 @@
+"""
+Kafka-related constants
+"""
+
 import os
 
 
 class Config:
+    """General Kafka configuration constants"""
+
     BOOTSTRAP_SERVERS = os.environ.get("BOOTSTRAP_SERVERS")
     SASL_MECHANISM = 'PLAIN'
     SECURITY_PROTOCOL = 'SASL_SSL'
@@ -18,14 +24,20 @@ class Config:
 
 
 class Topics:
+    """Kafka topic names"""
+
     REDDIT_SUBMISSIONS = 'reddit-submissions'
     REDDIT_COMMENTS = 'reddit-comments'
     TICKER_MENTIONS = 'ticker-mentions'
     SCRAPED_POSTS = 'scraped-posts'
     POST_SENTIMENT = 'post-sentiment'
 
+    LOGS = 'logs'
+
 
 class Groups:
+    """Kafka consumer groups"""
+
     SUBMISSION_CONSUMERS = 'submission-consumers'
     COMMENT_CONSUMERS = 'comment-consumers'
     SENTIMENT_ESTIMATORS = 'sentiment-estimators'

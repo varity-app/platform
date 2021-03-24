@@ -2,4 +2,4 @@
 load-plugins=pylint_pytest
 
 [MESSAGES CONTROL]
-disable=W0223
+disable=W0223,W1203
