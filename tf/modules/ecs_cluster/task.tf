@@ -163,3 +163,63 @@ resource "aws_ecs_task_definition" "submissions_scraper" {
     }
   ])
 }
+
+resource "aws_ecs_task_definition" "faust" {
+  family                   = "faust-definition"
+  network_mode             = "awsvpc"
+  requires_compatibilities = ["FARGATE"]
+
+  cpu    = 256
+  memory = 512
+
+  task_role_arn      = aws_iam_role.ecs_agent.arn
+  execution_role_arn = aws_iam_role.ecs_agent.arn
+
+  container_definitions = jsonencode([
+    {
+      name      = "scraper"
+      image     = "cgundlach13/faust-processor:0.3.0"
+      essential = true
+
+      cpu    = 256
+      memory = 512
+
+      logConfiguration = {
+        logDriver = "awslogs"
+        options = {
+          awslogs-group         = "/ecs/faust"
+          awslogs-stream-prefix = "ecs"
+          awslogs-region        = "us-east-2"
+          awslogs-create-group  = "true"
+        }
+      }
+
+      secrets = [
+        {
+          name      = "SASL_USERNAME"
+          valueFrom = data.aws_ssm_parameter.confluent_key.arn
+        },
+        {
+          name      = "SASL_PASSWORD"
+          valueFrom = data.aws_ssm_parameter.confluent_secret.arn
+        },
+        {
+          name      = "BOOTSTRAP_SERVERS"
+          valueFrom = data.aws_ssm_parameter.bootstrap.arn
+        }
+      ]
+
+      mountPoints = [
+        {
+          sourceVolume  = "faust-vol"
+          containerPath = "/tmp/faust"
+          readOnly      = false
+        }
+      ]
+    }
+  ])
+
+  volume {
+    name = "faust-vol"
+  }
+}
