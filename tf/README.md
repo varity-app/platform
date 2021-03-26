@@ -55,3 +55,5 @@ Make sure you logged into Terraform Cloud, where the remote state is stored.  Do
 2. `terraform init`
 3. `terraform plan`
 4. `terraform apply`
+
+Bonus: Format `.tf` files with `terraform fmt <dir>`
