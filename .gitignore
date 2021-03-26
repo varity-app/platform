@@ -133,3 +133,6 @@ dmypy.json
 **/staging
 notebooks
 **.zip
+
+# Terraform
+**terraform*
