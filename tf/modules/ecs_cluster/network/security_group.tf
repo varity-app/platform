@@ -1,5 +1,5 @@
 resource "aws_security_group" "ecs" {
-    name = "ecs_group"
+    name = var.security_group_name
     description = "Default security group for ECS"
     vpc_id = aws_vpc.ecs.id
 

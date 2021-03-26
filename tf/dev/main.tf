@@ -13,4 +13,7 @@ provider "aws" {
 
 module "ecs_cluster" {
     source = "../modules/ecs_cluster"
+
+    ecs_cluster_name = var.ecs_cluster_name
+    security_group_name = var.security_group_name
 }
