@@ -3,7 +3,7 @@ terraform {
         organization = "Varity"
 
         workspaces {
-        name = "varity-dev"
+            name = "varity-dev"
         }
     }
     
@@ -24,4 +24,5 @@ module "ecs_cluster" {
 
     ecs_cluster_name = var.ecs_cluster_name
     security_group_name = var.security_group_name
+    secrets_policy_arn = var.secrets_policy_arn
 }

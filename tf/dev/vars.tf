@@ -9,3 +9,9 @@ variable "security_group_name" {
     type = string
     default = "varity-ecs-dev"
 }
+
+variable "secrets_policy_arn" {
+    description = "ARN of the IAM policy that permits reading of AWS SSM secrets"
+    type = string
+    default = "arn:aws:iam::178852309825:policy/readVaritySecrets"
+}
