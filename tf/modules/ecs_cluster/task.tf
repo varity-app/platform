@@ -1,10 +1,9 @@
 resource "aws_ecs_task_definition" "comments_scraper" {
   family                   = "comments-scraper-definition"
-  network_mode             = "awsvpc"
-  requires_compatibilities = ["FARGATE"]
+  network_mode             = "bridge"
 
-  cpu    = 256
-  memory = 512
+  cpu    = 128
+  memory = 256
 
   task_role_arn      = aws_iam_role.ecs_agent.arn
   execution_role_arn = aws_iam_role.ecs_agent.arn
@@ -15,8 +14,8 @@ resource "aws_ecs_task_definition" "comments_scraper" {
       image     = "cgundlach13/reddit-scraper:0.3.0"
       essential = true
 
-      cpu    = 256
-      memory = 512
+      cpu    = 128
+      memory = 256
 
       logConfiguration = {
         logDriver = "awslogs"
@@ -83,11 +82,10 @@ resource "aws_ecs_task_definition" "comments_scraper" {
 
 resource "aws_ecs_task_definition" "submissions_scraper" {
   family                   = "submissions-scraper-definition"
-  network_mode             = "awsvpc"
-  requires_compatibilities = ["FARGATE"]
+  network_mode             = "bridge"
 
-  cpu    = 256
-  memory = 512
+  cpu    = 128
+  memory = 256
 
   task_role_arn      = aws_iam_role.ecs_agent.arn
   execution_role_arn = aws_iam_role.ecs_agent.arn
@@ -98,8 +96,8 @@ resource "aws_ecs_task_definition" "submissions_scraper" {
       image     = "cgundlach13/reddit-scraper:0.3.0"
       essential = true
 
-      cpu    = 256
-      memory = 512
+      cpu    = 128
+      memory = 256
 
       logConfiguration = {
         logDriver = "awslogs"
@@ -166,10 +164,9 @@ resource "aws_ecs_task_definition" "submissions_scraper" {
 
 resource "aws_ecs_task_definition" "faust" {
   family                   = "faust-definition"
-  network_mode             = "awsvpc"
-  requires_compatibilities = ["FARGATE"]
+  network_mode             = "bridge"
 
-  cpu    = 256
+  cpu    = 512
   memory = 512
 
   task_role_arn      = aws_iam_role.ecs_agent.arn
@@ -181,7 +178,7 @@ resource "aws_ecs_task_definition" "faust" {
       image     = "cgundlach13/faust-processor:0.3.0"
       essential = true
 
-      cpu    = 256
+      cpu    = 512
       memory = 512
 
       logConfiguration = {

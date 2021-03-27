@@ -4,7 +4,7 @@ data "aws_iam_policy_document" "ecs_agent" {
 
     principals {
       type        = "Service"
-      identifiers = ["ecs-tasks.amazonaws.com"]
+      identifiers = ["ecs-tasks.amazonaws.com", "ec2.amazonaws.com"]
     }
   }
 }
@@ -40,6 +40,11 @@ resource "aws_iam_role" "ecs_agent" {
   assume_role_policy = data.aws_iam_policy_document.ecs_agent.json
 }
 
+resource "aws_iam_role_policy_attachment" "ecs_agent_ec2" {
+  role       = aws_iam_role.ecs_agent.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role"
+}
+
 resource "aws_iam_policy_attachment" "ecs_agent" {
   name       = "ecs-agent-attachment"
   roles      = [aws_iam_role.ecs_agent.name]
@@ -56,4 +61,9 @@ resource "aws_iam_policy_attachment" "cloudwatch" {
   name       = "ecs-agent-attachment"
   roles      = [aws_iam_role.ecs_agent.name]
   policy_arn = aws_iam_policy.cloudwatch.arn
+}
+
+resource "aws_iam_instance_profile" "ecs_agent" {
+  name = "ecs-agent"
+  role = aws_iam_role.ecs_agent.name
 }
