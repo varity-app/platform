@@ -4,8 +4,7 @@ Unit tests for processing Reddit Submissions from Kafka
 
 import pytest
 
-from util.constants.scraping import DataSources as DS, ParentSources as PS
-from util.constants import MentionTypes
+from util.constants.scraping import DataSources as DS, ParentSources as PS, MentionTypes
 
 from .agents import parse_ticker_fields, create_mention_object, parse_posts
 from .models import Submission

@@ -1,11 +1,14 @@
-from .. import Message
+"""
+Declare Kafka message class for reddit submissions
+"""
 
 from util.constants.reddit import SubmissionConstants as SC
 
+from .. import Message
+
 
 class SubmissionMessage(Message):
-    fields = [SC.ID, SC.SUBREDDIT, SC.TITLE, SC.CREATED_UTC, SC.NAME, SC.SELFTEXT, SC.AUTHOR, SC.IS_ORIGINAL_CONTENT,
-              SC.IS_TEXT, SC.NSFW, SC.NUM_COMMENTS, SC.PERMALINK, SC.UPVOTES, SC.UPVOTE_RATIO, SC.URL]
+    """Kafka message repesenting a reddit submission"""
 
     def __init__(
         self,
@@ -24,7 +27,7 @@ class SubmissionMessage(Message):
         upvotes: int,
         upvote_ratio: float,
         url: str,
-    ):
+    ) -> None:
         self.submission_id = submission_id
         self.subreddit = subreddit
         self.title = self.get(title)
@@ -41,14 +44,9 @@ class SubmissionMessage(Message):
         self.upvote_ratio = self.get(upvote_ratio)
         self.url = self.get(url)
 
-    def get(self, value, default=""):
-        if value is None:
-            return default
-
-        return value
-
-    def serialize(self, as_str=True) -> dict:
-        response = dict(
+    def to_obj(self) -> dict:
+        """Serialize the class to a dict"""
+        obj = dict(
             submission_id=self.submission_id,
             subreddit=self.subreddit,
             title=self.title,
@@ -66,46 +64,27 @@ class SubmissionMessage(Message):
             url=self.url,
         )
 
-        if as_str:
-            response = self.to_str(response)
-
-        return response
+        return obj
 
     @classmethod
     def from_obj(cls, data: dict):
-        for field in [SC.ID, SC.SUBREDDIT, SC.CREATED_UTC, SC.AUTHOR]:
-            assert field in data.keys()
-
-        submission_id = data.get(SC.ID)
-        subreddit = data.get(SC.SUBREDDIT)
-        title = data.get(SC.TITLE)
-        created_utc = data.get(SC.CREATED_UTC)
-        name = data.get(SC.NAME)
-        selftext = data.get(SC.SELFTEXT)
-        author = data.get(SC.AUTHOR)
-        is_original_content = data.get(SC.IS_ORIGINAL_CONTENT)
-        is_text = data.get(SC.IS_TEXT)
-        nsfw = data.get(SC.NSFW)
-        num_comments = data.get(SC.NUM_COMMENTS)
-        permalink = data.get(SC.PERMALINK)
-        upvotes = data.get(SC.UPVOTES)
-        upvote_ratio = data.get(SC.UPVOTE_RATIO)
-        url = data.get(SC.URL)
+        """Create a new instance of the class from a dict"""
+        cls.assert_has_fields(data, [SC.ID, SC.SUBREDDIT, SC.CREATED_UTC, SC.AUTHOR])
 
         return cls(
-            submission_id,
-            subreddit,
-            title,
-            created_utc,
-            name,
-            selftext,
-            author,
-            is_original_content,
-            is_text,
-            nsfw,
-            num_comments,
-            permalink,
-            upvotes,
-            upvote_ratio,
-            url,
+            data.get(SC.ID),
+            data.get(SC.SUBREDDIT),
+            data.get(SC.TITLE),
+            data.get(SC.CREATED_UTC),
+            data.get(SC.NAME),
+            data.get(SC.SELFTEXT),
+            data.get(SC.AUTHOR),
+            data.get(SC.IS_ORIGINAL_CONTENT),
+            data.get(SC.IS_TEXT),
+            data.get(SC.NSFW),
+            data.get(SC.NUM_COMMENTS),
+            data.get(SC.PERMALINK),
+            data.get(SC.UPVOTES),
+            data.get(SC.UPVOTE_RATIO),
+            data.get(SC.URL),
         )
