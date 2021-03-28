@@ -5,8 +5,7 @@ Faust Agents and helper methods for processing Reddit Submissions
 from typing import List, Tuple
 
 from util.tickers import parse_tickers, all_tickers
-from util.constants.scraping import DataSources as DS, ParentSources as PS
-from util.constants import MentionTypes
+from util.constants.scraping import DataSources as DS, ParentSources as PS, MentionTypes
 
 from process.app import app
 from .views import submissions_topic
@@ -19,10 +18,8 @@ from ..scraped_posts.models import ScrapedPost
 
 def parse_ticker_fields(submission: Submission) -> Tuple[List[str], List[str]]:
     """Parse tickers from selftext and title fields to TickerMention messages"""
-    # Parse Tickers
-    selftext_tickers = parse_tickers(submission.selftext, all_tickers=all_tickers)
-
-    title_tickers = parse_tickers(submission.title, all_tickers=all_tickers)
+    selftext_tickers = parse_tickers(submission.selftext, all_tickers)
+    title_tickers = parse_tickers(submission.title, all_tickers)
 
     return selftext_tickers, title_tickers
 

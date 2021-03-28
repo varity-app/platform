@@ -3,8 +3,7 @@ Faust Agents and helper methods for processing Reddit Comments
 """
 
 from util.tickers import parse_tickers, all_tickers
-from util.constants.scraping import DataSources as DS, ParentSources as PS
-from util.constants import MentionTypes
+from util.constants.scraping import DataSources as DS, ParentSources as PS, MentionTypes
 
 from process.app import app
 from .views import comments_topic
@@ -17,7 +16,7 @@ from ..scraped_posts.models import ScrapedPost
 
 def parse_ticker_fields(comment: Comment) -> bool:
     """Parse tickers from body to TickerMention messages and publish to Kafka"""
-    body_tickers = parse_tickers(comment.body, all_tickers=all_tickers)
+    body_tickers = parse_tickers(comment.body, all_tickers)
 
     return body_tickers
 

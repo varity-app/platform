@@ -1,7 +1,13 @@
+"""
+Reddit scraping-related constants
+"""
+
 import os
 
 
 class Config:
+    """Reddit API configuration variables"""
+
     REDDIT_USERNAME = os.environ.get("REDDIT_USERNAME")
     REDDIT_PASSWORD = os.environ.get("REDDIT_PASSWORD")
     REDDIT_CLIENT_ID = os.environ.get("REDDIT_CLIENT_ID")
@@ -10,11 +16,15 @@ class Config:
 
 
 class Misc:
+    """Miscellanious constants"""
+
     SUBMISSIONS = "submissions"
     COMMENTS = "comments"
 
 
 class SubmissionConstants:
+    """Reddit submission object fields"""
+
     ID = "submission_id"
     TITLE = "title"
     CREATED_UTC = "created_utc"
@@ -33,6 +43,8 @@ class SubmissionConstants:
 
 
 class CommentConstants:
+    """Reddit comment object fields"""
+
     ID = "comment_id"
     SUBMISSION_ID = "submission_id"
     BODY = "body"
