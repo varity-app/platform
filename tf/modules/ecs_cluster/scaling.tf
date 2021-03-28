@@ -8,8 +8,8 @@ data "aws_ami" "ecs_optimized" {
 }
 
 resource "aws_launch_configuration" "ecs_launch_config" {
-  name_prefix     = "varity-ecs"
-  image_id = data.aws_ami.ecs_optimized.id
+  name_prefix = "varity-ecs"
+  image_id    = data.aws_ami.ecs_optimized.id
 
   associate_public_ip_address = true
 
@@ -17,7 +17,7 @@ resource "aws_launch_configuration" "ecs_launch_config" {
   security_groups      = [module.network.security_group]
   user_data            = format("#!/bin/bash\necho ECS_CLUSTER=%s >> /etc/ecs/ecs.config", var.ecs_cluster_name)
 
-  instance_type = "t3a.micro"
+  instance_type = "t3a.small"
 
   lifecycle {
     create_before_destroy = true
@@ -25,11 +25,11 @@ resource "aws_launch_configuration" "ecs_launch_config" {
 }
 
 resource "aws_autoscaling_group" "ecs" {
-  name                 = "varity-ecs-asg"
+  name                 = var.asg_name
   vpc_zone_identifier  = [module.network.subnet_id]
   launch_configuration = aws_launch_configuration.ecs_launch_config.name
 
-  desired_capacity          = 2
+  desired_capacity          = 1
   min_size                  = 0
   max_size                  = 5
   health_check_grace_period = 300

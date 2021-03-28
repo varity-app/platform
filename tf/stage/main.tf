@@ -1,12 +1,4 @@
 terraform {
-  backend "remote" {
-    organization = "Varity"
-
-    workspaces {
-      name = "varity-dev"
-    }
-  }
-
   required_providers {
     aws = {
       source  = "hashicorp/aws"

@@ -10,7 +10,7 @@ data "aws_iam_policy_document" "ecs_agent" {
 }
 
 resource "aws_iam_policy" "cloudwatch" {
-  name        = "ECS-CloudWatch"
+  name        = var.ecs_cloudwatch_policy_name
   description = "Policy for ECS to read and write to AWS CloudWatch"
 
   policy = <<EOF
@@ -35,7 +35,7 @@ EOF
 }
 
 resource "aws_iam_role" "ecs_agent" {
-  name = "varityECSExecutionRole"
+  name = var.ecs_role_name
 
   assume_role_policy = data.aws_iam_policy_document.ecs_agent.json
 }
@@ -45,25 +45,22 @@ resource "aws_iam_role_policy_attachment" "ecs_agent_ec2" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role"
 }
 
-resource "aws_iam_policy_attachment" "ecs_agent" {
-  name       = "ecs-agent-attachment"
-  roles      = [aws_iam_role.ecs_agent.name]
+resource "aws_iam_role_policy_attachment" "ecs_agent" {
+  role       = aws_iam_role.ecs_agent.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
 
-resource "aws_iam_policy_attachment" "read_parameters" {
-  name       = "ecs-agent-read-parameters-attachment"
-  roles      = [aws_iam_role.ecs_agent.name]
+resource "aws_iam_role_policy_attachment" "read_parameters" {
+  role       = aws_iam_role.ecs_agent.name
   policy_arn = var.secrets_policy_arn
 }
 
-resource "aws_iam_policy_attachment" "cloudwatch" {
-  name       = "ecs-agent-attachment"
-  roles      = [aws_iam_role.ecs_agent.name]
+resource "aws_iam_role_policy_attachment" "cloudwatch" {
+  role       = aws_iam_role.ecs_agent.name
   policy_arn = aws_iam_policy.cloudwatch.arn
 }
 
 resource "aws_iam_instance_profile" "ecs_agent" {
-  name = "ecs-agent"
+  name = var.ecs_instance_profile_name
   role = aws_iam_role.ecs_agent.name
 }
