@@ -3,3 +3,5 @@ nltk
 confluent-kafka
 asyncpraw
 mypy
+pylint
+pytest
