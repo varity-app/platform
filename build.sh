@@ -85,7 +85,13 @@ build_image() {
   local tag_name=${DOCKER_REPO_BASE}/${image_name}:${IMAGE_VERSIONS[$image_name]}
 
   mkdir -p ${stage_dir}
-  cp ${script_dir}/res/other/${image_name}/* ${stage_dir}
+
+  if [[ -d "${script_dir}/res/other/${image_name}" ]]; then
+    cp ${script_dir}/res/other/${image_name}/* ${stage_dir}
+  else
+    cp ${script_dir}/requirements.txt ${stage_dir}
+  fi
+
   cp ${script_dir}/res/docker/Dockerfile.${image_name} ${stage_dir}
   cp -r ${script_dir}/src ${stage_dir}
 

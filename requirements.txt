@@ -1,0 +1,8 @@
+faust[rocksdb]
+nltk
+confluent-kafka
+asyncpraw
+mypy
+pylint
+pytest
+pylint-pytest
