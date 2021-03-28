@@ -67,7 +67,7 @@ class SubmissionMessage(Message):
         return obj
 
     @classmethod
-    def from_obj(cls: SubmissionMessage, data: dict) -> SubmissionMessage:
+    def from_obj(cls, data: dict):
         """Create a new instance of the class from a dict"""
         cls.assert_has_fields(data, [SC.ID, SC.SUBREDDIT, SC.CREATED_UTC, SC.AUTHOR])
 

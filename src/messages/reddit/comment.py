@@ -43,7 +43,7 @@ class CommentMessage(Message):
         return obj
 
     @classmethod
-    def from_obj(cls: CommentMessage, data: dict) -> CommentMessage:
+    def from_obj(cls, data: dict):
         """Create a new instance of the class from a dict"""
         cls.assert_has_fields(
             data, [CC.ID, CC.SUBMISSION_ID, CC.SUBREDDIT, CC.AUTHOR, CC.CREATED_UTC]

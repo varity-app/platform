@@ -1,21 +1,37 @@
-import asyncpraw
+"""
+Define the RedditScraper class
+"""
+
 from datetime import datetime
-from confluent_kafka import Producer
+from typing import Union
 import logging
 
-from util.constants.reddit import Config as RC, CommentConstants as CC, SubmissionConstants as SC, Misc
+from confluent_kafka import Producer
+import asyncpraw
+
+from util.constants.reddit import (
+    Config as RC,
+    Misc,
+)
 from util.constants.kafka import Config, Topics
 from messages.reddit.submission import SubmissionMessage
 from messages.reddit.comment import CommentMessage
+
 from . import Scraper
 
 logger = logging.getLogger(__name__)
 
 
 class RedditScraper(Scraper):
+    """Scraper class for scraping submissions or comments from reddit at specified intervals"""
+
     def __init__(
-        self, subreddit, mode, limit=100, enable_publish=True,
-    ):
+        self,
+        subreddit: str,
+        mode: str,
+        limit=100,
+        enable_publish=True,
+    ) -> None:
         super().__init__(limit)
 
         self.subreddit = subreddit
@@ -36,15 +52,20 @@ class RedditScraper(Scraper):
         if enable_publish:
             self.publisher = Producer(Config.OBJ)
 
-    def callback(self, err, msg):
+    @staticmethod
+    def callback(err, msg):
         """Kafka publisher callback"""
         if err is not None:
             logger.error(f"Failed to deliver message: {err}")
         else:
             logger.debug(
-                f"Produced record to topic {msg.topic()} partition [{msg.partition()}] @ offset {msg.offset()}")
+                f"Produced record to topic {msg.topic()}"
+                "partition [{msg.partition()}] @ offset {msg.offset()}"
+            )
 
-    def publish(self, topic, message):
+    def publish(
+        self, topic: str, message: Union[SubmissionMessage, CommentMessage]
+    ) -> int:
         """Serialize a message and publish it to Kafka"""
         self.publisher.produce(topic, value=message.serialize())
 
@@ -70,13 +91,13 @@ class RedditScraper(Scraper):
         return comment_count
 
     def parse_comment(self, comment):
-        created_utc = datetime.utcfromtimestamp(
-            comment.created_utc).isoformat()
+        """Parse a PRAW comment to the custom CommentMessage class"""
+        created_utc = datetime.utcfromtimestamp(comment.created_utc).isoformat()
 
         if comment.author is not None:
             author = comment.author.name
         else:
-            author = ''
+            author = ""
 
         com_obj = CommentMessage(
             comment.id,
@@ -111,10 +132,10 @@ class RedditScraper(Scraper):
         return submission_count
 
     def parse_submission(self, submission):
+        """Parse a PRAW submission to the custom SubmissionMessage class"""
         submission_id = submission.id
         title = submission.title
-        created_utc = datetime.utcfromtimestamp(
-            submission.created_utc).isoformat()
+        created_utc = datetime.utcfromtimestamp(submission.created_utc).isoformat()
         is_original_content = submission.is_original_content
         is_text = submission.is_self
         name = submission.name
@@ -128,7 +149,7 @@ class RedditScraper(Scraper):
         if submission.author is not None:
             author = submission.author.name
         else:
-            author = ''
+            author = ""
 
         sub_obj = SubmissionMessage(
             submission_id,

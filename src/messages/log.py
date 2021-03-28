@@ -30,7 +30,7 @@ class LogMessage(Message):
         return obj
 
     @classmethod
-    def from_obj(cls: LogMessage, data: dict) -> LogMessage:
+    def from_obj(cls, data: dict):
         """Create instance of LogMessage from a dictionary"""
         fields = [
             Constants.TIMESTAMP,
