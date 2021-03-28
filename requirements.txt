@@ -5,3 +5,4 @@ asyncpraw
 mypy
 pylint
 pytest
+pylint-pytest
