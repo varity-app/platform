@@ -2,8 +2,6 @@
 Declare Kafka message class for logs
 """
 
-from typing import Union, Dict
-
 from util.constants.logging import Constants
 
 from . import Message
@@ -20,32 +18,28 @@ class LogMessage(Message):
         self.source = source
         self.message = message
 
-    def serialize(self, as_str=True) -> Union[str, Dict[str, str]]:
-        """Serialize message to dict or str"""
-
-        response = dict(
+    def to_obj(self) -> dict:
+        """Serialize the class as a dict"""
+        obj = dict(
             timestamp=self.timestamp,
             source_type=self.source_type,
             source=self.source,
             message=self.message,
         )
 
-        if as_str:
-            response = self.to_str(response)
-
-        return response
+        return obj
 
     @classmethod
-    def from_obj(cls, data: dict):
+    def from_obj(cls: LogMessage, data: dict) -> LogMessage:
         """Create instance of LogMessage from a dictionary"""
-
-        for field in [
+        fields = [
             Constants.TIMESTAMP,
             Constants.SOURCE_TYPE,
             Constants.SOURCE,
             Constants.MESSAGE,
-        ]:
-            assert field in data.keys()
+        ]
+
+        cls.assert_has_fields(data, fields)
 
         timestamp = data[Constants.TIMESTAMP]
         source_type = data[Constants.SOURCE_TYPE]
