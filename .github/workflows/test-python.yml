@@ -39,4 +39,5 @@ jobs:
     - name: Analysing the code with pylint
       run: |
         export PYTHONPATH=${PYTHONPATH}:${GITHUB_WORKSPACE}/src
-        python -m pylint src
+        cd src
+        python -m pylint *
