@@ -1,0 +1,5 @@
+faust[rocksdb]
+nltk
+confluent-kafka
+asyncpraw
+mypy
