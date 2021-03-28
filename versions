@@ -1,8 +1,5 @@
 declare -A IMAGE_VERSIONS=(
     ['reddit-scraper']='0.3.0' \
-    ['submissions-consumer']='0.2.0' \
-    ['comments-consumer']='0.2.0' \
-    ['sentiment-estimator']='0.2.0' \
     ['faust-processor']='0.3.0' \
     ['python-base']='0.3.0' \
 )
