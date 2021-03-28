@@ -8,7 +8,7 @@ import argparse
 from datetime import datetime
 import gc
 import traceback
-from asyncprawcore.exceptions import RequestException
+from asyncprawcore.exceptions import RequestException, ResponseException
 
 
 from scrapers.reddit import RedditScraper
@@ -58,13 +58,13 @@ async def main():
 
                 try:
                     num_results = await scraper.run()
-                except RequestException:
-                    logger.error(f"Error scraping on r/{subreddit}", subreddit=subreddit)
+                except (RequestException, ResponseException):
+                    logger.error(
+                        f"Error scraping on r/{subreddit}. Will retry: {traceback.format_exc()}"
+                    )
                     continue
 
-                logger.info(
-                    f"Saved {num_results} {mode}"
-                )
+                logger.info(f"Saved {num_results} {mode}")
 
             gc.collect()
             logger.info(
