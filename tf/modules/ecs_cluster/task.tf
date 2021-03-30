@@ -1,6 +1,6 @@
 resource "aws_ecs_task_definition" "comments_scraper" {
-  family                   = "comments-scraper-definition"
-  network_mode             = "bridge"
+  family       = format("comments-scraper-definition%s", var.task_suffix)
+  network_mode = "bridge"
 
   cpu    = 128
   memory = 256
@@ -11,7 +11,7 @@ resource "aws_ecs_task_definition" "comments_scraper" {
   container_definitions = jsonencode([
     {
       name      = "scraper"
-      image     = "cgundlach13/reddit-scraper:0.3.0"
+      image     = "cgundlach13/reddit-scraper:0.5.0"
       essential = true
 
       cpu    = 128
@@ -39,6 +39,10 @@ resource "aws_ecs_task_definition" "comments_scraper" {
         {
           name  = "SLEEP"
           value = "60"
+        },
+        {
+          name  = "AWS_DEFAULT_REGION"
+          value = "us-east-2"
         }
       ]
 
@@ -81,8 +85,8 @@ resource "aws_ecs_task_definition" "comments_scraper" {
 }
 
 resource "aws_ecs_task_definition" "submissions_scraper" {
-  family                   = "submissions-scraper-definition"
-  network_mode             = "bridge"
+  family       = format("submissions-scraper-definition%s", var.task_suffix)
+  network_mode = "bridge"
 
   cpu    = 128
   memory = 256
@@ -93,7 +97,7 @@ resource "aws_ecs_task_definition" "submissions_scraper" {
   container_definitions = jsonencode([
     {
       name      = "scraper"
-      image     = "cgundlach13/reddit-scraper:0.3.0"
+      image     = "cgundlach13/reddit-scraper:0.5.0"
       essential = true
 
       cpu    = 128
@@ -121,6 +125,10 @@ resource "aws_ecs_task_definition" "submissions_scraper" {
         {
           name  = "SLEEP"
           value = "120"
+        },
+        {
+          name  = "AWS_DEFAULT_REGION"
+          value = "us-east-2"
         }
       ]
 
@@ -163,8 +171,8 @@ resource "aws_ecs_task_definition" "submissions_scraper" {
 }
 
 resource "aws_ecs_task_definition" "faust" {
-  family                   = "faust-definition"
-  network_mode             = "bridge"
+  family       = format("faust-definition%s", var.task_suffix)
+  network_mode = "bridge"
 
   cpu    = 512
   memory = 512
