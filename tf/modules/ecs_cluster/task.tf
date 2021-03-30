@@ -20,7 +20,7 @@ resource "aws_ecs_task_definition" "comments_scraper" {
       logConfiguration = {
         logDriver = "awslogs"
         options = {
-          awslogs-group         = format("/ecs/scrapers/reddit-submissions%s", var.suffix)
+          awslogs-group         = format("/ecs/scrapers/reddit-comments%s", var.suffix)
           awslogs-stream-prefix = "ecs"
           awslogs-region        = "us-east-2"
           awslogs-create-group  = "true"
