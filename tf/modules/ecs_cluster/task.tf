@@ -43,6 +43,14 @@ resource "aws_ecs_task_definition" "comments_scraper" {
         {
           name  = "AWS_DEFAULT_REGION"
           value = "us-east-2"
+        },
+        {
+          name  = "DYNAMO_REDDIT_SUBMISSIONS"
+          value = var.submissions_table_name
+        },
+        {
+          name  = "DYNAMO_REDDIT_COMMENTS"
+          value = var.comments_table_name
         }
       ]
 
@@ -129,6 +137,14 @@ resource "aws_ecs_task_definition" "submissions_scraper" {
         {
           name  = "AWS_DEFAULT_REGION"
           value = "us-east-2"
+        },
+        {
+          name  = "DYNAMO_REDDIT_SUBMISSIONS"
+          value = var.submissions_table_name
+        },
+        {
+          name  = "DYNAMO_REDDIT_COMMENTS"
+          value = var.comments_table_name
         }
       ]
 

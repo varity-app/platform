@@ -33,6 +33,16 @@ variable "ecs_cloudwatch_policy_name" {
   type        = string
 }
 
+variable "submissions_table_name" {
+  description = "Name of the reddit submissions DynamoDB table name"
+  type        = string
+}
+
+variable "comments_table_name" {
+  description = "Name of the reddit submissions DynamoDB table name"
+  type        = string
+}
+
 variable "suffix" {
   description = "Suffix to append to various definitions to seperate deployments (e.g `-dev`, `-prod`)"
   type        = string
