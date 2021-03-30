@@ -32,3 +32,8 @@ variable "ecs_cloudwatch_policy_name" {
   description = "Name of the IAM policy that lets the ECS execution role write to CloudWatch"
   type        = string
 }
+
+variable "task_suffix" {
+  description = "Suffix to append to ECS task definitions"
+  type        = string
+}

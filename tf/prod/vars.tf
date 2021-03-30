@@ -40,6 +40,12 @@ variable "ecs_cloudwatch_policy_name" {
   default     = "ECS-CloudWatch-Prod"
 }
 
+variable "task_suffix" {
+  description = "Suffix to append to ECS task definitions"
+  type        = string
+  default = "-prod"
+}
+
 variable "submissions_table_name" {
   description = "Name of the reddit submissions DynamoDB table name"
   type        = string

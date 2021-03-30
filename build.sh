@@ -84,19 +84,7 @@ build_image() {
   local stage_dir=${script_dir}/staging/${image_name}
   local tag_name=${DOCKER_REPO_BASE}/${image_name}:${IMAGE_VERSIONS[$image_name]}
 
-  mkdir -p ${stage_dir}
-
-  if [[ -d "${script_dir}/res/other/${image_name}" ]]; then
-    cp ${script_dir}/res/other/${image_name}/* ${stage_dir}
-  else
-    cp ${script_dir}/requirements.txt ${stage_dir}
-  fi
-
-  cp ${script_dir}/res/docker/Dockerfile.${image_name} ${stage_dir}
-  cp -r ${script_dir}/src ${stage_dir}
-
-  cd ${stage_dir}
-  docker build -t ${tag_name} -f Dockerfile.${image_name} .
+  docker build -t ${tag_name} -f ${script_dir}/res/${image_name}/Dockerfile src
   if [[ -n "${publish}" ]]; then
     echo 'Pushing image...'
     docker push ${tag_name}
