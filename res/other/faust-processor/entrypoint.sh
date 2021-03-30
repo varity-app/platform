@@ -1,1 +1,0 @@
-python -m process worker -l info

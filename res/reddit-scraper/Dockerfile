@@ -10,13 +10,6 @@ RUN : \
     && add-apt-repository -y ppa:deadsnakes \
     && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
         python3.8-venv \
-        librocksdb-dev \
-        build-essential autoconf libtool pkg-config libpython3.8-dev \
-        librocksdb-dev \
-        libsnappy-dev \
-        zlib1g-dev \
-        libbz2-dev \
-        liblz4-dev \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* \
     && :
@@ -24,17 +17,15 @@ RUN : \
 RUN python3.8 -m venv /venv
 ENV PATH=/venv/bin:$PATH
 
-ADD requirements.txt /tmp
-
 RUN python -V
-RUN python -m pip install -r /tmp/requirements.txt
-RUN python -c "import nltk; nltk.download('vader_lexicon')"
+RUN python -m pip install confluent-kafka asyncpraw boto3
 
 RUN mkdir /app
-COPY src/util /app/util
-COPY src/process /app/process
-COPY entrypoint.sh /app
+COPY entrypoints/scrape_reddit_live.py /app
+COPY util /app/util
+COPY scrapers /app/scrapers
+COPY messages /app/messages
 
 WORKDIR /app
 
-ENTRYPOINT [ "bash", "/app/entrypoint.sh" ]
+ENTRYPOINT python scrape_reddit_live.py $MODE --sleep $SLEEP --subreddits $SUBREDDITS

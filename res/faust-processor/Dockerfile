@@ -10,6 +10,13 @@ RUN : \
     && add-apt-repository -y ppa:deadsnakes \
     && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
         python3.8-venv \
+        librocksdb-dev \
+        build-essential autoconf libtool pkg-config libpython3.8-dev \
+        librocksdb-dev \
+        libsnappy-dev \
+        zlib1g-dev \
+        libbz2-dev \
+        liblz4-dev \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* \
     && :
@@ -17,18 +24,14 @@ RUN : \
 RUN python3.8 -m venv /venv
 ENV PATH=/venv/bin:$PATH
 
-ADD requirements.txt /tmp
-
 RUN python -V
-RUN python -m pip install -r /tmp/requirements.txt
+RUN python -m pip install faust[rocksdb] nltk
+RUN python -c "import nltk; nltk.download('vader_lexicon')"
 
 RUN mkdir /app
-COPY src/entrypoints/scrape_reddit_live.py /app
-COPY src/util /app/util
-COPY src/scrapers /app/scrapers
-COPY src/messages /app/messages
-COPY entrypoint.sh /app
+COPY util /app/util
+COPY process /app/process
 
 WORKDIR /app
 
-ENTRYPOINT [ "bash", "/app/entrypoint.sh" ]
+ENTRYPOINT python -m process worker -l info
