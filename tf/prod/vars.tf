@@ -40,10 +40,10 @@ variable "ecs_cloudwatch_policy_name" {
   default     = "ECS-CloudWatch-Prod"
 }
 
-variable "task_suffix" {
-  description = "Suffix to append to ECS task definitions"
+variable "suffix" {
+  description = "Suffix to append to various definitions to seperate deployments (e.g `-dev`, `-prod`)"
   type        = string
-  default = "-prod"
+  default     = "-prod"
 }
 
 variable "submissions_table_name" {
@@ -56,4 +56,26 @@ variable "comments_table_name" {
   description = "Name of the reddit submissions DynamoDB table name"
   type        = string
   default     = "reddit-comments-prod"
+}
+
+variable "bootstrap_servers" {
+  description = "URL of the Confluent Cloud boostrap servers"
+  type        = string
+  default     = "pkc-ep9mm.us-east-2.aws.confluent.cloud:9092"
+}
+
+variable "confluent_key_prod" {
+  description = "SASL username to login to the production confluent cluster"
+  type        = string
+}
+
+variable "confluent_secret_prod" {
+  description = "SASL password to login to the production confluent cluster"
+  type        = string
+}
+
+variable "num_partitions" {
+  description = "Number of partitions to use for each Kafka topic"
+  type        = number
+  default     = 2
 }

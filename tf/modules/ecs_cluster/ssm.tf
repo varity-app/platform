@@ -1,13 +1,13 @@
 data "aws_ssm_parameter" "bootstrap" {
-  name = "varity-confluent-bootstrap"
+  name = format("varity-confluent-bootstrap%s", var.suffix)
 }
 
 data "aws_ssm_parameter" "confluent_key" {
-  name = "varity-confluent-key"
+  name = format("varity-confluent-key%s", var.suffix)
 }
 
 data "aws_ssm_parameter" "confluent_secret" {
-  name = "varity-confluent-secret"
+  name = format("varity-confluent-secret%s", var.suffix)
 }
 
 data "aws_ssm_parameter" "reddit_client_id" {

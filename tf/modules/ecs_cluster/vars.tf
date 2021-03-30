@@ -33,7 +33,7 @@ variable "ecs_cloudwatch_policy_name" {
   type        = string
 }
 
-variable "task_suffix" {
-  description = "Suffix to append to ECS task definitions"
+variable "suffix" {
+  description = "Suffix to append to various definitions to seperate deployments (e.g `-dev`, `-prod`)"
   type        = string
 }

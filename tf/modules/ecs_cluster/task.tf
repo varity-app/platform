@@ -1,5 +1,5 @@
 resource "aws_ecs_task_definition" "comments_scraper" {
-  family       = format("comments-scraper-definition%s", var.task_suffix)
+  family       = format("comments-scraper-definition%s", var.suffix)
   network_mode = "bridge"
 
   cpu    = 128
@@ -20,7 +20,7 @@ resource "aws_ecs_task_definition" "comments_scraper" {
       logConfiguration = {
         logDriver = "awslogs"
         options = {
-          awslogs-group         = "/ecs/scrapers/reddit-comments"
+          awslogs-group         = format("/ecs/scrapers/reddit-submissions%s", var.suffix)
           awslogs-stream-prefix = "ecs"
           awslogs-region        = "us-east-2"
           awslogs-create-group  = "true"
@@ -85,7 +85,7 @@ resource "aws_ecs_task_definition" "comments_scraper" {
 }
 
 resource "aws_ecs_task_definition" "submissions_scraper" {
-  family       = format("submissions-scraper-definition%s", var.task_suffix)
+  family       = format("submissions-scraper-definition%s", var.suffix)
   network_mode = "bridge"
 
   cpu    = 128
@@ -106,7 +106,7 @@ resource "aws_ecs_task_definition" "submissions_scraper" {
       logConfiguration = {
         logDriver = "awslogs"
         options = {
-          awslogs-group         = "/ecs/scrapers/reddit-submissions"
+          awslogs-group         = format("/ecs/scrapers/reddit-submissions%s", var.suffix)
           awslogs-stream-prefix = "ecs"
           awslogs-region        = "us-east-2"
           awslogs-create-group  = "true"
@@ -171,7 +171,7 @@ resource "aws_ecs_task_definition" "submissions_scraper" {
 }
 
 resource "aws_ecs_task_definition" "faust" {
-  family       = format("faust-definition%s", var.task_suffix)
+  family       = format("faust-definition%s", var.suffix)
   network_mode = "bridge"
 
   cpu    = 512
@@ -192,7 +192,7 @@ resource "aws_ecs_task_definition" "faust" {
       logConfiguration = {
         logDriver = "awslogs"
         options = {
-          awslogs-group         = "/ecs/faust"
+          awslogs-group         = format("/ecs/faust%s", var.suffix)
           awslogs-stream-prefix = "ecs"
           awslogs-region        = "us-east-2"
           awslogs-create-group  = "true"

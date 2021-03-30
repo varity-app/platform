@@ -19,6 +19,16 @@ provider "aws" {
   region = "us-east-2"
 }
 
+
+module "kafka" {
+  source = "../modules/kafka"
+
+  bootstrap_servers = var.bootstrap_servers
+  confluent_key     = var.confluent_key_dev
+  confluent_secret  = var.confluent_secret_dev
+  num_partitions    = var.num_partitions
+}
+
 module "ecs_cluster" {
   source = "../modules/ecs_cluster"
 
@@ -29,7 +39,7 @@ module "ecs_cluster" {
   ecs_role_name              = var.ecs_role_name
   ecs_instance_profile_name  = var.ecs_instance_profile_name
   ecs_cloudwatch_policy_name = var.ecs_cloudwatch_policy_name
-  task_suffix            = var.task_suffix
+  suffix                = var.suffix
 }
 
 module "dynamo" {
