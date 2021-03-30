@@ -10,10 +10,14 @@ from confluent_kafka import Producer
 import asyncpraw
 
 from util.constants.reddit import (
+    CommentConstants as CC,
+    SubmissionConstants as SC,
     Config as RC,
     Misc,
 )
 from util.constants.kafka import Config, Topics
+from util.constants.dynamo import Tables as DT
+from util.dynamo import DynamoTable
 from messages.reddit.submission import SubmissionMessage
 from messages.reddit.comment import CommentMessage
 
@@ -23,7 +27,12 @@ logger = logging.getLogger(__name__)
 
 
 class RedditScraper(Scraper):
-    """Scraper class for scraping submissions or comments from reddit at specified intervals"""
+    """
+    The scraper checks for new posts at a specified interval, and if they
+    have not been previously processed, submits them to Kafka.
+
+    The scraper's memory consists of a local Memory helper class and a DynamoDB table.
+    """
 
     def __init__(
         self,
@@ -31,12 +40,14 @@ class RedditScraper(Scraper):
         mode: str,
         limit=100,
         enable_publish=True,
+        enable_dynamo=True,
     ) -> None:
         super().__init__(limit)
 
         self.subreddit = subreddit
         self.limit = limit
         self.enable_publish = enable_publish
+        self.enable_dynamo = enable_dynamo
 
         assert mode in [Misc.COMMENTS, Misc.SUBMISSIONS]
         self.mode = mode
@@ -51,6 +62,12 @@ class RedditScraper(Scraper):
 
         if enable_publish:
             self.publisher = Producer(Config.OBJ)
+
+        if enable_dynamo:
+            if mode == Misc.SUBMISSIONS:
+                self.dynamo = DynamoTable(DT.REDDIT_SUBMISSIONS, SC.ID)
+            else:
+                self.dynamo = DynamoTable(DT.REDDIT_COMMENTS, CC.ID)
 
     @staticmethod
     def callback(err, msg):
@@ -79,12 +96,21 @@ class RedditScraper(Scraper):
             if self.memory_contains(comment.id):
                 continue
 
+            if self.enable_dynamo and self.dynamo.exists(comment.id):
+                continue
+
             self.memory_add(comment.id)
 
-            # Save Comment
+            # Parse Comment
             comment = self.parse_comment(comment)
+
+            # Save in Kafka
             if self.enable_publish:
                 self.publish(Topics.REDDIT_COMMENTS, comment)
+
+            # Save in DynamoDB
+            if self.enable_dynamo:
+                self.dynamo.put(comment.comment_id)
 
             comment_count += 1
 
@@ -120,12 +146,21 @@ class RedditScraper(Scraper):
             if self.memory_contains(submission.id):
                 continue
 
+            if self.enable_dynamo and self.dynamo.exists(submission.id):
+                continue
+
             self.memory_add(submission.id)
 
-            # Save Submission
+            # Parse Submission
             submission = self.parse_submission(submission)
+
+            # Save in Kafka
             if self.enable_publish:
                 self.publish(Topics.REDDIT_SUBMISSIONS, submission)
+
+            # Save in DynamoDB
+            if self.enable_dynamo:
+                self.dynamo.put(submission.submission_id)
 
             submission_count += 1
 

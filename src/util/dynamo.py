@@ -57,6 +57,4 @@ class DynamoTable:
         if not self.disable_ttl:
             obj[Constants.EXPIRATION_DATE] = expiration_date
 
-        print(obj)
-
         self.table.put_item(Item=obj)
