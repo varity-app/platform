@@ -22,3 +22,9 @@ module "ecs_cluster" {
   ecs_instance_profile_name  = var.ecs_instance_profile_name
   ecs_cloudwatch_policy_name = var.ecs_cloudwatch_policy_name
 }
+
+module "dynamo" {
+  source                 = "../modules/dynamo"
+  submissions_table_name = var.submissions_table_name
+  comments_table_name    = var.comments_table_name
+}

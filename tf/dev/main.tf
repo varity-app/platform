@@ -32,7 +32,7 @@ module "ecs_cluster" {
 }
 
 module "dynamo" {
-  source = "../modules/dynamo"
+  source                 = "../modules/dynamo"
   submissions_table_name = var.submissions_table_name
-  comments_table_name = var.comments_table_name
+  comments_table_name    = var.comments_table_name
 }

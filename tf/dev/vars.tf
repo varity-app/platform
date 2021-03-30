@@ -41,13 +41,13 @@ variable "ecs_cloudwatch_policy_name" {
 }
 
 variable "submissions_table_name" {
-    description = "Name of the reddit submissions DynamoDB table name"
-    type        = string
-    default     = "reddit-submissions-dev"
+  description = "Name of the reddit submissions DynamoDB table name"
+  type        = string
+  default     = "reddit-submissions-dev"
 }
 
 variable "comments_table_name" {
-    description = "Name of the reddit submissions DynamoDB table name"
-    type        = string
-    default     = "reddit-comments-dev"
+  description = "Name of the reddit submissions DynamoDB table name"
+  type        = string
+  default     = "reddit-comments-dev"
 }

@@ -45,3 +45,15 @@ variable "ecs_cloudwatch_policy_name" {
   type        = string
   default     = "ECS-CloudWatch-Stage"
 }
+
+variable "submissions_table_name" {
+  description = "Name of the reddit submissions DynamoDB table name"
+  type        = string
+  default     = "reddit-submissions-stage"
+}
+
+variable "comments_table_name" {
+  description = "Name of the reddit submissions DynamoDB table name"
+  type        = string
+  default     = "reddit-comments-stage"
+}
