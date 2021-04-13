@@ -45,7 +45,7 @@ submissions-scraper:
 comments-scraper:
 	@echo "Attaching to reddit-scraper..."
 	@"$(DOCKER_RUN)" -e MODE=comments scraper 
-
+	
 faust:
 	@echo "Attaching to faust-processor..."
 	@"$(DOCKER_RUN)" -e MODE=comments scraper 

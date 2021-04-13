@@ -8,15 +8,17 @@ import argparse
 from datetime import datetime
 import gc
 import traceback
+import logging
 from asyncprawcore.exceptions import RequestException, ResponseException
 
 
 from scrapers.reddit import RedditScraper
-from util.logging import get_logger
+from util.logging import set_log_config
 from util.constants.reddit import Misc
 from util.constants.logging import Sources
 
-logger = get_logger(Sources.REDDIT_SCRAPER)
+set_log_config()
+logger = logging.getLogger(Sources.REDDIT_SCRAPER)
 
 
 def parse_args():

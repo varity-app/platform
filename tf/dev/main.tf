@@ -9,43 +9,20 @@ terraform {
 
   required_providers {
     aws = {
-      source  = "hashicorp/aws"
-      version = "~> 3.0"
+      source  = "hashicorp/google"
+      version = "~> 3.64.0"
     }
   }
 }
 
-provider "aws" {
-  region = "us-east-2"
+provider "google" {
+  project = "varity"
+  region  = "us-east1"
+  zone    = "us-east1-c"
 }
 
+module "pubsub" {
+  source = "../modules/pubsub"
 
-module "kafka" {
-  source = "../modules/kafka"
-
-  bootstrap_servers = var.bootstrap_servers
-  confluent_key     = var.confluent_key_dev
-  confluent_secret  = var.confluent_secret_dev
-  num_partitions    = var.num_partitions
-}
-
-module "ecs_cluster" {
-  source = "../modules/ecs_cluster"
-
-  ecs_cluster_name           = var.ecs_cluster_name
-  security_group_name        = var.security_group_name
-  secrets_policy_arn         = var.secrets_policy_arn
-  asg_name                   = var.asg_name
-  ecs_role_name              = var.ecs_role_name
-  ecs_instance_profile_name  = var.ecs_instance_profile_name
-  ecs_cloudwatch_policy_name = var.ecs_cloudwatch_policy_name
-  suffix                     = var.suffix
-  submissions_table_name     = var.submissions_table_name
-  comments_table_name        = var.comments_table_name
-}
-
-module "dynamo" {
-  source                 = "../modules/dynamo"
-  submissions_table_name = var.submissions_table_name
-  comments_table_name    = var.comments_table_name
+  deployment = var.deployment
 }
