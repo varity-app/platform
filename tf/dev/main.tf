@@ -26,3 +26,9 @@ module "pubsub" {
 
   deployment = var.deployment
 }
+
+module "gke" {
+  source = "../modules/gke"
+
+  deployment = var.deployment
+}
