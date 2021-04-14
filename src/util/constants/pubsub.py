@@ -14,6 +14,8 @@ class Config:
 class Topics:
     """Pub/Sub topic names"""
 
+    PREFIX = f"projects/{Config.PROJECT}/topics"
+
     REDDIT_SUBMISSIONS = f"reddit-submissions-{DEPLOYMENT}"
     REDDIT_COMMENTS = f"reddit-comments-{DEPLOYMENT}"
     TICKER_MENTIONS = f"ticker-mentions-{DEPLOYMENT}"
