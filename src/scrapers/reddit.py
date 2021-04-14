@@ -73,17 +73,6 @@ class RedditScraper:
                     Config.PROJECT, Topics.REDDIT_COMMENTS
                 )
 
-    @staticmethod
-    def callback(err, msg):
-        """Pub/Sub publisher callback"""
-        if err is not None:
-            logger.error(f"Failed to deliver message: {err}")
-        else:
-            logger.debug(
-                f"Produced record to topic {msg.topic()}"
-                "partition [{msg.partition()}] @ offset {msg.offset()}"
-            )
-
     def publish(self, message: Union[SubmissionMessage, CommentMessage]) -> int:
         """Serialize a message and publish it to Pub/Sub"""
         self.publisher.publish(self.topic, message.serialize().encode("utf-8")).result()

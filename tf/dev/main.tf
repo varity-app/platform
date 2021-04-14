@@ -31,4 +31,5 @@ module "gke" {
   source = "../modules/gke"
 
   deployment = var.deployment
+  release = var.release
 }

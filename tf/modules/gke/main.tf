@@ -1,12 +1,6 @@
 # Retrieve an access token as the Terraform runner
 data "google_client_config" "provider" {}
 
-resource "google_service_account" "default" {
-  account_id   = "varity-gke-svc-${var.deployment}"
-  display_name = "Varity GKE Service Account (${var.deployment})"
-  project      = var.project
-}
-
 resource "google_container_cluster" "varity_cluster" {
   name     = "varity-k8s-${var.deployment}"
   location = var.location
@@ -37,12 +31,14 @@ resource "google_container_node_pool" "primary_nodes" {
 }
 
 provider "kubernetes" {
-  load_config_file = false
-
-  host  = "https://${data.google_container_cluster.varity_cluster.endpoint}"
+  host  = "https://${google_container_cluster.varity_cluster.endpoint}"
   token = data.google_client_config.provider.access_token
   cluster_ca_certificate = base64decode(
-    data.google_container_cluster.varity_cluster.master_auth[0].cluster_ca_certificate,
+    google_container_cluster.varity_cluster.master_auth[0].cluster_ca_certificate,
   )
+}
+
+module "secrets" {
+  source = "../secrets"
 }
 
