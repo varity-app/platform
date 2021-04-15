@@ -9,20 +9,24 @@ import string
 LOCATION = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
 
 
-def parse_tickers(text, ticker_list=None):
+def parse_tickers(text, ticker_list=None, spam_threshold=5, caps_threshold=8):
     """Parse stock tickers from a string"""
 
     if not ticker_list:
         ticker_list = all_tickers
 
     # Remove urls
-    text = re.sub(r'https?:\/\/.*[\r\n]*', '', text)
+    text = re.sub(r"https?:\/\/.*[\r\n]*", "", text)
 
     # Remove anything not alphanumeric
     text = re.sub(r"[^a-zA-Z0-9 \n\.]", " ", text)
 
     # Find tickers
     tickers = re.findall(r"[A-Z][A-Z0-9.]{0,3}[A-Z]", text)
+
+    # Threshold for capital letter words, detect posts in all caps
+    if len(tickers) > caps_threshold:
+        tickers = []
 
     # Cross reference with local ticker list
     if ticker_list:
@@ -35,7 +39,7 @@ def parse_tickers(text, ticker_list=None):
     tickers = list(set(tickers))
 
     # If there are more than 5 tickers, count as spam
-    if len(tickers) > 5:
+    if len(tickers) > spam_threshold:
         tickers = []
 
     return tickers

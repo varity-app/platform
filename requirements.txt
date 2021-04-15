@@ -1,6 +1,4 @@
-faust[rocksdb]
-nltk
-confluent-kafka
+apache-beam[gcp]
 asyncpraw
 mypy
 pylint
