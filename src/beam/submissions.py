@@ -14,11 +14,10 @@ from util.constants.reddit import SubmissionConstants as SC
 from util.constants.scraping import (
     DataSources as DS,
     ParentSources as PS,
-    MentionTypes,
-    TickerMentionsConstants as TMC,
     ScrapedPostConstants as SPC,
 )
 from util.constants.pubsub import Topics, BeamSubscriptions as BS
+from util.constants.bigquery import Tables
 
 from . import print_collection, publish_to_pubsub, standard_options
 
@@ -62,16 +61,17 @@ def create_test_submissions_pipeline():
     """
 
     # Load test data from json
-    with open(f"{LOCATION}/test/submissions.json", "r") as f:
-        test_data = json.load(f)
+    with open(f"{LOCATION}/test/submissions.json", "r") as test_file:
+        test_data = json.load(test_file)
 
     # Create pipeline
     pipeline_options = PipelineOptions(standard_options)
 
     with beam.Pipeline(options=pipeline_options) as pipeline:
         submissions = pipeline | beam.Create(test_data)
-        submissions = extract_scraped_posts(submissions)
+        scraped_posts = extract_scraped_posts(submissions)
         print_collection(submissions)
+        print_collection(scraped_posts)
 
 
 def create_dataflow_submissions_pipeline():
@@ -82,11 +82,7 @@ def create_dataflow_submissions_pipeline():
 
     # Create pipeline
     pipeline_options = PipelineOptions(
-        [
-            *standard_options,
-            "--direct_num_workers=0",
-            "--streaming"
-        ]
+        [*standard_options, "--direct_num_workers=0", "--streaming"]
     )
 
     with beam.Pipeline(options=pipeline_options) as pipeline:
@@ -98,6 +94,12 @@ def create_dataflow_submissions_pipeline():
             )
             | beam.Map(lambda d: d.decode("utf-8"))
             | beam.Map(json.loads)
+        )
+
+        # Write to bigquery
+        _ = submissions | beam.io.WriteToBigQuery(
+            Tables.REDDIT_SUBMISSIONS,
+            write_disposition=beam.io.BigQueryDisposition.WRITE_APPEND,
         )
 
         # Extract scraped posts

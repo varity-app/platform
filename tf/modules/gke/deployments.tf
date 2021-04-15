@@ -53,6 +53,11 @@ resource "kubernetes_deployment" "submissions_scraper" {
           }
 
           env {
+            name  = "DEPLOYMENT"
+            value = var.deployment
+          }
+
+          env {
             name = "REDDIT_USERNAME"
             value_from {
               secret_key_ref {
@@ -159,6 +164,11 @@ resource "kubernetes_deployment" "comments_scraper" {
           env {
             name  = "SUBREDDITS"
             value = var.subreddits
+          }
+
+          env {
+            name  = "DEPLOYMENT"
+            value = var.deployment
           }
 
           env {

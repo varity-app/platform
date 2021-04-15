@@ -26,3 +26,16 @@ module "pubsub" {
 
   deployment = var.deployment
 }
+
+module "gke" {
+  source = "../modules/gke"
+
+  deployment = var.deployment
+  release = var.release
+}
+
+module "biquery" {
+  source = "../modules/bigquery"
+
+  deployment = var.deployment
+}

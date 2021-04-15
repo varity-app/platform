@@ -14,11 +14,10 @@ from util.constants.reddit import CommentConstants as CC
 from util.constants.scraping import (
     DataSources as DS,
     ParentSources as PS,
-    MentionTypes,
-    TickerMentionsConstants as TMC,
     ScrapedPostConstants as SPC,
 )
 from util.constants.pubsub import Topics, BeamSubscriptions as BS
+from util.constants.bigquery import Tables
 
 from . import print_collection, publish_to_pubsub, standard_options
 
@@ -51,16 +50,17 @@ def create_test_comments_pipeline():
     """
 
     # Load test data from json
-    with open(f"{LOCATION}/test/comments.json", "r") as f:
-        test_data = json.load(f)
+    with open(f"{LOCATION}/test/comments.json", "r") as test_file:
+        test_data = json.load(test_file)
 
     # Create pipeline
     pipeline_options = PipelineOptions(standard_options)
 
     with beam.Pipeline(options=pipeline_options) as pipeline:
         comments = pipeline | beam.Create(test_data)
-        comments = extract_scraped_posts(comments)
+        scraped_posts = extract_scraped_posts(comments)
         print_collection(comments)
+        print_collection(scraped_posts)
 
 
 def create_dataflow_comments_pipeline():
@@ -71,22 +71,22 @@ def create_dataflow_comments_pipeline():
 
     # Create pipeline
     pipeline_options = PipelineOptions(
-        [
-            *standard_options,
-            "--direct_num_workers=0",
-            "--streaming"
-        ]
+        [*standard_options, "--direct_num_workers=0", "--streaming"]
     )
 
     with beam.Pipeline(options=pipeline_options) as pipeline:
         # Load from Pub/Sub
         comments = (
             pipeline
-            | beam.io.ReadFromPubSub(
-                subscription=f"{BS.PREFIX}/{BS.REDDIT_COMMENTS}"
-            )
+            | beam.io.ReadFromPubSub(subscription=f"{BS.PREFIX}/{BS.REDDIT_COMMENTS}")
             | beam.Map(lambda d: d.decode("utf-8"))
             | beam.Map(json.loads)
+        )
+
+        # Write to bigquery
+        _ = comments | beam.io.WriteToBigQuery(
+            Tables.REDDIT_COMMENTS,
+            write_disposition=beam.io.BigQueryDisposition.WRITE_APPEND,
         )
 
         # Extract scraped posts

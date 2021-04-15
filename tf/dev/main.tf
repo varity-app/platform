@@ -33,3 +33,9 @@ module "gke" {
   deployment = var.deployment
   release = var.release
 }
+
+module "biquery" {
+  source = "../modules/bigquery"
+
+  deployment = var.deployment
+}

@@ -11,8 +11,8 @@ from beam.comments import (
 def main():
     """Entrypoint method"""
 
-    create_test_comments_pipeline()
-    # create_dataflow_comments_pipeline()
+    # create_test_comments_pipeline()
+    create_dataflow_comments_pipeline()
 
 
 if __name__ == "__main__":
