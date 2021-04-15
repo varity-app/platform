@@ -17,3 +17,14 @@ services:
       GOOGLE_APPLICATION_CREDENTIALS: /google/credentials.json
     volumes:
       - ${GOOGLE_APPLICATION_CREDENTIALS}:/google/credentials.json:ro
+  beam-executor:
+    build:
+      context: ./src
+      dockerfile: ../res/beam-executor/Dockerfile
+    image: beam-executor
+    environment:
+      PIPELINE: submissions
+      DEBUG: --debug
+      GOOGLE_APPLICATION_CREDENTIALS: /google/credentials.json
+    volumes:
+      - ${GOOGLE_APPLICATION_CREDENTIALS}:/google/credentials.json:ro

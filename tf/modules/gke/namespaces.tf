@@ -3,3 +3,9 @@ resource "kubernetes_namespace" "scrapers" {
         name = "scrapers"
     }
 }
+
+resource "kubernetes_namespace" "beam" {
+    metadata {
+        name = "beam"
+    }
+}

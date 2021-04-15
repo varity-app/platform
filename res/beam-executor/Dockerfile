@@ -23,7 +23,8 @@ RUN python -m pip install "apache-beam[gcp]"
 RUN mkdir /app
 COPY util /app/util
 COPY beam /app/beam
+COPY entrypoints /app/entrypoints
 
 WORKDIR /app
 
-# ENTRYPOINT python scrape_reddit_live.py $MODE --sleep $SLEEP --subreddits $SUBREDDITS
+ENTRYPOINT python -m entrypoints.beam $PIPELINE $DEBUG

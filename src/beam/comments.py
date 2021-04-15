@@ -63,7 +63,7 @@ def create_test_comments_pipeline():
         print_collection(scraped_posts)
 
 
-def create_dataflow_comments_pipeline():
+def create_comments_pipeline():
     """
     Create the local test pipeline that uses data
     saved in a json file inside the 'test' directory
