@@ -64,7 +64,7 @@ pylint:
 
 pytest:
 	@echo "Running pytest..."
-	@cd src && python -m pytest .
+	@cd src && python -m pytest . --disable-pytest-warnings
 
 radon:
 	@echo "Run Radon to compute complexity..."

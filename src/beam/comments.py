@@ -24,7 +24,7 @@ from . import print_collection, publish_to_pubsub, standard_options
 LOCATION = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
 
 
-def parse_scraped_posts(comment: Dict) -> List[Dict]:
+def parse_scraped_post(comment: Dict) -> Dict:
     """Parse scraped post objects from a comment object"""
 
     post = {
@@ -39,8 +39,8 @@ def parse_scraped_posts(comment: Dict) -> List[Dict]:
 
 
 def extract_scraped_posts(comments: PCollection) -> PCollection:
-    """Apply the parse_scraped_posts method to a comments collection"""
-    return comments | beam.Map(parse_scraped_posts)
+    """Apply the parse_scraped_post method to a comments collection"""
+    return comments | beam.Map(parse_scraped_post)
 
 
 def create_test_comments_pipeline():
