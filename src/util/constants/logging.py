@@ -22,3 +22,4 @@ class Sources:
     """Values for source"""
 
     REDDIT_SCRAPER = "reddit_scraper"
+    HISTORICAL_REDDIT_SCRAPER = "historical_reddit_scraper"

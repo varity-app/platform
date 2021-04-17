@@ -5,9 +5,6 @@ Unit tests for the reddit comments pipeline
 from typing import Dict
 import pytest
 
-
-import apache_beam as beam
-
 from util.constants.scraping import (
     DataSources as DS,
     ParentSources as PS,

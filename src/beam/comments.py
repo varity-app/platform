@@ -4,7 +4,7 @@ Apache beam pipeline definitions for processing reddit submisisons
 
 import os
 import json
-from typing import List, Dict
+from typing import Dict
 
 import apache_beam as beam
 from apache_beam.pvalue import PCollection

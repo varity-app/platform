@@ -16,7 +16,7 @@ class Topics:
 
     PREFIX = f"projects/{Config.PROJECT}/topics"
 
-    REDDIT_SUBMISSIONS = f"reddit-submissions-beam-{DEPLOYMENT}"
+    REDDIT_SUBMISSIONS = f"reddit-submissions-{DEPLOYMENT}"
     REDDIT_COMMENTS = f"reddit-comments-{DEPLOYMENT}"
     TICKER_MENTIONS = f"ticker-mentions-{DEPLOYMENT}"
     SCRAPED_POSTS = f"scraped-posts-{DEPLOYMENT}"

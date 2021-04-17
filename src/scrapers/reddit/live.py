@@ -1,5 +1,5 @@
 """
-Define the RedditScraper class
+Define the scraper class for scraping live reddit posts with the asyncpraw library
 """
 
 from datetime import datetime
@@ -18,7 +18,7 @@ from util.constants.firestore import Collections
 from messages.reddit.submission import SubmissionMessage
 from messages.reddit.comment import CommentMessage
 
-from .memory import Memory
+from ..memory import Memory
 
 logger = logging.getLogger(__name__)
 

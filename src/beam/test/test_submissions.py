@@ -5,9 +5,6 @@ Unit tests for the reddit submissions pipeline
 from typing import List, Dict
 import pytest
 
-
-import apache_beam as beam
-
 from util.constants.scraping import (
     DataSources as DS,
     ParentSources as PS,

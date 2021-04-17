@@ -5,9 +5,6 @@ Unit tests for the scraped posts pipeline
 from typing import List, Dict
 import pytest
 
-
-import apache_beam as beam
-
 from util.constants.scraping import (
     TickerMentionsConstants as TMC,
     MentionTypes,
@@ -39,7 +36,8 @@ test_data = [
         {
             "parent_id": "mpuizf",
             "timestamp": "2021-04-13T03:51:58",
-            "text": "Was averaging down and holding/rolling since Jan. Hopefully can see $BABA @ 300+ EOY.",
+            "text": "Was averaging down and holding/rolling since Jan. "
+            "Hopefully can see $BABA @ 300+ EOY.",
             "data_source": "reddit",
             "parent_source": "submission_selftext",
         },
@@ -58,7 +56,8 @@ test_data = [
         {
             "parent_id": "mpudu8",
             "timestamp": "2021-04-13T03:42:33",
-            "text": "My Options account just got converted into diamond hand ape bag 100% IN...Almost. original purchase in Dec. I am finally at peace.",
+            "text": "My Options account just got converted into diamond hand ape"
+            " bag 100% IN...Almost. original purchase in Dec. I am finally at peace.",
             "data_source": "reddit",
             "parent_source": "submission_title",
         },
