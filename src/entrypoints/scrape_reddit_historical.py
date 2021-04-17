@@ -73,12 +73,15 @@ def main():
     for day in days:
         for hour in range(24):
             if year < POPULARITY_YEAR or subreddit.lower() != WALLSTREETBETS:
-                start_date = datetime(
-                    year=year, month=month, day=day, hour=hour, minute=0
-                )
-                end_date = datetime(
-                    year=year, month=month, day=day, hour=hour, minute=59, second=59
-                )
+                try:
+                    start_date = datetime(
+                        year=year, month=month, day=day, hour=hour, minute=0
+                    )
+                    end_date = datetime(
+                        year=year, month=month, day=day, hour=hour, minute=59, second=59
+                    )
+                except ValueError: # No 31st day of the month
+                    continue
 
                 logger.info(
                     f"Scraping {mode} on r/{scraper.subreddit} for"
@@ -90,17 +93,20 @@ def main():
             else:  # Scrape at a much lower resolution for r/wallstreetbets
                 interval = 60 // chunks
                 for start_minute in range(0, 60, interval):
-                    start_date = datetime(
-                        year=year, month=month, day=day, hour=hour, minute=start_minute
-                    )
-                    end_date = datetime(
-                        year=year,
-                        month=month,
-                        day=day,
-                        hour=hour,
-                        minute=start_minute + interval - 1,
-                        second=59,
-                    )
+                    try:
+                        start_date = datetime(
+                            year=year, month=month, day=day, hour=hour, minute=start_minute
+                        )
+                        end_date = datetime(
+                            year=year,
+                            month=month,
+                            day=day,
+                            hour=hour,
+                            minute=start_minute + interval - 1,
+                            second=59,
+                        )
+                    except ValueError: # No 31st day of the month
+                        continue
 
                     logger.info(
                         f"Scraping {mode} on r/{scraper.subreddit} for"
