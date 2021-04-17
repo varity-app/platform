@@ -1,5 +1,8 @@
 """
 Helper script for deploying historical reddit jobs on kubernetes
+
+Example usage:
+python entrypoints/launch_historical_jobs.py submissions prod --subreddit stocks -y 2020 -m 12
 """
 
 from typing import Tuple
@@ -21,9 +24,10 @@ def parse_args() -> Tuple[str, str, int, int, int]:
     parser = argparse.ArgumentParser()
 
     parser.add_argument("mode", choices=[Misc.COMMENTS, Misc.SUBMISSIONS])
+    parser.add_argument("deployment", choices=["prod", "dev"])
     parser.add_argument("-s", "--subreddit", default="wallstreetbets")
-    parser.add_argument("-y", "--year", type=int, default=2020)
-    parser.add_argument("-m", "--month", type=int, default=1)
+    parser.add_argument("-y", "--year", type=int, default=-1)
+    parser.add_argument("-m", "--month", type=int, default=-1)
     parser.add_argument("-d", "--day", type=int, default=-1)
 
     args = parser.parse_args()
@@ -35,27 +39,26 @@ def parse_args() -> Tuple[str, str, int, int, int]:
         raise ValueError(f"Invalid value for subreddit: {subreddit}")
 
     assert year > 2010
-
-    if month not in range(1, 13):
-        raise ValueError(f"Invalid value for month: {month}")
-
+    assert month == -1 or 1 <= month <= 12
     assert day == -1 or 1 <= day <= 31
+    assert args.deployment is not None
 
-    return args.mode, subreddit, year, month, day
+    return args.mode, subreddit, year, month, day, args.deployment
 
 
-def main():
-    """Entrypoint method"""
-
-    # Load args
-    mode, subreddit, year, month, day = parse_args()
-
-    # Initialize k8s
-    api_instance = init_k8s()
+def launch_month_job(api_instance, mode, subreddit, year, month, day, deployment):
+    """
+    Helper method for deploying a job
+    """
 
     # Create job spec
     body = create_scraper_job_object(
-        mode, subreddit, scraping_year=year, scraping_month=month, scraping_day=day
+        mode,
+        subreddit,
+        scraping_year=year,
+        scraping_month=month,
+        scraping_day=day,
+        deployment=deployment,
     )
 
     # Create job
@@ -69,6 +72,23 @@ def main():
         logger.info(
             f"Created scraping job for {mode} on r/{subreddit} for {year}-{month}-{day}"
         )
+
+
+
+def main():
+    """Entrypoint method"""
+
+    # Load args
+    mode, subreddit, year, month, day, deployment = parse_args()
+
+    # Initialize k8s
+    api_instance = init_k8s()
+
+    if month == -1:
+        for mth in range(1, 13):
+            launch_month_job(api_instance, mode, subreddit, year, mth, day, deployment)
+    else:
+        launch_month_job(api_instance, mode, subreddit, year, month, day, deployment)
 
 
 if __name__ == "__main__":

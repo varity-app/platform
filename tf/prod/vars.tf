@@ -3,3 +3,9 @@ variable "deployment" {
   type        = string
   default     = "prod"
 }
+
+variable "release" {
+  description = "Varity release"
+  type = string
+  default = "0.6.0"
+}

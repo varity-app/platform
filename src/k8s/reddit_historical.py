@@ -14,6 +14,7 @@ def create_scraper_job_object(
     scraping_year=2020,
     scraping_month=1,
     scraping_day=-1,
+    deployment="dev",
     namespace="default",
     container_name="scraper-container",
 ):
@@ -52,6 +53,7 @@ def create_scraper_job_object(
         client.V1EnvVar(name="DAY", value=str(scraping_day)),
         client.V1EnvVar(name="MODE", value=scraping_mode),
         client.V1EnvVar(name="SUBREDDIT", value=subreddit),
+        client.V1EnvVar(name="DEPLOYMENT", value=deployment),
     ]
 
     # Secrets
@@ -91,11 +93,29 @@ def create_scraper_job_object(
         )
     ]
 
+    # Set affinity to only schedule on preemtible nodes
+    requirement = client.V1NodeSelectorRequirement(
+        key="cloud.google.com/gke-preemptible",
+        values=["true"],
+        operator="In",
+    )
+
+    term = client.V1NodeSelectorTerm(match_expressions=[requirement])
+
+    node_selector = client.V1NodeSelector(node_selector_terms=[term])
+
+    affinity = client.V1Affinity(
+        node_affinity=client.V1NodeAffinity(
+            required_during_scheduling_ignored_during_execution=node_selector
+        )
+    )
+
     template.template.spec = client.V1PodSpec(
         containers=[container],
         restart_policy="Never",
         image_pull_secrets=secret_list,
         tolerations=tolerations,
+        affinity=affinity,
     )
 
     # And finaly we can create our V1JobSpec!

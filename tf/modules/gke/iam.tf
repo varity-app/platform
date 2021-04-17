@@ -1,41 +1,25 @@
-resource "google_project_iam_binding" "pubsub_publish" {
+resource "google_project_iam_member" "pubsub_publish" {
   project = var.project
-
   role = "roles/pubsub.publisher"
-
-  members = [
-    "serviceAccount:${google_service_account.default.email}"
-  ]
+  member = "serviceAccount:${google_service_account.default.email}"
 }
 
-resource "google_project_iam_binding" "pubsub_subscribe" {
+resource "google_project_iam_member" "pubsub_subscribe" {
   project = var.project
-
   role = "roles/pubsub.subscriber"
-
-  members = [
-    "serviceAccount:${google_service_account.default.email}"
-  ]
+  member = "serviceAccount:${google_service_account.default.email}"
 }
 
-resource "google_project_iam_binding" "firestore" {
+resource "google_project_iam_member" "firestore" {
   project = var.project
-
   role = "roles/datastore.owner"
-
-  members = [
-    "serviceAccount:${google_service_account.default.email}"
-  ]
+  member = "serviceAccount:${google_service_account.default.email}"
 }
 
-resource "google_project_iam_binding" "bigquery" {
+resource "google_project_iam_member" "bigquery" {
   project = var.project
-
   role = "roles/bigquery.dataEditor"
-
-  members = [
-    "serviceAccount:${google_service_account.default.email}"
-  ]
+  member = "serviceAccount:${google_service_account.default.email}"
 }
 
 resource "google_service_account" "default" {
