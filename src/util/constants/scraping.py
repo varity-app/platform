@@ -16,11 +16,11 @@ class ScrapedPostConstants:
 class TickerMentionsConstants:
     """Fields for a TickerMention Kafka message"""
 
-    STOCK_NAME = "stock_name"
+    TICKER = "ticker"
+    DATA_SOURCE = "data_source"
     PARENT_SOURCE = "parent_source"
     PARENT_ID = "parent_id"
-    DATA_SOURCE = "data_source"
-    CREATED_UTC = "created_utc"
+    TIMESTAMP = "timestamp"
     MENTION_TYPE = "mention_type"
 
 

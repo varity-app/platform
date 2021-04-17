@@ -9,26 +9,36 @@ services:
       MODE: submissions
       SLEEP: 60
       SUBREDDITS: stocks
-      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
-      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
-      AWS_DEFAULT_REGION: us-east-2
       REDDIT_USERNAME: ${REDDIT_USERNAME}
       REDDIT_PASSWORD: ${REDDIT_PASSWORD}
       REDDIT_CLIENT_ID: ${REDDIT_CLIENT_ID}
       REDDIT_CLIENT_SECRET: ${REDDIT_CLIENT_SECRET}
       REDDIT_USER_AGENT: ${REDDIT_USER_AGENT}
-      BOOTSTRAP_SERVERS: ${BOOTSTRAP_SERVERS}
-      SASL_USERNAME: ${SASL_USERNAME}
-      SASL_PASSWORD: ${SASL_PASSWORD}
-  faust:
+      GOOGLE_APPLICATION_CREDENTIALS: /google/credentials.json
+    volumes:
+      - ${GOOGLE_APPLICATION_CREDENTIALS}:/google/credentials.json:ro
+  historical-scraper:
     build:
       context: ./src
-      dockerfile: ../res/faust-processor/Dockerfile
-    image: faust-processor
+      dockerfile: ../res/historical-reddit-scraper/Dockerfile
+    image: historical-reddit-scraper
     environment:
       MODE: submissions
-      SLEEP: 60
-      SUBREDDITS: stocks
-      BOOTSTRAP_SERVERS: ${BOOTSTRAP_SERVERS}
-      SASL_USERNAME: ${SASL_USERNAME}
-      SASL_PASSWORD: ${SASL_PASSWORD}
+      SUBREDDIT: stocks
+      YEAR: 2021
+      MONTH: 1
+      DAY: 1
+      GOOGLE_APPLICATION_CREDENTIALS: /google/credentials.json
+    volumes:
+      - ${GOOGLE_APPLICATION_CREDENTIALS}:/google/credentials.json:ro
+  beam-executor:
+    build:
+      context: ./src
+      dockerfile: ../res/beam-executor/Dockerfile
+    image: beam-executor
+    environment:
+      PIPELINE: submissions
+      DEBUG: --debug
+      GOOGLE_APPLICATION_CREDENTIALS: /google/credentials.json
+    volumes:
+      - ${GOOGLE_APPLICATION_CREDENTIALS}:/google/credentials.json:ro

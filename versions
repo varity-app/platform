@@ -1,4 +1,7 @@
+GLOBAL_VERSION='0.6.0'
+
 declare -A IMAGE_VERSIONS=(
-    ['reddit-scraper']='0.5.0' \
-    ['faust-processor']='0.5.0' \
+    ['reddit-scraper']=$GLOBAL_VERSION \
+    ['beam-executor']=$GLOBAL_VERSION \
+    ['historical-reddit-scraper']=$GLOBAL_VERSION \
 )

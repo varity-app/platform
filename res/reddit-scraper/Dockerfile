@@ -18,7 +18,7 @@ RUN python3.8 -m venv /venv
 ENV PATH=/venv/bin:$PATH
 
 RUN python -V
-RUN python -m pip install confluent-kafka asyncpraw boto3
+RUN python -m pip install asyncpraw google-cloud-pubsub google-cloud-firestore
 
 RUN mkdir /app
 COPY entrypoints/scrape_reddit_live.py /app
