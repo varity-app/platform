@@ -19,7 +19,7 @@ POPULARITY_YEAR = 2020  # Year WSB got popular
 WALLSTREETBETS = "wallstreetbets"
 
 
-def parse_args() -> Tuple[str, List[str], int, int, List[int], int, int, int, bool]:
+def parse_args() -> Tuple[str, str, int, int, List[int], int, int, int, bool]:
     """Parse arguments from command line"""
     parser = argparse.ArgumentParser()
 

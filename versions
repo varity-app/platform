@@ -3,4 +3,5 @@ GLOBAL_VERSION='0.6.0'
 declare -A IMAGE_VERSIONS=(
     ['reddit-scraper']=$GLOBAL_VERSION \
     ['beam-executor']=$GLOBAL_VERSION \
+    ['historical-reddit-scraper']=$GLOBAL_VERSION \
 )
