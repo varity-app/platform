@@ -84,6 +84,7 @@ class HistoricalRedditScraper:
 
     def scrape_comments(self, start_date: datetime, end_date: datetime):
         """Scrape historical comments from Reddit"""
+        start_date, end_date = int(start_date.timestamp()), int(end_date.timestamp())
 
         gen = self.api.search_comments(
             subreddit=self.subreddit,
