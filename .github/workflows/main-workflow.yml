@@ -1,0 +1,55 @@
+name: Test Python
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  test-python:
+    name: Test and Lint Python
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python 3.8
+      uses: actions/setup-python@v1
+      with:
+        python-version: 3.8
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        python -m pip install install pylint pytest
+        python -m pip install install -r requirements.txt
+    - name: Test with PyTest
+      env:
+        REDDIT_USERNAME: ${{ secrets.REDDIT_USERNAME }}
+        REDDIT_PASSWORD: ${{ secrets.REDDIT_PASSWORD }}
+        REDDIT_CLIENT_ID: ${{ secrets.REDDIT_CLIENT_ID }}
+        REDDIT_CLIENT_SECRET: ${{ secrets.REDDIT_CLIENT_SECRET }}
+        REDDIT_USER_AGENT: ${{ secrets.REDDIT_USER_AGENT }}
+      run: cd src && python -m pytest .
+    - name: Analysing the code with pylint
+      run: cd src && python -m pylint *
+
+  build-images:
+    needs: test-python
+    name: Build and Publish to GCR
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    # Setup gcloud CLI
+    - name: Setup GCP CLI
+    - uses: GoogleCloudPlatform/github-actions/setup-gcloud@master
+      with:
+        version: '270.0.0'
+        service_account_key: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}
+    - run: gcloud auth configure-docker
+
+    # Build and push the Docker images
+    - name: Build
+      run: |
+        export TAG=`echo $GITHUB_REF | awk -F/ '{print $NF}'`
+        echo Building ${TAG}...
+        ./build.sh --publish --release $TAG
