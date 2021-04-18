@@ -3,19 +3,23 @@
 set -Eeuo pipefail
 trap cleanup SIGINT SIGTERM ERR EXIT
 
-script_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd -P)
-
-source ${script_dir}/versions
+SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd -P)
 
 ###### CONSTANTS #####
 
-declare DOCKER_REPO_BASE='cgundlach13'
+declare DOCKER_REPO_BASE='gcr.io/varity/scraping'
+
+declare -a IMAGES=(
+  'reddit-scraper' \
+  'historical-reddit-scraper' \
+  'beam-executor' \
+)
 
 ######################
 
 usage() {
   cat <<EOF
-Usage: $(basename "${BASH_SOURCE[0]}") [-h] [-v] [-f] -p param_value arg1 [arg2...]
+Usage: $(basename "${BASH_SOURCE[0]}") [-h] [-v] [-f] [-p] [-r, --release] [--prod] image_name [image_name2, ...]
 
 Script description here.
 
@@ -25,6 +29,8 @@ Available options:
 -v, --verbose   Print script debug info
 -f, --flag      Some flag description
 -p, --publish   Push to docker
+-r, --release   Release version (e.g. "0.5.1")
+--prod          Deploy to the prod branch instead of dev
 EOF
   exit
 }
@@ -56,6 +62,8 @@ die() {
 parse_params() {
   # default values of variables set from params
   publish=''
+  release=''
+  deployment='dev'
 
   while :; do
     case "${1-}" in
@@ -64,6 +72,8 @@ parse_params() {
     --no-color) NO_COLOR=1 ;;
     -f | --flag) flag=1 ;; # example flag
     -p | --publish) publish=1 ;;
+    -r | --release) shift; release=$1 ;;
+    --prod) deployment='prod' ;;
     -?*) die "Unknown option: $1" ;;
     *) break ;;
     esac
@@ -73,22 +83,33 @@ parse_params() {
   args=("$@")
 
   # check required params and arguments
-  #   [[ -z "${param-}" ]] && die "Missing required parameter: param"
-  [[ ${#args[@]} -eq 0 ]] && die "Missing script arguments"
+  [[ -z "${release-}" ]] && die "Missing required parameter: release"
+  [[ ${#args[@]} > 1 ]] && die "Too many arguments"
 
   return 0
 }
 
 build_image() {
-  local image_name=${args[0]}
-  local stage_dir=${script_dir}/staging/${image_name}
-  local tag_name=${DOCKER_REPO_BASE}/${image_name}:${IMAGE_VERSIONS[$image_name]}
-
-  docker build -t ${tag_name} -f ${script_dir}/res/${image_name}/Dockerfile src
-  if [[ -n "${publish}" ]]; then
-    echo 'Pushing image...'
-    docker push ${tag_name}
+  local image_name=""
+  if [[ -z "${args[@]}" ]]; then
+    image_names=${IMAGES[@]}
+  else
+    image_names=${args[0]}
   fi
+
+  echo ${image_names[@]}
+  
+  for image_name in $image_names; do
+    local stage_dir=${SCRIPT_DIR}/staging/${image_name}
+    local tag_name=${DOCKER_REPO_BASE}/${deployment}/${image_name}:${RELEASE}
+
+    docker build -t ${tag_name} -f ${SCRIPT_DIR}/res/${image_name}/Dockerfile src
+    if [[ -n "${publish}" ]]; then
+      echo 'Pushing image...'
+      docker push ${tag_name}
+    fi
+
+  done
 
 }
 

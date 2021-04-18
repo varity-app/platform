@@ -23,9 +23,9 @@ resource "kubernetes_deployment" "submissions_scraper" {
 
       spec {
         container {
-          image = "cgundlach13/reddit-scraper:${var.release}"
+          image             = "${var.container_repository}/${var.deployment}/reddit-scraper:${var.release}"
           image_pull_policy = "Always"
-          name  = "scraper"
+          name              = "scraper"
 
           resources {
             limits = {
@@ -138,9 +138,9 @@ resource "kubernetes_deployment" "comments_scraper" {
 
       spec {
         container {
-          image = "cgundlach13/reddit-scraper:${var.release}"
+          image             = "${var.container_repository}/${var.deployment}/reddit-scraper:${var.release}"
           image_pull_policy = "Always"
-          name  = "scraper"
+          name              = "scraper"
 
           resources {
             limits = {

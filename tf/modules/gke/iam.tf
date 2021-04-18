@@ -34,6 +34,12 @@ resource "google_project_iam_member" "monitoring" {
   member  = "serviceAccount:${google_service_account.default.email}"
 }
 
+resource "google_project_iam_member" "container_registry" {
+  project = var.project
+  role    = "roles/storage.objectViewer"
+  member  = "serviceAccount:${google_service_account.default.email}"
+}
+
 resource "google_service_account" "default" {
   account_id   = "varity-gke-svc-${var.deployment}"
   display_name = "Varity GKE Service Account (${var.deployment})"

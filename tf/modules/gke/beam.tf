@@ -23,9 +23,9 @@ resource "kubernetes_deployment" "comments_executor" {
 
       spec {
         container {
-          image = "cgundlach13/beam-executor:${var.release}"
+          image             = "${var.container_repository}/${var.deployment}/beam-executor:${var.release}"
           image_pull_policy = "Always"
-          name  = "beam"
+          name              = "beam"
 
           resources {
             limits = {
@@ -78,9 +78,9 @@ resource "kubernetes_deployment" "submissions_executor" {
 
       spec {
         container {
-          image = "cgundlach13/beam-executor:${var.release}"
+          image             = "${var.container_repository}/${var.deployment}/beam-executor:${var.release}"
           image_pull_policy = "Always"
-          name  = "beam"
+          name              = "beam"
 
           resources {
             limits = {
@@ -133,9 +133,9 @@ resource "kubernetes_deployment" "scraped_posts_executor" {
 
       spec {
         container {
-          image = "cgundlach13/beam-executor:${var.release}"
+          image             = "${var.container_repository}/${var.deployment}/beam-executor:${var.release}"
           image_pull_policy = "Always"
-          name  = "beam"
+          name              = "beam"
 
           resources {
             limits = {
