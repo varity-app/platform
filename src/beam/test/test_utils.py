@@ -16,7 +16,7 @@ test_data = [
 @pytest.mark.parametrize("date,valid", test_data)
 def test_check_age(date: str, valid: bool) -> None:
     """Test the check_age utility method"""
-    
+
     obj = dict(timestamp=date)
     test_valid = check_age(obj, "timestamp")
 
