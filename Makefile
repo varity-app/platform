@@ -21,6 +21,9 @@ help:
 	radon: Runs a cyclomatic complexity checker and shows anything with less than an A rating. \n \
 	xenon: Runs a cyclomatic complexity checker that will throw a non-zero exit code if the criteria aren't met. \n \
 	\n \
+	++ Terraform Related ++ \n \
+	format-tf: Format terraform files with 'terraform fmt'. \n \
+	\n \
 	++ Utilities ++ \n \
 	cleanup: WARNING: DELETES DB VOLUME, frees up space and gets rid of old containers/images. \n \
 	------------------------------ \n"
@@ -73,3 +76,7 @@ radon:
 xenon:
 	@echo "Running Xenon..."
 	@xenon --max-absolute B --max-modules A --max-average A src -i transform,shared_modules
+
+format-tf:
+	@echo "Formatting terraform files..."
+	@terraform fmt -recursive tf

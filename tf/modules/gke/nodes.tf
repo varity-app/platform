@@ -10,9 +10,9 @@ resource "google_container_node_pool" "primary_preemptible_nodes" {
     machine_type = "e2-standard-4"
 
     taint {
-        key = "cloud.google.com/gke-preemptible"
-        value = true
-        effect = "NO_SCHEDULE"
+      key    = "cloud.google.com/gke-preemptible"
+      value  = true
+      effect = "NO_SCHEDULE"
     }
 
     # Google recommends custom service accounts that have cloud-platform scope and permissions granted via IAM Roles.
