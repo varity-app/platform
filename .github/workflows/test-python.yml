@@ -29,4 +29,4 @@ jobs:
         cd src && python -m pytest .
     - name: Analysing the code with pylint
       run: |
-        cd src && python -m pylint * --disable-pytest-warnings
+        cd src && python -m pylint *
