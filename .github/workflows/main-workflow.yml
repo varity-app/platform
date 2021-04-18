@@ -37,12 +37,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
-
-    # Setup gcloud CLI
-    - uses: GoogleCloudPlatform/github-actions/setup-gcloud@master
-      with:
-        version: '270.0.0'
-        service_account_key: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}
+    - uses: actions-hub/gcloud@master
+        env:
+          PROJECT_ID: varity
+          APPLICATION_CREDENTIALS: ${{secrets.GOOGLE_APPLICATION_CREDENTIALS}}
 
     - name: Authenticate to GCR
       run: gcloud auth configure-docker
