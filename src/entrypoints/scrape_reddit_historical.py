@@ -80,7 +80,7 @@ def main():
                     end_date = datetime(
                         year=year, month=month, day=day, hour=hour, minute=59, second=59
                     )
-                except ValueError: # No 31st day of the month
+                except ValueError:  # No 31st day of the month
                     continue
 
                 logger.info(
@@ -95,7 +95,11 @@ def main():
                 for start_minute in range(0, 60, interval):
                     try:
                         start_date = datetime(
-                            year=year, month=month, day=day, hour=hour, minute=start_minute
+                            year=year,
+                            month=month,
+                            day=day,
+                            hour=hour,
+                            minute=start_minute,
                         )
                         end_date = datetime(
                             year=year,
@@ -105,7 +109,7 @@ def main():
                             minute=start_minute + interval - 1,
                             second=59,
                         )
-                    except ValueError: # No 31st day of the month
+                    except ValueError:  # No 31st day of the month
                         continue
 
                     logger.info(

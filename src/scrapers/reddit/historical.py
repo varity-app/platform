@@ -168,7 +168,7 @@ class HistoricalRedditScraper:
         submission_id = submission.id
         title = submission.title
         created_utc = datetime.utcfromtimestamp(submission.created_utc).isoformat()
-        
+
         try:
             is_original_content = submission.is_original_content
         except AttributeError:

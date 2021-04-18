@@ -4,12 +4,8 @@ Test the live reddit scraper
 
 from datetime import datetime, timedelta
 import pytest
-import asyncio
-import logging
 
 from .live import RedditScraper
-
-logger = logging.getLogger(__name__)
 
 START_DATE = datetime.now() - timedelta(days=7)
 END_DATE = datetime.now()
@@ -19,6 +15,7 @@ test_data = [
     ("submissions", "stocks"),
     ("comments", "stocks"),
 ]
+
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("mode,subreddit", test_data)
@@ -33,5 +30,5 @@ async def test_live_scraper(mode: str, subreddit: str) -> None:
         enable_publish=False,
     )
 
-    results = await scraper.run()
+    await scraper.run()
     await scraper.reddit.close()

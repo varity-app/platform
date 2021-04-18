@@ -2,6 +2,7 @@ apache-beam[gcp]
 google-cloud-firestore
 google-cloud-firestore
 asyncpraw
+psaw
 mypy
 pylint
 pytest
