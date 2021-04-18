@@ -17,9 +17,9 @@ from util.constants.scraping import (
     MentionTypes,
 )
 from util.constants.pubsub import Topics, BeamSubscriptions as BS
-from util.constants.bigquery import Tables
+from util.constants.bigquery import Tables, BatchSizes
 
-from . import print_collection, publish_to_pubsub, standard_options
+from . import print_collection, publish_to_pubsub, standard_options, check_age
 
 LOCATION = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
 
@@ -86,6 +86,7 @@ def create_scraped_posts_pipeline():
             | beam.io.ReadFromPubSub(subscription=f"{BS.PREFIX}/{BS.SCRAPED_POSTS}")
             | beam.Map(lambda d: d.decode("utf-8"))
             | beam.Map(json.loads)
+            | beam.Filter(check_age, key=SPC.TIMESTAMP)
         )
 
         # Write posts to bigquery
@@ -101,6 +102,7 @@ def create_scraped_posts_pipeline():
         _ = ticker_mentions | "Save Tickers to BQ" >> beam.io.WriteToBigQuery(
             Tables.TICKER_MENTIONS,
             write_disposition=beam.io.BigQueryDisposition.WRITE_APPEND,
+            batch_size=BatchSizes.SCRAPED_POSTS,
         )
 
         # Write to Pub/Sub

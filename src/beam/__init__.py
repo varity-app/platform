@@ -2,6 +2,8 @@
 Module for declaring apache beam pipelines
 """
 
+from typing import Dict
+from datetime import datetime, timedelta
 import json
 import uuid
 
@@ -28,3 +30,18 @@ def publish_to_pubsub(collection: PCollection, topic: str) -> None:
         | beam.Map(lambda x: json.dumps(x).encode("utf-8"))
         | beam.io.WriteToPubSub(topic=topic)
     )
+
+
+def check_age(obj: Dict, key: str, years=5) -> bool:
+    """Check if the date field of a dictionary is too old to be inserted into BigQuery"""
+
+    value = obj.get(key, datetime.now())
+
+    if isinstance(value, str):
+        value = datetime.fromisoformat(value)
+
+    days_delta = 365 * years - 1  # Add a buffer of one day
+
+    valid_age = value > datetime.now() - timedelta(days=days_delta)
+
+    return valid_age
