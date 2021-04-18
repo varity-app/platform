@@ -49,7 +49,7 @@ variable "ecs_cloudwatch_policy_name" {
 variable "task_suffix" {
   description = "Suffix to append to ECS task definitions"
   type        = string
-  default = "-stage"
+  default     = "-stage"
 }
 
 variable "submissions_table_name" {

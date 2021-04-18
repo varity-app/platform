@@ -74,7 +74,6 @@ def launch_month_job(api_instance, mode, subreddit, year, month, day, deployment
         )
 
 
-
 def main():
     """Entrypoint method"""
 

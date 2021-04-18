@@ -84,6 +84,7 @@ class HistoricalRedditScraper:
 
     def scrape_comments(self, start_date: datetime, end_date: datetime):
         """Scrape historical comments from Reddit"""
+        start_date, end_date = int(start_date.timestamp()), int(end_date.timestamp())
 
         gen = self.api.search_comments(
             subreddit=self.subreddit,
@@ -167,7 +168,12 @@ class HistoricalRedditScraper:
         submission_id = submission.id
         title = submission.title
         created_utc = datetime.utcfromtimestamp(submission.created_utc).isoformat()
-        is_original_content = submission.is_original_content
+
+        try:
+            is_original_content = submission.is_original_content
+        except AttributeError:
+            is_original_content = False
+
         is_text = submission.is_self
         name = submission.id  # PSAW has no name field
         num_comments = submission.num_comments
