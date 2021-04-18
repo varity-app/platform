@@ -101,7 +101,7 @@ build_image() {
   
   for image_name in $image_names; do
     local stage_dir=${SCRIPT_DIR}/staging/${image_name}
-    local tag_name=${DOCKER_REPO_BASE}/${deployment}/${image_name}:${RELEASE}
+    local tag_name=${DOCKER_REPO_BASE}/${deployment}/${image_name}:${release}
 
     docker build -t ${tag_name} -f ${SCRIPT_DIR}/res/${image_name}/Dockerfile src
     if [[ -n "${publish}" ]]; then

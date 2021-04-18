@@ -50,4 +50,4 @@ jobs:
       run: |
         export TAG=`echo $GITHUB_REF | awk -F/ '{print $NF}'`
         echo Building ${TAG}...
-        ./build.sh --publish --release $TAG
+        ./build.sh --prod --publish --release $TAG
