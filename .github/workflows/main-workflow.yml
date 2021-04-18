@@ -44,6 +44,8 @@ jobs:
       with:
         version: '270.0.0'
         service_account_key: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}
+
+    - name: Authenticate to GCR
       run: gcloud auth configure-docker
 
     # Build and push the Docker images
