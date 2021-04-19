@@ -1,7 +1,11 @@
 # Varity Scraping Infrastructure
 [![Build](https://github.com/VarityPlatform/varity-scraping/actions/workflows/main-workflow.yml/badge.svg)](https://github.com/VarityPlatform/varity-scraping/actions/workflows/main-workflow.yml)
 
+## Deployment
+Almost every part of deployment is automated with GitHub actions and [Terraform](https://terraform.io).  See more information in the [tf](./tf/README.md) directory.
+
 ## Cutting a new release
+Docker images will be build automatically via git tags.  To cut a new release and run the build scripts, you can use the following workflow:
 ```
 # Either on the master branch or in a feature branch run:
 git tag v<sem_ver>
@@ -31,6 +35,3 @@ gcloud auth configure-docker
 ./build.sh reddit-scraper
 ```
 More information on building and deploying with GCR can be found [here](https://cloud.google.com/container-registry/docs/quickstart?hl=en_US).
-
-## Deployment
-Almost every part of deployment is automated with [Terraform](https://terraform.io).  See more information in the [tf](./tf/README.md) directory.
