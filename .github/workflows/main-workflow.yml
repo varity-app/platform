@@ -37,13 +37,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
-    - uses: actions-hub/gcloud@master
-      env:
-        PROJECT_ID: varity
-        APPLICATION_CREDENTIALS: ${{secrets.GOOGLE_APPLICATION_CREDENTIALS}}
-        
+
+    - name: Set up Cloud SDK
+      uses: google-github-actions/setup-gcloud@master
+      with:
+        project_id: varity
+        service_account_key: ${{secrets.GOOGLE_APPLICATION_CREDENTIALS}}
+        export_default_credentials: true
+
     # Build and push the Docker images
-    - name: Build
+    - name: Build and Publish Images
       run: |
         gcloud auth configure-docker
         export TAG=`echo $GITHUB_REF | awk -F/ '{print $NF}'`
