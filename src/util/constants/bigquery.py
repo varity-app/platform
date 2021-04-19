@@ -5,6 +5,14 @@ Constants related to BigQuery
 from . import DEPLOYMENT
 
 
+class BatchSizes:
+    """Size of batches of streaming inserts to BigQuery"""
+
+    REDDIT_SUBMISSIONS = 25
+    REDDIT_COMMENTS = 100
+    SCRAPED_POSTS = 100
+
+
 class Tables:
     """IDs of tables inside BigQuery"""
 

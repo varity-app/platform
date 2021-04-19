@@ -17,9 +17,9 @@ from util.constants.scraping import (
     ScrapedPostConstants as SPC,
 )
 from util.constants.pubsub import Topics, BeamSubscriptions as BS
-from util.constants.bigquery import Tables
+from util.constants.bigquery import Tables, BatchSizes
 
-from . import print_collection, publish_to_pubsub, standard_options
+from . import print_collection, publish_to_pubsub, standard_options, check_age
 
 LOCATION = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
 
@@ -81,12 +81,14 @@ def create_comments_pipeline():
             | beam.io.ReadFromPubSub(subscription=f"{BS.PREFIX}/{BS.REDDIT_COMMENTS}")
             | beam.Map(lambda d: d.decode("utf-8"))
             | beam.Map(json.loads)
+            | beam.Filter(check_age, key=CC.CREATED_UTC)
         )
 
         # Write to bigquery
         _ = comments | beam.io.WriteToBigQuery(
             Tables.REDDIT_COMMENTS,
             write_disposition=beam.io.BigQueryDisposition.WRITE_APPEND,
+            batch_size=BatchSizes.REDDIT_COMMENTS,
         )
 
         # Extract scraped posts
