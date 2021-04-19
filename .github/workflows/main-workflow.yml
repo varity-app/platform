@@ -41,13 +41,11 @@ jobs:
       env:
         PROJECT_ID: varity
         APPLICATION_CREDENTIALS: ${{secrets.GOOGLE_APPLICATION_CREDENTIALS}}
-
-    - name: Authenticate to GCR
-      run: gcloud auth configure-docker
-
+        
     # Build and push the Docker images
     - name: Build
       run: |
+        gcloud auth configure-docker
         export TAG=`echo $GITHUB_REF | awk -F/ '{print $NF}'`
         echo Building ${TAG}...
         ./build.sh --prod --publish --release $TAG

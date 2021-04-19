@@ -1,4 +1,5 @@
 # Varity Scraping Infrastructure
+[![Build](https://github.com/VarityPlatform/varity-scraping/actions/workflows/main-workflow.yml/badge.svg)](https://github.com/VarityPlatform/varity-scraping/actions/workflows/main-workflow.yml)
 
 ## Cutting a new release
 ```
