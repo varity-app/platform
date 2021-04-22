@@ -16,4 +16,5 @@ class DeploymentTypes:
 DEPLOYMENT = os.environ.get("DEPLOYMENT", DeploymentTypes.DEV)
 assert DEPLOYMENT in [DeploymentTypes.DEV, DeploymentTypes.TEST, DeploymentTypes.PROD]
 
-RELEASE = os.environ.get("RELEASE", "0.6.0")
+RELEASE = os.environ.get("RELEASE")
+assert RELEASE is not None

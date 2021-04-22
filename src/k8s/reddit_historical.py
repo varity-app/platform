@@ -6,6 +6,7 @@ from kubernetes import client
 
 from util.constants.k8s import Images, JobResources
 from util.constants.reddit import Misc
+from util.constants import RELEASE
 
 
 def create_scraper_job_object(
@@ -76,7 +77,7 @@ def create_scraper_job_object(
     # Create container
     container = client.V1Container(
         name=container_name,
-        image=Images.HISTORICAL_SCRAPER,
+        image=f"{Images.REPO}/{deployment}/historical-reddit-scraper:{RELEASE}",
         env=env_list,
         volume_mounts=[],
         image_pull_policy="Always",

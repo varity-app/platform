@@ -2,15 +2,15 @@
 Kubernetes API related constants
 """
 
-from . import RELEASE
+from . import DEPLOYMENT, RELEASE
 
 
 class Images:
     """Docker images used for k8s jobs"""
 
-    REPO = "cgundlach13"
+    REPO = "gcr.io/varity/scraping"
 
-    HISTORICAL_SCRAPER = f"{REPO}/historical-reddit-scraper:{RELEASE}"
+    HISTORICAL_SCRAPER = f"{REPO}/{DEPLOYMENT}/historical-reddit-scraper:{RELEASE}"
 
 
 class Resource:
