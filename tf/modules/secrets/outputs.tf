@@ -22,3 +22,13 @@ output "reddit_password" {
   value     = data.google_secret_manager_secret_version.reddit_password.secret_data
   sensitive = true
 }
+
+output "postgres_username" {
+  value     = data.google_secret_manager_secret_version.postgres_username.secret_data
+  sensitive = true
+}
+
+output "postgres_password" {
+  value     = data.google_secret_manager_secret_version.postgres_password.secret_data
+  sensitive = true
+}

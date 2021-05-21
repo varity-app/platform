@@ -8,9 +8,14 @@ terraform {
   }
 
   required_providers {
-    aws = {
+    google = {
       source  = "hashicorp/google"
       version = "~> 3.64.0"
+    }
+
+    postgresql = {
+      source  = "cyrilgdn/postgresql"
+      version = "1.13.0-pre1"
     }
   }
 }
@@ -36,6 +41,12 @@ module "gke" {
 
 module "biquery" {
   source = "../modules/bigquery"
+
+  deployment = var.deployment
+}
+
+module "cloud_sql" {
+  source = "../modules/cloud_sql"
 
   deployment = var.deployment
 }

@@ -23,3 +23,12 @@ data "google_secret_manager_secret_version" "reddit_user_agent" {
   project = var.project
 }
 
+data "google_secret_manager_secret_version" "postgres_username" {
+  secret  = "varity-postgres-username"
+  project = var.project
+}
+
+data "google_secret_manager_secret_version" "postgres_password" {
+  secret  = "varity-postgres-password"
+  project = var.project
+}
