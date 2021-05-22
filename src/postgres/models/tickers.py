@@ -14,7 +14,7 @@ class Ticker(Base):
     __tablename__ = "tickers"
 
     symbol = Column(String, primary_key=True)
-    exchange = Column(String, primary_key=True)
+    exchange = Column(String)
     exchange_name = Column(String)
     name = Column(String)
     scraped_on = Column(Date)
@@ -23,3 +23,6 @@ class Ticker(Base):
     currency = Column(String)
     is_enabled = Column(Boolean)
     cik = Column(String)
+
+    # Custom
+    short_name = Column(String, nullable=True)
