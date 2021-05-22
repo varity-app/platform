@@ -13,3 +13,4 @@ prefect~=0.14.19
 SQLAlchemy~=1.4.14
 asyncprawcore~=2.0.1
 psycopg2-binary
+google-cloud-storage

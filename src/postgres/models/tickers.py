@@ -23,7 +23,3 @@ class Ticker(Base):
     currency = Column(String)
     is_enabled = Column(Boolean)
     cik = Column(String)
-
-
-
-

@@ -1,5 +1,6 @@
 [MASTER]
 load-plugins=pylint_pytest
+ignore=alembic
 
 [SIMILARITIES]
 # Minimum lines number of a similarity.

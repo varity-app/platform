@@ -39,7 +39,9 @@ assert PASSWORD is not None
 assert HOST is not None
 assert DB is not None
 
-config.set_main_option("sqlalchemy.url", f"postgresql://{USERNAME}:{PASSWORD}@{HOST}/{DB}")
+config.set_main_option(
+    "sqlalchemy.url", f"postgresql://{USERNAME}:{PASSWORD}@{HOST}/{DB}"
+)
 
 
 def run_migrations_offline():
@@ -80,9 +82,7 @@ def run_migrations_online():
     )
 
     with connectable.connect() as connection:
-        context.configure(
-            connection=connection, target_metadata=target_metadata
-        )
+        context.configure(connection=connection, target_metadata=target_metadata)
 
         with context.begin_transaction():
             context.run_migrations()

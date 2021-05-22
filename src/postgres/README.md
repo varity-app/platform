@@ -16,7 +16,7 @@ Before running alembic, several environment variables must be set to authenticat
 
 ## Running a migration
 
-1. Edit or create a SQLAlchemy model in the `models` directory.
+1. Edit or create a SQLAlchemy model in the `models` directory.  If creating a new file, be sure to import the file inside `models/__init__.py`.
 2. Autogenerate an Alembic revision.
 ```bash
 alembic revision --autogenerate -m "My revision message"

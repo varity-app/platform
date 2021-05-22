@@ -28,6 +28,12 @@ resource "google_project_iam_member" "logging" {
   member  = "serviceAccount:${google_service_account.default.email}"
 }
 
+resource "google_project_iam_member" "storage" {
+  project = var.project
+  role    = "roles/storage.admin" # TODO: narrow down permissions
+  member  = "serviceAccount:${google_service_account.default.email}"
+}
+
 resource "google_project_iam_member" "monitoring" {
   project = var.project
   role    = "roles/monitoring.editor" # TODO: narrow down permissions
