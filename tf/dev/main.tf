@@ -8,7 +8,7 @@ terraform {
   }
 
   required_providers {
-    aws = {
+    google = {
       source  = "hashicorp/google"
       version = "~> 3.64.0"
     }
@@ -27,15 +27,21 @@ module "pubsub" {
   deployment = var.deployment
 }
 
-module "gke" {
-  source = "../modules/gke"
+# module "gke" {
+#   source = "../modules/gke"
 
-  deployment = var.deployment
-  release    = var.release
-}
+#   deployment = var.deployment
+#   release    = var.release
+# }
 
 module "biquery" {
   source = "../modules/bigquery"
+
+  deployment = var.deployment
+}
+
+module "cloud_sql" {
+  source = "../modules/cloud_sql"
 
   deployment = var.deployment
 }
