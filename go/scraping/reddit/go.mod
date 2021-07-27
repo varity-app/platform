@@ -6,6 +6,7 @@ replace github.com/VarityPlatform/scraping/protobuf/reddit => ../protobuf/reddit
 
 require (
 	cloud.google.com/go/firestore v1.5.0
+	cloud.google.com/go/pubsub v1.3.1
 	github.com/VarityPlatform/scraping/protobuf/reddit v0.0.0-00010101000000-000000000000
 	github.com/google/go-querystring v1.0.0
 	github.com/spf13/viper v1.8.1

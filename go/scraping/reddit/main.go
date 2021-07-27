@@ -5,43 +5,10 @@ import (
 	"log"
 
 	"cloud.google.com/go/firestore"
+	"cloud.google.com/go/pubsub"
 )
 
 const WALLSTREETBETS string = "wallstreetbets"
-
-// type thing struct {
-// 	Kind string      `json:"kind"`
-// 	Data interface{} `json:"data"`
-// }
-
-// type things struct {
-// 	Comments          []*reddit.Comment
-// 	Mores             []*reddit.More
-// 	Users             []*reddit.User
-// 	Posts             []*reddit.Post
-// 	Subreddits        []*reddit.Subreddit
-// 	ModActions        []*reddit.ModAction
-// 	Multis            []*reddit.Multi
-// 	LiveThreads       []*reddit.LiveThread
-// 	LiveThreadUpdates []*reddit.LiveThreadUpdate
-// }
-
-// type listing struct {
-// 	things things
-// 	after  string
-// }
-
-// func (l *listing) Posts() []*reddit.Post {
-// 	if l == nil {
-// 		return nil
-// 	}
-// 	return l.things.Posts
-// }
-
-// func (t *thing) Listing() (v *listing, ok bool) {
-// 	v, ok = t.Data.(*listing)
-// 	return
-// }
 
 // Entrypoint method
 func main() {
@@ -57,5 +24,12 @@ func main() {
 	}
 	defer fsClient.Close()
 
-	scrapeComments(ctx, redditClient, fsClient, WALLSTREETBETS)
+	// Init pubsub client
+	psClient, err := pubsub.NewClient(ctx, GCP_PROJECT_ID)
+	if err != nil {
+		log.Fatal("Error initializing pubsub client:", err.Error())
+	}
+	defer psClient.Close()
+
+	scrapeComments(ctx, redditClient, fsClient, psClient, WALLSTREETBETS)
 }

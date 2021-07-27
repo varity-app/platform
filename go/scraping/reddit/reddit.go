@@ -7,10 +7,15 @@ import (
 	"net/url"
 	"os"
 	"reflect"
+	"sync"
 
 	"cloud.google.com/go/firestore"
+	"cloud.google.com/go/pubsub"
+
+	"google.golang.org/protobuf/proto"
 
 	"github.com/google/go-querystring/query"
+	"github.com/spf13/viper"
 	"github.com/vartanbeno/go-reddit/v2/reddit"
 )
 
@@ -34,7 +39,7 @@ func initReddit() *reddit.Client {
 }
 
 // Scrape submissions from reddit
-func scrapeSubmissions(ctx context.Context, redditClient *reddit.Client, fsClient *firestore.Client, subreddit string) {
+func scrapeSubmissions(ctx context.Context, redditClient *reddit.Client, fsClient *firestore.Client, psClient *pubsub.Client, subreddit string) {
 
 	// Fetch posts
 	posts, _, err := redditClient.Subreddit.NewPosts(ctx, subreddit, &reddit.ListOptions{
@@ -49,13 +54,42 @@ func scrapeSubmissions(ctx context.Context, redditClient *reddit.Client, fsClien
 	newPosts := getNewDSSubmissions(ctx, fsClient, posts)
 	log.Printf("Fetched %d unseen posts...\n", len(newPosts))
 
+	// Send submissions to pubsub
+	topic := psClient.Topic(REDDIT_SUBMISSIONS + "-" + viper.GetString("deploymentMode"))
+	wg := new(sync.WaitGroup)
+
 	for _, post := range newPosts {
-		log.Println(post.ID)
+		// Convert to proto
+		postProto := submissionToProto(post)
+
+		// Serialize
+		serializedPost, err := proto.Marshal(postProto)
+		if err != nil {
+			log.Fatal("Error serializing submission proto:", err.Error())
+		}
+
+		// Asynchronously publish to pubsub
+		result := topic.Publish(ctx, &pubsub.Message{
+			Data: serializedPost,
+		})
+
+		wg.Add(1) // Add wait counter
+		go func(res *pubsub.PublishResult) {
+			defer wg.Done()
+			_, err := result.Get(ctx)
+			if err != nil {
+				log.Fatalf("Error publishing msg: %v", err)
+			}
+		}(result)
+
 	}
+
+	// Wait for all messages to publish
+	wg.Wait()
 }
 
 // Scrape comments from reddit
-func scrapeComments(ctx context.Context, redditClient *reddit.Client, fsClient *firestore.Client, subreddit string) {
+func scrapeComments(ctx context.Context, redditClient *reddit.Client, fsClient *firestore.Client, psClient *pubsub.Client, subreddit string) {
 
 	// Fetch comments
 	comments, _, err := getNewRedditComments(ctx, redditClient, subreddit, &reddit.ListOptions{
@@ -68,9 +102,38 @@ func scrapeComments(ctx context.Context, redditClient *reddit.Client, fsClient *
 	newComments := getNewDSComments(ctx, fsClient, comments)
 	log.Printf("Fetched %d unseen comments...\n", len(newComments))
 
+	// Send submissions to pubsub
+	topic := psClient.Topic(REDDIT_COMMENTS + "-" + viper.GetString("deploymentMode"))
+	wg := new(sync.WaitGroup)
+
 	for _, comment := range newComments {
-		log.Println(comment.ID)
+		// Convert to proto
+		commentProto := commentToProto(comment)
+
+		// Serialize
+		serializedComment, err := proto.Marshal(commentProto)
+		if err != nil {
+			log.Fatal("Error serializing comment proto:", err.Error())
+		}
+
+		// Asynchronously publish to pubsub
+		result := topic.Publish(ctx, &pubsub.Message{
+			Data: serializedComment,
+		})
+
+		wg.Add(1) // Add wait counter
+		go func(res *pubsub.PublishResult) {
+			defer wg.Done()
+			_, err := result.Get(ctx)
+			if err != nil {
+				log.Fatalf("Error publishing msg: %v", err)
+			}
+		}(result)
+
 	}
+
+	// Wait for all messages to publish
+	wg.Wait()
 }
 
 // Get comments.  This method and everything in things.go had to be included

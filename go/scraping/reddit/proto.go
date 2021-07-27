@@ -4,7 +4,7 @@ import (
 	pb "github.com/VarityPlatform/scraping/protobuf/reddit"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	"github.com/vartanbeno/go-reddit/reddit"
+	"github.com/vartanbeno/go-reddit/v2/reddit"
 )
 
 // Encode reddit submission as protobuf
