@@ -9,23 +9,25 @@ import (
 
 const TICKER_SPAM_THRESHOLD int = 5
 
+var urls *regexp.Regexp = regexp.MustCompile(`https?:\/\/.*[\r\n]*`)
+var alphaNumeric *regexp.Regexp = regexp.MustCompile(`[^a-zA-Z0-9 \n\.]`)
+var capsSpam *regexp.Regexp = regexp.MustCompile(`([A-Z]{1,3}.?[A-Z]{1,3})(\W[A-Z].?[A-Z]+)+`)
+var tickerRegex *regexp.Regexp = regexp.MustCompile(`[A-Z][A-Z0-9.]*[A-Z0-9]`)
+var wordRegex *regexp.Regexp = regexp.MustCompile(`\w+`)
+
 // Extract tickers from string
 func extractTickersString(s string, tickerList []common.IEXTicker) []common.IEXTicker {
 
 	// Remove urls
-	urls := regexp.MustCompile(`https?:\/\/.*[\r\n]*`)
 	s = urls.ReplaceAllString(s, "")
 
 	// Remove alphanumeric characters
-	alphaNumeric := regexp.MustCompile(`[^a-zA-Z0-9 \n\.]`)
 	s = alphaNumeric.ReplaceAllString(s, "")
 
 	// Remove caps spam
-	capsSpam := regexp.MustCompile(`([A-Z]{1,3}.?[A-Z]{1,3})(\W[A-Z].?[A-Z]+)+`)
 	s = capsSpam.ReplaceAllString(s, "")
 
 	// Find ticker look-a-likes
-	tickerRegex := regexp.MustCompile(`[A-Z][A-Z0-9.]*[A-Z0-9]`)
 	tickers := tickerRegex.FindAllString(s, -1)
 
 	// Cross reference with provided list of valid tickers
@@ -49,7 +51,6 @@ func extractTickersString(s string, tickerList []common.IEXTicker) []common.IEXT
 // Extract short name mentions from strings
 func extractShortNamesString(s string, tickerList []common.IEXTicker) []common.IEXTicker {
 	// Extract all alphanumeric words
-	wordRegex := regexp.MustCompile(`\w+`)
 	words := wordRegex.FindAllString(s, -1)
 
 	// Find mentioned tickers
@@ -88,6 +89,6 @@ func calcTickerFrequency(tickerList []common.IEXTicker) ([]common.IEXTicker, map
 // Fetch tickers from postgres
 func fetchTickers(db *pg.DB) ([]common.IEXTicker, error) {
 	var tickers []common.IEXTicker
-	_, err := db.Query(&tickers, `SELECT symbol, short_name FROM tickers WHERE exchange IN (NYS, NAS)`)
+	_, err := db.Query(&tickers, `SELECT symbol, short_name FROM tickers WHERE exchange IN ('NYS', 'NAS')`)
 	return tickers, err
 }
