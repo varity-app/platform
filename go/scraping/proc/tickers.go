@@ -33,6 +33,19 @@ func extractTickersString(s string, tickerList []common.IEXTicker) []common.IEXT
 	// Cross reference with provided list of valid tickers
 	validTickers := []common.IEXTicker{}
 	for _, ticker := range tickers {
+		blacklisted := false
+		// Check if ticker is blacklisted
+		for _, blacklistedTicker := range TICKER_BLACKLIST {
+			if ticker == blacklistedTicker {
+				blacklisted = true
+			}
+		}
+
+		if blacklisted {
+			continue
+		}
+
+		// Check for existing valid ticker
 		for _, realTicker := range tickerList {
 			if ticker == realTicker.Symbol {
 				validTickers = append(validTickers, realTicker)

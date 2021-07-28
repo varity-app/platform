@@ -25,6 +25,6 @@ message RedditComment {
     string author = 4;
     string author_id = 5;
     google.protobuf.Timestamp timestamp = 6;
-    optional string body = 7;
+    string body = 7;
     optional string permalink = 8;
 }

@@ -1,33 +1,44 @@
 package main
 
 import (
+	"context"
 	"log"
 
+	"cloud.google.com/go/pubsub"
 	"github.com/VarityPlatform/scraping/common"
-	"google.golang.org/protobuf/types/known/timestamppb"
-
-	redditPB "github.com/VarityPlatform/scraping/protobuf/reddit"
 )
 
 // Entrypoint method
 func main() {
+	initConfig()
+
+	// Initialize postgres
 	db := common.InitPostgres()
 
+	// Fetch list of tickers from postgres
 	allTickers, err := fetchTickers(db)
 	if err != nil {
 		log.Fatalln("Error fetching tickers:", err.Error())
 	}
 
-	submission := redditPB.RedditSubmission{
-		SubmissionId: "testid",
-		Title:        "Buy Apple ($AAPL) stocks you cucks.  Also GME?",
-		Body:         "This is the boring part. Oh well.  GOOGL.  I like Google?.",
-		Timestamp:    timestamppb.Now(),
+	// Initialize pubsub client
+	ctx := context.Background()
+	psClient, err := pubsub.NewClient(ctx, common.GCP_PROJECT_ID)
+	if err != nil {
+		log.Printf("pubsub.NewClient: %v", err)
+	}
+	defer psClient.Close()
+
+	// Process reddit submissions
+	err = readRedditSubmission(ctx, psClient, allTickers)
+	if err != nil {
+		log.Fatalln("Error:", err)
 	}
 
-	mentions := procRedditSubmission(&submission, allTickers)
-
-	for _, mention := range mentions {
-		log.Println(mention.ParentId, mention.Symbol, mention.SymbolCounts, mention.ShortNameCounts, mention.QuestionMarkCount, mention.WordCount)
+	// Process reddit comments
+	err = readRedditComment(ctx, psClient, allTickers)
+	if err != nil {
+		log.Fatalln("Error:", err)
 	}
+
 }

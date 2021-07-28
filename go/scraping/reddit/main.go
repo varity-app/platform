@@ -31,5 +31,5 @@ func main() {
 	}
 	defer psClient.Close()
 
-	scrapeComments(ctx, redditClient, fsClient, psClient, WALLSTREETBETS)
+	scrapeSubmissions(ctx, redditClient, fsClient, psClient, WALLSTREETBETS)
 }
