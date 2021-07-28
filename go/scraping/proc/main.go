@@ -4,8 +4,11 @@ import (
 	"context"
 	"log"
 
-	"cloud.google.com/go/pubsub"
 	"github.com/VarityPlatform/scraping/common"
+	"github.com/spf13/viper"
+
+	"cloud.google.com/go/pubsub"
+	"github.com/labstack/echo/v4"
 )
 
 // Entrypoint method
@@ -18,27 +21,26 @@ func main() {
 	// Fetch list of tickers from postgres
 	allTickers, err := fetchTickers(db)
 	if err != nil {
-		log.Fatalln("Error fetching tickers:", err.Error())
+		log.Fatalf("error fetching tickers: %v", err)
 	}
 
 	// Initialize pubsub client
 	ctx := context.Background()
 	psClient, err := pubsub.NewClient(ctx, common.GCP_PROJECT_ID)
 	if err != nil {
-		log.Printf("pubsub.NewClient: %v", err)
+		log.Fatalln(err)
 	}
 	defer psClient.Close()
 
-	// Process reddit submissions
-	err = readRedditSubmission(ctx, psClient, allTickers)
+	// Initialize webserver
+	web := echo.New()
+	err = setupRoutes(web, psClient, allTickers)
 	if err != nil {
-		log.Fatalln("Error:", err)
+		log.Fatalln(err)
 	}
 
-	// Process reddit comments
-	err = readRedditComment(ctx, psClient, allTickers)
-	if err != nil {
-		log.Fatalln("Error:", err)
-	}
+	// Start webserver
+	port := viper.GetString("port")
+	web.Logger.Fatal(web.Start(":" + port))
 
 }

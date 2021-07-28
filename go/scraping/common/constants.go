@@ -3,6 +3,10 @@ package common
 // GCP
 const GCP_PROJECT_ID string = "varity"
 
+// Deployment modes
+const DEPLOYMENT_MODE_DEV = "dev"
+const DEPLOYMENT_MODE_PROD = "prod"
+
 // Pub/Sub subscription names
 const SUBSCRIPTION_REDDIT_COMMENTS = "reddit-comments-proc"
 const SUBSCRIPTION_REDDIT_SUBSCRIPTIONS = "reddit-submissions-proc"

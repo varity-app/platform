@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	"log"
+	"fmt"
 	"regexp"
 	"sync"
 
@@ -20,7 +20,7 @@ import (
 var questionRegex *regexp.Regexp = regexp.MustCompile(`\?`)
 
 // Read reddit submissions from Pub/Sub and process them
-func readRedditSubmission(ctx context.Context, psClient *pubsub.Client, allTickers []common.IEXTicker) error {
+func readRedditSubmission(ctx context.Context, psClient *pubsub.Client, allTickers []common.IEXTicker) (int, error) {
 
 	sub := psClient.Subscription(common.SUBSCRIPTION_REDDIT_SUBSCRIPTIONS + "-" + viper.GetString("deploymentMode"))
 	topic := psClient.Topic(common.TOPIC_TICKER_MENTIONS + "-" + viper.GetString("deploymentMode"))
@@ -30,14 +30,21 @@ func readRedditSubmission(ctx context.Context, psClient *pubsub.Client, allTicke
 
 	wg := new(sync.WaitGroup)
 	var mu sync.Mutex
+
 	count := 0
+	totalCount := 0
+
+	var readErr error = nil
 
 	// Handle individual messages in a goroutine.
 	go func() {
 		for msg := range cm {
 			submission := &redditPB.RedditSubmission{}
 			if err := proto.Unmarshal(msg.Data, submission); err != nil {
-				log.Fatalln("Failed to unmarshal submission:", err)
+				mu.Lock()
+				readErr = fmt.Errorf("error unmarshalling protobuf message: %v", err)
+				mu.Unlock()
+				return
 			}
 
 			// Publish each mention to Pub/Sub
@@ -50,7 +57,10 @@ func readRedditSubmission(ctx context.Context, psClient *pubsub.Client, allTicke
 				// Serialize
 				serializedMention, err := proto.Marshal(&mention)
 				if err != nil {
-					log.Fatal("Error serializing submission proto:", err.Error())
+					mu.Lock()
+					readErr = fmt.Errorf("error serializing mention protobuf message: %v", err)
+					mu.Unlock()
+					return
 				}
 
 				// Asynchronously publish to pubsub
@@ -62,7 +72,10 @@ func readRedditSubmission(ctx context.Context, psClient *pubsub.Client, allTicke
 					defer wg.Done()
 					_, err := result.Get(ctx)
 					if err != nil {
-						log.Fatalf("Error publishing msg: %v", err)
+						mu.Lock()
+						readErr = fmt.Errorf("error publishing mention message: %v", err)
+						mu.Unlock()
+						return
 					}
 				}(result)
 
@@ -73,12 +86,9 @@ func readRedditSubmission(ctx context.Context, psClient *pubsub.Client, allTicke
 			count++
 			mu.Unlock()
 
-			// log.Println(submission.Title)
 			msg.Ack()
 		}
 	}()
-
-	log.Println("Ready to listen for submissions...")
 
 	// Receive messages for N sec
 	for {
@@ -90,30 +100,33 @@ func readRedditSubmission(ctx context.Context, psClient *pubsub.Client, allTicke
 
 		// Receive blocks until the context is cancelled or an error occurs.
 		err := sub.Receive(ctx, func(ctx context.Context, msg *pubsub.Message) {
+			if readErr != nil {
+				cancel()
+			}
 			cm <- msg
 		})
 		if err != nil {
-			return err
+			return totalCount, err
+		} else if readErr != nil {
+			return totalCount, readErr
 		}
+
+		totalCount += count
 
 		// If no messages were received in this window, break
 		if count == 0 {
 			break
 		}
-		log.Println("Fetched", count)
-
 	}
 
 	wg.Wait()
 
-	log.Println("Finished...")
-
-	return nil
+	return totalCount, nil
 
 }
 
 // Read reddit comment from Pub/Sub and process them
-func readRedditComment(ctx context.Context, psClient *pubsub.Client, allTickers []common.IEXTicker) error {
+func readRedditComment(ctx context.Context, psClient *pubsub.Client, allTickers []common.IEXTicker) (int, error) {
 
 	sub := psClient.Subscription(common.SUBSCRIPTION_REDDIT_COMMENTS + "-" + viper.GetString("deploymentMode"))
 	topic := psClient.Topic(common.TOPIC_TICKER_MENTIONS + "-" + viper.GetString("deploymentMode"))
@@ -123,14 +136,22 @@ func readRedditComment(ctx context.Context, psClient *pubsub.Client, allTickers 
 
 	wg := new(sync.WaitGroup)
 	var mu sync.Mutex
+
+	// Message counts
 	count := 0
+	totalCount := 0
+
+	var readErr error = nil
 
 	// Handle individual messages in a goroutine.
 	go func() {
 		for msg := range cm {
 			comment := &redditPB.RedditComment{}
 			if err := proto.Unmarshal(msg.Data, comment); err != nil {
-				log.Fatalln("Failed to unmarshal comment:", err)
+				mu.Lock()
+				readErr = fmt.Errorf("error unmarshalling protobuf message: %v", err)
+				mu.Unlock()
+				return
 			}
 
 			// Publish each mention to Pub/Sub
@@ -143,7 +164,10 @@ func readRedditComment(ctx context.Context, psClient *pubsub.Client, allTickers 
 				// Serialize
 				serializedMention, err := proto.Marshal(&mention)
 				if err != nil {
-					log.Fatal("Error serializing comment proto:", err.Error())
+					mu.Lock()
+					readErr = fmt.Errorf("error serializing mention protobuf message: %v", err)
+					mu.Unlock()
+					return
 				}
 
 				// Asynchronously publish to pubsub
@@ -155,7 +179,10 @@ func readRedditComment(ctx context.Context, psClient *pubsub.Client, allTickers 
 					defer wg.Done()
 					_, err := result.Get(ctx)
 					if err != nil {
-						log.Fatalf("Error publishing msg: %v", err)
+						mu.Lock()
+						readErr = fmt.Errorf("error publishing mention message: %v", err)
+						mu.Unlock()
+						return
 					}
 				}(result)
 
@@ -170,8 +197,6 @@ func readRedditComment(ctx context.Context, psClient *pubsub.Client, allTickers 
 		}
 	}()
 
-	log.Println("Ready to listen for comments...")
-
 	// Receive messages for N sec
 	for {
 		ctx, cancel := context.WithTimeout(ctx, WAIT_INTERVAL)
@@ -182,25 +207,28 @@ func readRedditComment(ctx context.Context, psClient *pubsub.Client, allTickers 
 
 		// Receive blocks until the context is cancelled or an error occurs.
 		err := sub.Receive(ctx, func(ctx context.Context, msg *pubsub.Message) {
+			if readErr != nil {
+				cancel()
+			}
 			cm <- msg
 		})
 		if err != nil {
-			return err
+			return totalCount, err
+		} else if readErr != nil {
+			return totalCount, readErr
 		}
+
+		totalCount += count
 
 		// If no messages were received in this window, break
 		if count == 0 {
 			break
 		}
-		log.Println("Fetched", count)
-
 	}
 
 	wg.Wait()
 
-	log.Println("Finished...")
-
-	return nil
+	return totalCount, nil
 
 }
 

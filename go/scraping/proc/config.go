@@ -1,18 +1,30 @@
 package main
 
 import (
-	"log"
+	"fmt"
+
+	"github.com/VarityPlatform/scraping/common"
 
 	"github.com/spf13/viper"
 )
 
 // Initialize viper
-func initConfig() {
+func initConfig() error {
 	viper.AutomaticEnv()
 
-	viper.SetDefault("deploymentMode", "dev")
+	// Application deployment mode (dev or prod)
+	viper.SetDefault("deploymentMode", common.DEPLOYMENT_MODE_DEV)
 	err := viper.BindEnv("deploymentMode", "DEPLOYMENT_MODE")
 	if err != nil {
-		log.Fatal("Error binding env variable:", err.Error())
+		return fmt.Errorf("error binding env variable: %v", err)
 	}
+
+	// Port to run webserver on
+	viper.SetDefault("port", 8000)
+	err = viper.BindEnv("port", "PORT")
+	if err != nil {
+		return fmt.Errorf("error binding env variable: %v", err)
+	}
+
+	return nil
 }
