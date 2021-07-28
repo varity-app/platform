@@ -1,6 +1,6 @@
 module reddit-scraper
 
-go 1.13
+go 1.16
 
 replace github.com/VarityPlatform/scraping/protobuf/reddit => ../protobuf/reddit
 
