@@ -1,3 +1,6 @@
+"""
+Alembic env.py file
+"""
 from os import environ as env
 
 from logging.config import fileConfig

@@ -46,7 +46,7 @@ jobs:
       run: test -n "$(gofmt -l -s go)" && echo $(gofmt -l -s go) && exit 1
 
   build-images:
-    needs: test-python
+    needs: [test-python, test-go]
     name: Build and Publish to GCR
     runs-on: ubuntu-latest
     steps:
