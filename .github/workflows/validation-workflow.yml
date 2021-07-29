@@ -2,8 +2,6 @@ name: Validation Workflow
 
 on:
   push:
-    tags:
-      - 'v*.*.*'
 
 jobs:
   test-python:
