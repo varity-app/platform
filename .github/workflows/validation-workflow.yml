@@ -40,13 +40,13 @@ jobs:
         go-version: 1.16
     - name: Test certain modules
       run: |
-      go_dirs=(go/scraping/reddit go/scraping/proc go/scraping/common)
-      for dir in $go_dirs; do
-        echo $dir
-        pushd $dir > /dev/null
-        go test .
-        popd > /dev/null
-      done
+        go_dirs=(go/scraping/reddit go/scraping/proc go/scraping/common)
+        for dir in $go_dirs; do
+          echo $dir
+          pushd $dir > /dev/null
+          go test .
+          popd > /dev/null
+        done
     - name: Check formatting
       run: test -n "$(gofmt -l -s go)" && echo $(gofmt -l -s go) && exit 1
 
