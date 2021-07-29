@@ -50,14 +50,14 @@ func main() {
 	// Init firestore client
 	fsClient, err := firestore.NewClient(ctx, GCP_PROJECT_ID)
 	if err != nil {
-		log.Fatal("firestore.GetClient: %v", err)
+		log.Fatalf("firestore.GetClient: %v", err)
 	}
 	defer fsClient.Close()
 
 	// Init pubsub client
 	psClient, err := pubsub.NewClient(ctx, GCP_PROJECT_ID)
 	if err != nil {
-		log.Fatal("pubsub.GetClient: %v", err)
+		log.Fatalf("pubsub.GetClient: %v", err)
 	}
 	defer psClient.Close()
 
