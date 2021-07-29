@@ -1,4 +1,4 @@
-name: Validation Workflow
+name: Test and Validate
 
 on:
   push:
