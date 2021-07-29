@@ -30,7 +30,7 @@ jobs:
       run: cd src && python -m pylint *
 
   test-go:
-    name: Test and Lint Go modules
+    name: Test Go modules
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
@@ -47,8 +47,6 @@ jobs:
           go test .
           popd > /dev/null
         done
-    - name: Check formatting
-      run: test -n "$(gofmt -l -s go)" && echo $(gofmt -l -s go) && exit 1
 
   build-images:
     name: Validate Docker Images
