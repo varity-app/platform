@@ -1,4 +1,4 @@
-name: Main Workflow
+name: Validation Workflow
 
 on:
   push:
@@ -47,22 +47,15 @@ jobs:
 
   build-images:
     needs: test-python
-    name: Build and Publish to GCR
+    name: Validate Docker Images
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
 
-    - name: Set up Cloud SDK
-      uses: google-github-actions/setup-gcloud@master
-      with:
-        project_id: varity
-        service_account_key: ${{secrets.GOOGLE_APPLICATION_CREDENTIALS}}
-        export_default_credentials: true
-
-    # Build and push the Docker images
-    - name: Build and Publish Images
+    # Validate the Docker images
+    - name: Build Images
       run: |
         gcloud auth configure-docker
         export TAG=`echo $GITHUB_REF | awk -F/ '{print $NF}'`
         echo Building ${TAG}...
-        ./build.sh --prod --publish --release $TAG
+        ./build.sh --prod --release $TAG
