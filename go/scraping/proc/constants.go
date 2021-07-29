@@ -2,7 +2,7 @@ package main
 
 import "time"
 
-const WAIT_INTERVAL time.Duration = 3 * time.Second / 2
+const WAIT_INTERVAL time.Duration = 2 * time.Second
 
 var TICKER_BLACKLIST []string = []string{
 	"WSB",

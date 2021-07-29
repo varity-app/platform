@@ -5,6 +5,7 @@ import (
 	"log"
 
 	"github.com/VarityPlatform/scraping/common"
+
 	"github.com/spf13/viper"
 
 	"cloud.google.com/go/pubsub"
@@ -35,12 +36,12 @@ func main() {
 	)
 	defer tp.ForceFlush(ctx) // flushes any pending spans
 	otel.SetTracerProvider(tp)
+	tracer := otel.GetTracerProvider().Tracer("varity.app/proc")
 
 	// Initialize postgres
 	db := common.InitPostgres()
 
 	// Fetch list of tickers from postgres
-	tracer := otel.GetTracerProvider().Tracer("varity.app/proc")
 	ctx, span := tracer.Start(ctx, "proc.fetchTickers")
 	allTickers, err := fetchTickers(db)
 	if err != nil {

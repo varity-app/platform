@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	"log"
+	"fmt"
 
 	"cloud.google.com/go/firestore"
 
@@ -13,7 +13,7 @@ import (
 
 // Take a list of submissions and check if their IDs exist in datastore.
 // Return a list of submissions that do not currently exist
-func getNewDSSubmissions(ctx context.Context, fsClient *firestore.Client, posts []*reddit.Post) []*reddit.Post {
+func getNewDSSubmissions(ctx context.Context, fsClient *firestore.Client, posts []*reddit.Post) ([]*reddit.Post, error) {
 
 	// Create list of firestore refs for each submission
 	refs := [](*firestore.DocumentRef){}
@@ -26,7 +26,7 @@ func getNewDSSubmissions(ctx context.Context, fsClient *firestore.Client, posts 
 	// Fetch submissions from firestore
 	docsnaps, err := fsClient.GetAll(ctx, refs)
 	if err != nil {
-		log.Fatal("Error fetching from firestore:", err.Error())
+		return nil, fmt.Errorf("firestore.GetAll: %v", err)
 	}
 
 	// Create batch of writes
@@ -48,16 +48,16 @@ func getNewDSSubmissions(ctx context.Context, fsClient *firestore.Client, posts 
 	if willCommit {
 		_, err = batch.Commit(ctx)
 		if err != nil {
-			log.Fatal("Error commiting firestore batch", err)
+			return nil, fmt.Errorf("firestore.WriteBatch: %v", err)
 		}
 	}
 
-	return newPosts
+	return newPosts, nil
 }
 
 // Take a list of comments and check if their IDs exist in datastore.
 // Return a list of comments that do not currently exist
-func getNewDSComments(ctx context.Context, fsClient *firestore.Client, comments []*reddit.Comment) []*reddit.Comment {
+func getNewDSComments(ctx context.Context, fsClient *firestore.Client, comments []*reddit.Comment) ([]*reddit.Comment, error) {
 
 	// Create list of firestore refs for each comment
 	refs := [](*firestore.DocumentRef){}
@@ -70,7 +70,7 @@ func getNewDSComments(ctx context.Context, fsClient *firestore.Client, comments 
 	// Fetch comments from firestore
 	docsnaps, err := fsClient.GetAll(ctx, refs)
 	if err != nil {
-		log.Fatal("Error fetching from firestore:", err.Error())
+		return nil, fmt.Errorf("firestore.GetAll: %v", err)
 	}
 
 	// Create batch of writes
@@ -92,9 +92,9 @@ func getNewDSComments(ctx context.Context, fsClient *firestore.Client, comments 
 	if willCommit {
 		_, err = batch.Commit(ctx)
 		if err != nil {
-			log.Fatal("Error commiting firestore batch", err)
+			return nil, fmt.Errorf("firestore.WriteBatch: %v", err)
 		}
 	}
 
-	return newComments
+	return newComments, nil
 }

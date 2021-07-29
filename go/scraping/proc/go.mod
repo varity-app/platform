@@ -3,9 +3,7 @@ module proc
 go 1.16
 
 replace github.com/VarityPlatform/scraping/common => ../common
-
 replace github.com/VarityPlatform/scraping/protobuf/common => ../protobuf/common
-
 replace github.com/VarityPlatform/scraping/protobuf/reddit => ../protobuf/reddit
 
 require (

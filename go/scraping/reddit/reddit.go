@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	"log"
+	"fmt"
 	"net/http"
 	"net/url"
 	"os"
@@ -12,15 +12,18 @@ import (
 	"cloud.google.com/go/firestore"
 	"cloud.google.com/go/pubsub"
 
-	"google.golang.org/protobuf/proto"
+	"go.opentelemetry.io/otel/trace"
 
 	"github.com/google/go-querystring/query"
+	"google.golang.org/protobuf/proto"
+
 	"github.com/spf13/viper"
+
 	"github.com/vartanbeno/go-reddit/v2/reddit"
 )
 
 // Initialize the reddit client.  Load credentials from environment variables.
-func initReddit() *reddit.Client {
+func initReddit() (*reddit.Client, error) {
 	credentials := reddit.Credentials{
 		ID:       os.Getenv("REDDIT_CLIENT_ID"),
 		Secret:   os.Getenv("REDDIT_CLIENT_SECRET"),
@@ -32,31 +35,40 @@ func initReddit() *reddit.Client {
 
 	client, err := reddit.NewClient(credentials, reddit.WithUserAgent(userAgent))
 	if err != nil {
-		log.Fatal("Error creating reddit client:", err.Error())
+		return nil, fmt.Errorf("redditClient.Create: %v", err)
 	}
 
-	return client
+	return client, nil
 }
 
 // Scrape submissions from reddit
-func scrapeSubmissions(ctx context.Context, redditClient *reddit.Client, fsClient *firestore.Client, psClient *pubsub.Client, subreddit string) {
+func scrapeSubmissions(ctx context.Context, redditClient *reddit.Client, fsClient *firestore.Client, psClient *pubsub.Client, subreddit string, tracer *trace.Tracer) (int, error) {
 
 	// Fetch posts
+	ctx, span := (*tracer).Start(ctx, "query.Reddit")
 	posts, _, err := redditClient.Subreddit.NewPosts(ctx, subreddit, &reddit.ListOptions{
 		Limit: LIMIT,
 	})
 	if err != nil {
-		log.Fatal("Error retrieving posts:", err.Error())
+		return 0, fmt.Errorf("fetch.Post: %v", err)
 	}
+	span.End()
 
-	// log.Println("Response", resp.Rate.Remaining, len(posts))
-
-	newPosts := getNewDSSubmissions(ctx, fsClient, posts)
-	log.Printf("Fetched %d unseen posts...\n", len(newPosts))
+	// Check with datastore for unseen posts
+	ctx, span = (*tracer).Start(ctx, "query.Datastore")
+	newPosts, err := getNewDSSubmissions(ctx, fsClient, posts)
+	if err != nil {
+		return 0, err
+	}
+	span.End()
 
 	// Send submissions to pubsub
+	ctx, span = (*tracer).Start(ctx, "publish.Pubsub")
+
 	topic := psClient.Topic(REDDIT_SUBMISSIONS + "-" + viper.GetString("deploymentMode"))
 	wg := new(sync.WaitGroup)
+
+	var writeErr error = nil
 
 	for _, post := range newPosts {
 		// Convert to proto
@@ -65,7 +77,7 @@ func scrapeSubmissions(ctx context.Context, redditClient *reddit.Client, fsClien
 		// Serialize
 		serializedPost, err := proto.Marshal(postProto)
 		if err != nil {
-			log.Fatal("Error serializing submission proto:", err.Error())
+			return 0, fmt.Errorf("serialize.Post: %v", err)
 		}
 
 		// Asynchronously publish to pubsub
@@ -78,7 +90,8 @@ func scrapeSubmissions(ctx context.Context, redditClient *reddit.Client, fsClien
 			defer wg.Done()
 			_, err := result.Get(ctx)
 			if err != nil {
-				log.Fatalf("Error publishing msg: %v", err)
+				writeErr = fmt.Errorf("publish.RedditSubmission: %v", err)
+				ctx.Err()
 			}
 		}(result)
 
@@ -86,25 +99,42 @@ func scrapeSubmissions(ctx context.Context, redditClient *reddit.Client, fsClien
 
 	// Wait for all messages to publish
 	wg.Wait()
+	if writeErr != nil {
+		return 0, writeErr
+	}
+	span.End()
+
+	return len(newPosts), nil
 }
 
 // Scrape comments from reddit
-func scrapeComments(ctx context.Context, redditClient *reddit.Client, fsClient *firestore.Client, psClient *pubsub.Client, subreddit string) {
+func scrapeComments(ctx context.Context, redditClient *reddit.Client, fsClient *firestore.Client, psClient *pubsub.Client, subreddit string, tracer *trace.Tracer) (int, error) {
 
 	// Fetch comments
+	ctx, span := (*tracer).Start(ctx, "query.Reddit")
 	comments, _, err := getNewRedditComments(ctx, redditClient, subreddit, &reddit.ListOptions{
 		Limit: LIMIT,
 	})
 	if err != nil {
-		log.Fatal("Error retrieving comments:", err.Error())
+		return 0, fmt.Errorf("fetch.Comment: %v", err)
 	}
+	span.End()
 
-	newComments := getNewDSComments(ctx, fsClient, comments)
-	log.Printf("Fetched %d unseen comments...\n", len(newComments))
+	// Check with datastore for unseen comments
+	ctx, span = (*tracer).Start(ctx, "query.Datastore")
+	newComments, err := getNewDSComments(ctx, fsClient, comments)
+	if err != nil {
+		return 0, err
+	}
+	span.End()
 
 	// Send submissions to pubsub
+	ctx, span = (*tracer).Start(ctx, "publish.Pubsub")
+
 	topic := psClient.Topic(REDDIT_COMMENTS + "-" + viper.GetString("deploymentMode"))
 	wg := new(sync.WaitGroup)
+
+	var writeErr error = nil
 
 	for _, comment := range newComments {
 		// Convert to proto
@@ -113,7 +143,7 @@ func scrapeComments(ctx context.Context, redditClient *reddit.Client, fsClient *
 		// Serialize
 		serializedComment, err := proto.Marshal(commentProto)
 		if err != nil {
-			log.Fatal("Error serializing comment proto:", err.Error())
+			return 0, fmt.Errorf("serialize.Comment: %v", err)
 		}
 
 		// Asynchronously publish to pubsub
@@ -126,7 +156,8 @@ func scrapeComments(ctx context.Context, redditClient *reddit.Client, fsClient *
 			defer wg.Done()
 			_, err := result.Get(ctx)
 			if err != nil {
-				log.Fatalf("Error publishing msg: %v", err)
+				writeErr = fmt.Errorf("publish.RedditComment: %v", err)
+				ctx.Err()
 			}
 		}(result)
 
@@ -134,6 +165,12 @@ func scrapeComments(ctx context.Context, redditClient *reddit.Client, fsClient *
 
 	// Wait for all messages to publish
 	wg.Wait()
+	if writeErr != nil {
+		return 0, writeErr
+	}
+	span.End()
+
+	return len(newComments), nil
 }
 
 // Get comments.  This method and everything in things.go had to be included
