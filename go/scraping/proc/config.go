@@ -26,5 +26,11 @@ func initConfig() error {
 		return fmt.Errorf("error binding env variable: %v", err)
 	}
 
+	viper.SetDefault("tracing.probability", 0.01)
+	err = viper.BindEnv("tracing.probability", "TRACING_PROBABILITY")
+	if err != nil {
+		return fmt.Errorf("error binding env variable: %v", err)
+	}
+
 	return nil
 }
