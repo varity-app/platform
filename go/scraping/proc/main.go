@@ -8,6 +8,7 @@ import (
 
 	"github.com/spf13/viper"
 
+	"cloud.google.com/go/bigquery"
 	"cloud.google.com/go/pubsub"
 	"github.com/labstack/echo/v4"
 
@@ -57,9 +58,15 @@ func main() {
 	}
 	defer psClient.Close()
 
+	// Initialize bigquery client
+	bqClient, err := bigquery.NewClient(ctx, common.GCP_PROJECT_ID)
+	if err != nil {
+		log.Fatalln(err)
+	}
+
 	// Initialize webserver
 	web := echo.New()
-	err = setupRoutes(web, psClient, &tracer, allTickers)
+	err = setupRoutes(web, psClient, bqClient, &tracer, allTickers)
 	if err != nil {
 		log.Fatalln(err)
 	}

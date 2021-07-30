@@ -28,7 +28,8 @@ func readRedditSubmission(ctx context.Context, psClient *pubsub.Client, allTicke
 	cm := make(chan *pubsub.Message)
 	defer close(cm)
 
-	wg := new(sync.WaitGroup)
+	readWG := new(sync.WaitGroup)
+	writeWG := new(sync.WaitGroup)
 	var mu sync.Mutex
 
 	count := 0
@@ -51,7 +52,7 @@ func readRedditSubmission(ctx context.Context, psClient *pubsub.Client, allTicke
 			mentions := procRedditSubmission(submission, allTickers)
 			for _, mention := range mentions {
 				mu.Lock()
-				wg.Add(1)
+				writeWG.Add(1)
 				mu.Unlock()
 
 				// Serialize
@@ -69,7 +70,7 @@ func readRedditSubmission(ctx context.Context, psClient *pubsub.Client, allTicke
 				})
 
 				go func(res *pubsub.PublishResult) {
-					defer wg.Done()
+					defer writeWG.Done()
 					_, err := result.Get(ctx)
 					if err != nil {
 						mu.Lock()
@@ -84,6 +85,7 @@ func readRedditSubmission(ctx context.Context, psClient *pubsub.Client, allTicke
 			// Update counter
 			mu.Lock()
 			count++
+			readWG.Done()
 			mu.Unlock()
 
 			msg.Ack()
@@ -103,11 +105,15 @@ func readRedditSubmission(ctx context.Context, psClient *pubsub.Client, allTicke
 			if readErr != nil {
 				cancel()
 			}
+			readWG.Add(1)
 			cm <- msg
 		})
 		if err != nil {
 			return totalCount, err
-		} else if readErr != nil {
+		}
+
+		readWG.Wait()
+		if readErr != nil {
 			return totalCount, readErr
 		}
 
@@ -119,7 +125,7 @@ func readRedditSubmission(ctx context.Context, psClient *pubsub.Client, allTicke
 		}
 	}
 
-	wg.Wait()
+	writeWG.Wait()
 
 	return totalCount, nil
 
@@ -134,7 +140,8 @@ func readRedditComment(ctx context.Context, psClient *pubsub.Client, allTickers 
 	cm := make(chan *pubsub.Message)
 	defer close(cm)
 
-	wg := new(sync.WaitGroup)
+	readWG := new(sync.WaitGroup)
+	writeWG := new(sync.WaitGroup)
 	var mu sync.Mutex
 
 	// Message counts
@@ -158,7 +165,7 @@ func readRedditComment(ctx context.Context, psClient *pubsub.Client, allTickers 
 			mentions := procRedditComment(comment, allTickers)
 			for _, mention := range mentions {
 				mu.Lock()
-				wg.Add(1)
+				writeWG.Add(1)
 				mu.Unlock()
 
 				// Serialize
@@ -176,7 +183,7 @@ func readRedditComment(ctx context.Context, psClient *pubsub.Client, allTickers 
 				})
 
 				go func(res *pubsub.PublishResult) {
-					defer wg.Done()
+					defer writeWG.Done()
 					_, err := result.Get(ctx)
 					if err != nil {
 						mu.Lock()
@@ -191,6 +198,7 @@ func readRedditComment(ctx context.Context, psClient *pubsub.Client, allTickers 
 			// Update counter
 			mu.Lock()
 			count++
+			readWG.Done()
 			mu.Unlock()
 
 			msg.Ack()
@@ -210,11 +218,15 @@ func readRedditComment(ctx context.Context, psClient *pubsub.Client, allTickers 
 			if readErr != nil {
 				cancel()
 			}
+			readWG.Add(1)
 			cm <- msg
 		})
 		if err != nil {
 			return totalCount, err
-		} else if readErr != nil {
+		}
+
+		readWG.Wait()
+		if readErr != nil {
 			return totalCount, readErr
 		}
 
@@ -226,7 +238,7 @@ func readRedditComment(ctx context.Context, psClient *pubsub.Client, allTickers 
 		}
 	}
 
-	wg.Wait()
+	writeWG.Wait()
 
 	return totalCount, nil
 

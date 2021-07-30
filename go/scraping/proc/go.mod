@@ -3,10 +3,13 @@ module proc
 go 1.16
 
 replace github.com/VarityPlatform/scraping/common => ../common
+
 replace github.com/VarityPlatform/scraping/protobuf/common => ../protobuf/common
+
 replace github.com/VarityPlatform/scraping/protobuf/reddit => ../protobuf/reddit
 
 require (
+	cloud.google.com/go/bigquery v1.19.0
 	cloud.google.com/go/pubsub v1.3.1
 	github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/trace v0.21.0
 	github.com/VarityPlatform/scraping/common v0.0.0-00010101000000-000000000000
