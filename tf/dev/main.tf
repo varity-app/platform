@@ -45,3 +45,9 @@ module "cloud_sql" {
 
   deployment = var.deployment
 }
+
+module "confluent" {
+  source = "../modules/confluent"
+
+  deployment = var.deployment
+}
