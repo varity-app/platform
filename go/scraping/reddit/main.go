@@ -3,11 +3,14 @@ package main
 import (
 	"context"
 	"log"
+	"os"
 
 	"github.com/VarityPlatform/scraping/common"
 
 	"cloud.google.com/go/firestore"
 	"cloud.google.com/go/pubsub"
+
+	"github.com/confluentinc/confluent-kafka-go/kafka"
 
 	texporter "github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/trace"
 	"go.opentelemetry.io/otel"
@@ -61,9 +64,23 @@ func main() {
 	}
 	defer psClient.Close()
 
+	// Init kafka client
+	producer, err := kafka.NewProducer(&kafka.ConfigMap{
+		"bootstrap.servers": os.Getenv("KAFKA_BOOTSTRAP_SERVERS"),
+		"security.protocol": "SASL_SSL",
+		"sasl.mechanisms":   "PLAIN",
+		"sasl.username":     os.Getenv("KAFKA_AUTH_KEY"),
+		"sasl.password":     os.Getenv("KAFKA_AUTH_SECRET"),
+	})
+	if err != nil {
+		log.Fatalf("kafka.GetProducer: %v", err)
+	}
+
+	defer producer.Close()
+
 	// Initialize webserver
 	web := echo.New()
-	err = setupRoutes(web, redditClient, fsClient, psClient, &tracer)
+	err = setupRoutes(web, redditClient, fsClient, psClient, producer, &tracer)
 	if err != nil {
 		log.Fatalln(err)
 	}

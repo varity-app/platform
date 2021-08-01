@@ -30,29 +30,42 @@ func getNewDSSubmissions(ctx context.Context, fsClient *firestore.Client, posts 
 	}
 
 	// Create batch of writes
-	batch := fsClient.Batch()
-	willCommit := false
 	newPosts := []*reddit.Post{}
 
 	// Check each snapshot for each document
 	for idx, snap := range docsnaps {
 		// If there is no entry for a submission, then create one
 		if !snap.Exists() {
-			batch.Create(snap.Ref, map[string]interface{}{})
-			willCommit = true
 			newPosts = append(newPosts, posts[idx])
 		}
 	}
 
+	return newPosts, nil
+}
+
+// Save a list of comments to datastore
+func saveNewDSSubmissions(ctx context.Context, fsClient *firestore.Client, submissions []*reddit.Post) error {
+	collection := fsClient.Collection(REDDIT_SUBMISSIONS + "-" + viper.GetString("deploymentMode"))
+
+	// Create batch of writes
+	batch := fsClient.Batch()
+	willCommit := false
+
+	// Check each snapshot for each document
+	for _, submission := range submissions {
+		batch.Create(collection.Doc(submission.ID), map[string]interface{}{})
+		willCommit = true
+	}
+
 	// There are changes to write
 	if willCommit {
-		_, err = batch.Commit(ctx)
+		_, err := batch.Commit(ctx)
 		if err != nil {
-			return nil, fmt.Errorf("firestore.WriteBatch: %v", err)
+			return fmt.Errorf("firestore.WriteBatch: %v", err)
 		}
 	}
 
-	return newPosts, nil
+	return nil
 }
 
 // Take a list of comments and check if their IDs exist in datastore.
@@ -74,27 +87,40 @@ func getNewDSComments(ctx context.Context, fsClient *firestore.Client, comments 
 	}
 
 	// Create batch of writes
-	batch := fsClient.Batch()
-	willCommit := false
 	newComments := []*reddit.Comment{}
 
 	// Check each snapshot for each document
 	for idx, snap := range docsnaps {
 		// If there is no entry for a comment, then create one
 		if !snap.Exists() {
-			batch.Create(snap.Ref, map[string]interface{}{})
-			willCommit = true
 			newComments = append(newComments, comments[idx])
 		}
 	}
 
+	return newComments, nil
+}
+
+// Save a list of comments to datastore
+func saveNewDSComments(ctx context.Context, fsClient *firestore.Client, comments []*reddit.Comment) error {
+	collection := fsClient.Collection(REDDIT_COMMENTS + "-" + viper.GetString("deploymentMode"))
+
+	// Create batch of writes
+	batch := fsClient.Batch()
+	willCommit := false
+
+	// Check each snapshot for each document
+	for _, comment := range comments {
+		batch.Create(collection.Doc(comment.ID), map[string]interface{}{})
+		willCommit = true
+	}
+
 	// There are changes to write
 	if willCommit {
-		_, err = batch.Commit(ctx)
+		_, err := batch.Commit(ctx)
 		if err != nil {
-			return nil, fmt.Errorf("firestore.WriteBatch: %v", err)
+			return fmt.Errorf("firestore.WriteBatch: %v", err)
 		}
 	}
 
-	return newComments, nil
+	return nil
 }

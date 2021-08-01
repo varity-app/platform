@@ -1,44 +1,31 @@
 version: "3.9"
 services:
-  scraper:
+  reddit-scraper:
     build:
-      context: ./src
-      dockerfile: ../res/reddit-scraper/Dockerfile
+      context: .
+      dockerfile: ./res/scraping/reddit-go/Dockerfile
+      target: prod
     image: reddit-scraper
+    ports:
+      - "8000:8000"
     environment:
-      MODE: submissions
-      SLEEP: 60
-      SUBREDDITS: stocks
       REDDIT_USERNAME: ${REDDIT_USERNAME}
       REDDIT_PASSWORD: ${REDDIT_PASSWORD}
       REDDIT_CLIENT_ID: ${REDDIT_CLIENT_ID}
       REDDIT_CLIENT_SECRET: ${REDDIT_CLIENT_SECRET}
       REDDIT_USER_AGENT: ${REDDIT_USER_AGENT}
+      KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_BOOTSTRAP_SERVERS}
+      KAFKA_AUTH_KEY: ${KAFKA_AUTH_KEY}
+      KAFKA_AUTH_SECRET: ${KAFKA_AUTH_SECRET}
       GOOGLE_APPLICATION_CREDENTIALS: /google/credentials.json
     volumes:
       - ${GOOGLE_APPLICATION_CREDENTIALS}:/google/credentials.json:ro
-  historical-scraper:
+  proc:
     build:
-      context: ./src
-      dockerfile: ../res/historical-reddit-scraper/Dockerfile
-    image: historical-reddit-scraper
+      context: .
+      dockerfile: ../res/scraping/proc/Dockerfile
+    image: prod
     environment:
-      MODE: submissions
-      SUBREDDIT: stocks
-      YEAR: 2021
-      MONTH: 1
-      DAY: 1
-      GOOGLE_APPLICATION_CREDENTIALS: /google/credentials.json
-    volumes:
-      - ${GOOGLE_APPLICATION_CREDENTIALS}:/google/credentials.json:ro
-  beam-executor:
-    build:
-      context: ./src
-      dockerfile: ../res/beam-executor/Dockerfile
-    image: beam-executor
-    environment:
-      PIPELINE: submissions
-      DEBUG: --debug
       GOOGLE_APPLICATION_CREDENTIALS: /google/credentials.json
     volumes:
       - ${GOOGLE_APPLICATION_CREDENTIALS}:/google/credentials.json:ro

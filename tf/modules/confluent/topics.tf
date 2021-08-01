@@ -9,7 +9,7 @@ provider "kafka" {
 }
 
 resource "kafka_topic" "reddit_submissions" {
-  name               = "reddit_submissions"
+  name               = "reddit-submissions"
   replication_factor = 3
   partitions         = 2
   config = {
@@ -19,7 +19,7 @@ resource "kafka_topic" "reddit_submissions" {
 }
 
 resource "kafka_topic" "reddit_comments" {
-  name               = "reddit_comments"
+  name               = "reddit-comments"
   replication_factor = 3
   partitions         = 2
   config = {
@@ -29,7 +29,7 @@ resource "kafka_topic" "reddit_comments" {
 }
 
 resource "kafka_topic" "ticker_mentions" {
-  name               = "ticker_mentions"
+  name               = "ticker-mentions"
   replication_factor = 3
   partitions         = 2
   config = {

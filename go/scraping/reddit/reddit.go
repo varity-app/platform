@@ -14,13 +14,15 @@ import (
 
 	"go.opentelemetry.io/otel/trace"
 
+	"github.com/VarityPlatform/scraping/common"
+	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"github.com/google/go-querystring/query"
 	"google.golang.org/protobuf/proto"
 
-	"github.com/spf13/viper"
-
 	"github.com/vartanbeno/go-reddit/v2/reddit"
 )
+
+const PRODUCER_TIMEOUT_MS = 5 * 1000 // 5 seconds
 
 // Initialize the reddit client.  Load credentials from environment variables.
 func initReddit() (*reddit.Client, error) {
@@ -42,7 +44,7 @@ func initReddit() (*reddit.Client, error) {
 }
 
 // Scrape submissions from reddit
-func scrapeSubmissions(ctx context.Context, redditClient *reddit.Client, fsClient *firestore.Client, psClient *pubsub.Client, subreddit string, tracer *trace.Tracer) (int, error) {
+func scrapeSubmissions(ctx context.Context, redditClient *reddit.Client, fsClient *firestore.Client, psClient *pubsub.Client, producer *kafka.Producer, subreddit string, tracer *trace.Tracer) (int, error) {
 
 	// Fetch posts
 	ctx, span := (*tracer).Start(ctx, "query.Reddit")
@@ -62,45 +64,56 @@ func scrapeSubmissions(ctx context.Context, redditClient *reddit.Client, fsClien
 	}
 	span.End()
 
-	// Send submissions to pubsub
-	ctx, span = (*tracer).Start(ctx, "publish.Pubsub")
-
-	topic := psClient.Topic(REDDIT_SUBMISSIONS + "-" + viper.GetString("deploymentMode"))
+	// Send submissions to kafka
+	_, span = (*tracer).Start(ctx, "kafka.PublishSubmissions")
 	wg := new(sync.WaitGroup)
-
 	var writeErr error = nil
 
-	for _, post := range newPosts {
+	// Delivery report handler for produced messages
+	deliveryChan := make(chan kafka.Event)
+	go func() {
+		for e := range deliveryChan {
+			switch ev := e.(type) {
+			case *kafka.Message:
+				if ev.TopicPartition.Error != nil {
+					writeErr = fmt.Errorf("kafka.ProduceMessage: %v", ev.TopicPartition)
+				}
+				wg.Done()
+			}
+		}
+	}()
+
+	for _, submission := range newPosts {
 		// Convert to proto
-		postProto := submissionToProto(post)
+		submissionProto := submissionToProto(submission)
 
 		// Serialize
-		serializedPost, err := proto.Marshal(postProto)
+		serializedSubmission, err := proto.Marshal(submissionProto)
 		if err != nil {
-			return 0, fmt.Errorf("serialize.Post: %v", err)
+			return 0, fmt.Errorf("serialize.Submission: %v", err)
 		}
 
-		// Asynchronously publish to pubsub
-		result := topic.Publish(ctx, &pubsub.Message{
-			Data: serializedPost,
-		})
-
 		wg.Add(1) // Add wait counter
-		go func(res *pubsub.PublishResult) {
-			defer wg.Done()
-			_, err := result.Get(ctx)
-			if err != nil {
-				writeErr = fmt.Errorf("publish.RedditSubmission: %v", err)
-				ctx.Err()
-			}
-		}(result)
-
+		producer.Produce(&kafka.Message{
+			TopicPartition: kafka.TopicPartition{Topic: stringToPtr(common.REDDIT_SUBMISSIONS), Partition: kafka.PartitionAny},
+			Value:          serializedSubmission,
+		}, deliveryChan)
 	}
 
-	// Wait for all messages to publish
+	// Flush queue
+	producer.Flush(PRODUCER_TIMEOUT_MS)
+
+	// Wait for all messages to process in the delivery report handler
 	wg.Wait()
 	if writeErr != nil {
 		return 0, writeErr
+	}
+	span.End()
+
+	// Save newly processed submissions to datastore
+	ctx, span = (*tracer).Start(ctx, "datastore.WriteSubmissions")
+	if err = saveNewDSSubmissions(ctx, fsClient, newPosts); err != nil {
+		return 0, fmt.Errorf("datastore.SaveSubmissions: %v", err)
 	}
 	span.End()
 
@@ -108,7 +121,7 @@ func scrapeSubmissions(ctx context.Context, redditClient *reddit.Client, fsClien
 }
 
 // Scrape comments from reddit
-func scrapeComments(ctx context.Context, redditClient *reddit.Client, fsClient *firestore.Client, psClient *pubsub.Client, subreddit string, tracer *trace.Tracer) (int, error) {
+func scrapeComments(ctx context.Context, redditClient *reddit.Client, fsClient *firestore.Client, psClient *pubsub.Client, producer *kafka.Producer, subreddit string, tracer *trace.Tracer) (int, error) {
 
 	// Fetch comments
 	ctx, span := (*tracer).Start(ctx, "query.Reddit")
@@ -128,13 +141,24 @@ func scrapeComments(ctx context.Context, redditClient *reddit.Client, fsClient *
 	}
 	span.End()
 
-	// Send submissions to pubsub
-	ctx, span = (*tracer).Start(ctx, "publish.Pubsub")
-
-	topic := psClient.Topic(REDDIT_COMMENTS + "-" + viper.GetString("deploymentMode"))
+	// Send comments to kafka
+	_, span = (*tracer).Start(ctx, "kafka.PublishComments")
 	wg := new(sync.WaitGroup)
-
 	var writeErr error = nil
+
+	// Delivery report handler for produced messages
+	deliveryChan := make(chan kafka.Event)
+	go func() {
+		for e := range deliveryChan {
+			switch ev := e.(type) {
+			case *kafka.Message:
+				if ev.TopicPartition.Error != nil {
+					writeErr = fmt.Errorf("kafka.ProduceMessage: %v", ev.TopicPartition)
+				}
+				wg.Done()
+			}
+		}
+	}()
 
 	for _, comment := range newComments {
 		// Convert to proto
@@ -146,27 +170,27 @@ func scrapeComments(ctx context.Context, redditClient *reddit.Client, fsClient *
 			return 0, fmt.Errorf("serialize.Comment: %v", err)
 		}
 
-		// Asynchronously publish to pubsub
-		result := topic.Publish(ctx, &pubsub.Message{
-			Data: serializedComment,
-		})
-
 		wg.Add(1) // Add wait counter
-		go func(res *pubsub.PublishResult) {
-			defer wg.Done()
-			_, err := result.Get(ctx)
-			if err != nil {
-				writeErr = fmt.Errorf("publish.RedditComment: %v", err)
-				ctx.Err()
-			}
-		}(result)
-
+		producer.Produce(&kafka.Message{
+			TopicPartition: kafka.TopicPartition{Topic: stringToPtr(common.REDDIT_COMMENTS), Partition: kafka.PartitionAny},
+			Value:          serializedComment,
+		}, deliveryChan)
 	}
 
-	// Wait for all messages to publish
+	// Flush queue
+	producer.Flush(PRODUCER_TIMEOUT_MS)
+
+	// Wait for all messages to process in the delivery report handler
 	wg.Wait()
 	if writeErr != nil {
 		return 0, writeErr
+	}
+	span.End()
+
+	ctx, span = (*tracer).Start(ctx, "datastore.WriteComments")
+	// Save newly processed comments to datastore
+	if err = saveNewDSComments(ctx, fsClient, newComments); err != nil {
+		return 0, fmt.Errorf("datastore.SaveComments: %v", err)
 	}
 	span.End()
 
@@ -227,4 +251,9 @@ func addOptions(s string, opt interface{}) (string, error) {
 
 	origURL.RawQuery = origValues.Encode()
 	return origURL.String(), nil
+}
+
+// Utility function
+func stringToPtr(s string) *string {
+	return &s
 }

@@ -12,6 +12,7 @@ require (
 	github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/trace v0.21.0
 	github.com/VarityPlatform/scraping/common v0.0.0-00010101000000-000000000000
 	github.com/VarityPlatform/scraping/protobuf/reddit v0.0.0-00010101000000-000000000000
+	github.com/confluentinc/confluent-kafka-go v1.7.0
 	github.com/google/go-querystring v1.0.0
 	github.com/labstack/echo/v4 v4.4.0
 	github.com/spf13/viper v1.8.1

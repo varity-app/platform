@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"github.com/vartanbeno/go-reddit/v2/reddit"
 
 	"cloud.google.com/go/firestore"
@@ -21,7 +22,7 @@ type Response struct {
 }
 
 // Set up echo routes
-func setupRoutes(web *echo.Echo, redditClient *reddit.Client, fsClient *firestore.Client, psClient *pubsub.Client, tracer *trace.Tracer) error {
+func setupRoutes(web *echo.Echo, redditClient *reddit.Client, fsClient *firestore.Client, psClient *pubsub.Client, producer *kafka.Producer, tracer *trace.Tracer) error {
 
 	web.GET("/scraping/reddit/submissions/:subreddit", func(ctx echo.Context) error {
 
@@ -35,7 +36,7 @@ func setupRoutes(web *echo.Echo, redditClient *reddit.Client, fsClient *firestor
 		defer span.End()
 
 		// Process reddit submissions
-		count, err := scrapeSubmissions(readCtx, redditClient, fsClient, psClient, subreddit, tracer)
+		count, err := scrapeSubmissions(readCtx, redditClient, fsClient, psClient, producer, subreddit, tracer)
 		if err != nil {
 			log.Println(err)
 			span.RecordError(err)
@@ -59,7 +60,7 @@ func setupRoutes(web *echo.Echo, redditClient *reddit.Client, fsClient *firestor
 		defer span.End()
 
 		// Process reddit comments
-		count, err := scrapeComments(readCtx, redditClient, fsClient, psClient, subreddit, tracer)
+		count, err := scrapeComments(readCtx, redditClient, fsClient, psClient, producer, subreddit, tracer)
 		if err != nil {
 			log.Println(err)
 			span.RecordError(err)

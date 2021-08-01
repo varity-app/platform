@@ -1,5 +1,15 @@
+# Install kafka
+FROM golang:1.16.6-buster AS base
+
+WORKDIR /root
+RUN git clone https://github.com/edenhill/librdkafka.git
+WORKDIR /root/librdkafka
+RUN ./configure --prefix=/opt/librdkafka
+RUN make -j4
+RUN make install
+
 # Build module
-from golang:1.16.6-buster as builder
+FROM base AS builder
 
 # Copy source
 WORKDIR /opt
@@ -12,7 +22,7 @@ RUN go mod download
 RUN go build .
 
 # Prod module
-from debian:stable-slim as prod
+FROM base AS prod
 
 # Copy binary
 WORKDIR /app
