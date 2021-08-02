@@ -4,15 +4,17 @@ import (
 	"context"
 	"fmt"
 	"regexp"
+	"strconv"
 	"sync"
 
-	"cloud.google.com/go/pubsub"
-
-	"github.com/VarityPlatform/scraping/common"
-	"github.com/spf13/viper"
+	"cloud.google.com/go/firestore"
+	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"github.com/confluentinc/confluent-kafka-go/kafka"
+
+	"github.com/VarityPlatform/scraping/common"
 	commonPB "github.com/VarityPlatform/scraping/protobuf/common"
 	redditPB "github.com/VarityPlatform/scraping/protobuf/reddit"
 )
@@ -20,227 +22,292 @@ import (
 var questionRegex *regexp.Regexp = regexp.MustCompile(`\?`)
 
 // Read reddit submissions from Pub/Sub and process them
-func readRedditSubmission(ctx context.Context, psClient *pubsub.Client, allTickers []common.IEXTicker) (int, error) {
+func extractRedditSubmissionsTickers(ctx context.Context, fsClient *firestore.Client, producer *kafka.Producer, consumer *kafka.Consumer, allTickers []common.IEXTicker, tracer *trace.Tracer) (int, error) {
 
-	sub := psClient.Subscription(common.SUBSCRIPTION_REDDIT_SUBSCRIPTIONS + "-" + viper.GetString("deploymentMode"))
-	topic := psClient.Topic(common.TOPIC_TICKER_MENTIONS + "-" + viper.GetString("deploymentMode"))
-
-	cm := make(chan *pubsub.Message)
-	defer close(cm)
-
-	readWG := new(sync.WaitGroup)
-	writeWG := new(sync.WaitGroup)
 	var mu sync.Mutex
-
 	count := 0
-	totalCount := 0
 
-	var readErr error = nil
+	// Subscribe to topic
+	err := consumer.Unassign()
+	if err != nil {
+		return count, fmt.Errorf("kafka.Unassign: %v", err)
+	}
+	_, span := (*tracer).Start(ctx, "firestore.GetOffsets")
+	checkpointKey := common.REDDIT_SUBMISSIONS + "-proc"
+	offsets, err := getOffsetsFromFS(ctx, fsClient, checkpointKey)
+	if err != nil {
+		return count, err
+	}
+	partitions := offsetMapToPartitions(common.REDDIT_SUBMISSIONS, offsets)
+	err = consumer.Assign(partitions)
+	if err != nil {
+		return count, fmt.Errorf("kafka.SubscribeTopic: %v", err)
+	}
+	span.End()
 
-	// Handle individual messages in a goroutine.
+	// Delivery report handler for produced messages
+	deliveryChan := make(chan kafka.Event)
+	deliveryWG := new(sync.WaitGroup)
+	var writeErr error
 	go func() {
-		for msg := range cm {
+		for e := range deliveryChan {
+			switch ev := e.(type) {
+			case *kafka.Message:
+				if ev.TopicPartition.Error != nil {
+					mu.Lock()
+					writeErr = fmt.Errorf("kafka.ProduceMessage: %v", ev.TopicPartition)
+					mu.Unlock()
+				}
+				deliveryWG.Done()
+			}
+		}
+	}()
+
+	// Handle read messages from kafka
+	readChan := make(chan *kafka.Message)
+	readWG := new(sync.WaitGroup)
+	var readErr error
+	go func() {
+		for msg := range readChan {
 			submission := &redditPB.RedditSubmission{}
-			if err := proto.Unmarshal(msg.Data, submission); err != nil {
+			if err := proto.Unmarshal(msg.Value, submission); err != nil {
 				mu.Lock()
-				readErr = fmt.Errorf("error unmarshalling protobuf message: %v", err)
+				readErr = fmt.Errorf("protobuf.Unmarshal: %v", err)
+				readWG.Done()
 				mu.Unlock()
-				return
+				continue
 			}
 
-			// Publish each mention to Pub/Sub
+			mu.Lock()
+			count++
+			mu.Unlock()
+			readWG.Done()
+
+			// Handle each mention
 			mentions := procRedditSubmission(submission, allTickers)
 			for _, mention := range mentions {
-				mu.Lock()
-				writeWG.Add(1)
-				mu.Unlock()
 
 				// Serialize
 				serializedMention, err := proto.Marshal(&mention)
 				if err != nil {
 					mu.Lock()
-					readErr = fmt.Errorf("error serializing mention protobuf message: %v", err)
+					readErr = fmt.Errorf("protobuf.Marshal: %v", err)
 					mu.Unlock()
-					return
+					continue
 				}
 
-				// Asynchronously publish to pubsub
-				result := topic.Publish(ctx, &pubsub.Message{
-					Data: serializedMention,
-				})
-
-				go func(res *pubsub.PublishResult) {
-					defer writeWG.Done()
-					_, err := result.Get(ctx)
-					if err != nil {
-						mu.Lock()
-						readErr = fmt.Errorf("error publishing mention message: %v", err)
-						mu.Unlock()
-						return
-					}
-				}(result)
+				// Write to ticker mentions topic
+				deliveryWG.Add(1)
+				err = producer.Produce(&kafka.Message{
+					TopicPartition: kafka.TopicPartition{Topic: common.StringToPtr(common.TICKER_MENTIONS), Partition: kafka.PartitionAny},
+					Value:          serializedMention,
+				}, deliveryChan)
+				if err != nil {
+					readErr = fmt.Errorf("kafka.Produce: %v", err)
+				}
 
 			}
-
-			// Update counter
-			mu.Lock()
-			count++
-			readWG.Done()
-			mu.Unlock()
-
-			msg.Ack()
 		}
 	}()
+	span.End()
 
-	// Receive messages for N sec
+	// Consume messages from Kafka
+	_, span = (*tracer).Start(ctx, "kafka.ReadMessage")
 	for {
-		ctx, cancel := context.WithTimeout(ctx, WAIT_INTERVAL)
-		defer cancel()
-
-		// Reset count
-		count = 0
-
-		// Receive blocks until the context is cancelled or an error occurs.
-		err := sub.Receive(ctx, func(ctx context.Context, msg *pubsub.Message) {
-			if readErr != nil {
-				cancel()
-			}
-			readWG.Add(1)
-			cm <- msg
-		})
-		if err != nil {
-			return totalCount, err
-		}
-
-		readWG.Wait()
-		if readErr != nil {
-			return totalCount, readErr
-		}
-
-		totalCount += count
-
-		// If no messages were received in this window, break
-		if count == 0 {
+		msg, err := consumer.ReadMessage(CONSUMER_TIMEOUT)
+		if err != nil && err.(kafka.Error).Code() == kafka.ErrTimedOut {
 			break
+		} else if err != nil {
+			return count, fmt.Errorf("kafka.ReadMessage: %v", err)
 		}
+
+		offset, err := strconv.Atoi(msg.TopicPartition.Offset.String())
+		if err != nil {
+			return count, fmt.Errorf("strconv.Atoi: %v", err)
+		}
+		offsets[fmt.Sprint(msg.TopicPartition.Partition)] = offset + 1
+
+		// Check for errors occurring in goroutines
+		if readErr != nil {
+			return count, readErr
+		} else if writeErr != nil {
+			return count, writeErr
+		}
+
+		readWG.Add(1)
+		readChan <- msg
+
 	}
 
-	writeWG.Wait()
+	span.End()
+	_, span = (*tracer).Start(ctx, "kafka.Produce")
 
-	return totalCount, nil
+	producer.Flush(PRODUCER_TIMEOUT_MS)
+	readWG.Wait()
+	deliveryWG.Wait()
+	span.End()
+
+	// Check for errors occurring in goroutines
+	if readErr != nil {
+		return count, readErr
+	} else if writeErr != nil {
+		return count, writeErr
+	}
+
+	// Save offsets to firestore
+	_, span = (*tracer).Start(ctx, "firestore.SaveOffsets")
+	if err := saveOffsetsToFS(ctx, fsClient, checkpointKey, offsets); err != nil {
+		return count, err
+	}
+	span.End()
+
+	return count, nil
+
+	return count, nil
 
 }
 
-// Read reddit comment from Pub/Sub and process them
-func readRedditComment(ctx context.Context, psClient *pubsub.Client, allTickers []common.IEXTicker) (int, error) {
+// Read reddit comments from kafka, parse ticker mentions, and publish to kafka
+func extractRedditCommentsTickers(ctx context.Context, fsClient *firestore.Client, producer *kafka.Producer, consumer *kafka.Consumer, allTickers []common.IEXTicker, tracer *trace.Tracer) (int, error) {
 
-	sub := psClient.Subscription(common.SUBSCRIPTION_REDDIT_COMMENTS + "-" + viper.GetString("deploymentMode"))
-	topic := psClient.Topic(common.TOPIC_TICKER_MENTIONS + "-" + viper.GetString("deploymentMode"))
-
-	cm := make(chan *pubsub.Message)
-	defer close(cm)
-
-	readWG := new(sync.WaitGroup)
-	writeWG := new(sync.WaitGroup)
 	var mu sync.Mutex
-
-	// Message counts
 	count := 0
-	totalCount := 0
 
-	var readErr error = nil
+	// Subscribe to topic
+	err := consumer.Unassign()
+	if err != nil {
+		return count, fmt.Errorf("kafka.Unassign: %v", err)
+	}
+	_, span := (*tracer).Start(ctx, "firestore.GetOffsets")
+	checkpointKey := common.REDDIT_COMMENTS + "-proc"
+	offsets, err := getOffsetsFromFS(ctx, fsClient, checkpointKey)
+	if err != nil {
+		return count, err
+	}
+	partitions := offsetMapToPartitions(common.REDDIT_COMMENTS, offsets)
+	err = consumer.Assign(partitions)
+	if err != nil {
+		return count, fmt.Errorf("kafka.SubscribeTopic: %v", err)
+	}
+	span.End()
 
-	// Handle individual messages in a goroutine.
+	// Delivery report handler for produced messages
+	deliveryChan := make(chan kafka.Event)
+	deliveryWG := new(sync.WaitGroup)
+	var writeErr error
 	go func() {
-		for msg := range cm {
+		for e := range deliveryChan {
+			switch ev := e.(type) {
+			case *kafka.Message:
+				if ev.TopicPartition.Error != nil {
+					mu.Lock()
+					writeErr = fmt.Errorf("kafka.ProduceMessage: %v", ev.TopicPartition)
+					mu.Unlock()
+				}
+				deliveryWG.Done()
+			}
+		}
+	}()
+
+	// Handle read messages from kafka
+	readChan := make(chan *kafka.Message)
+	readWG := new(sync.WaitGroup)
+	var readErr error
+	go func() {
+		for msg := range readChan {
 			comment := &redditPB.RedditComment{}
-			if err := proto.Unmarshal(msg.Data, comment); err != nil {
+			if err := proto.Unmarshal(msg.Value, comment); err != nil {
 				mu.Lock()
-				readErr = fmt.Errorf("error unmarshalling protobuf message: %v", err)
+				readErr = fmt.Errorf("protobuf.Unmarshal: %v", err)
+				readWG.Done()
 				mu.Unlock()
-				return
+				continue
 			}
 
-			// Publish each mention to Pub/Sub
+			mu.Lock()
+			count++
+			mu.Unlock()
+			readWG.Done()
+
+			// Handle each mention
 			mentions := procRedditComment(comment, allTickers)
 			for _, mention := range mentions {
-				mu.Lock()
-				writeWG.Add(1)
-				mu.Unlock()
 
 				// Serialize
 				serializedMention, err := proto.Marshal(&mention)
 				if err != nil {
 					mu.Lock()
-					readErr = fmt.Errorf("error serializing mention protobuf message: %v", err)
+					readErr = fmt.Errorf("protobuf.Marshal: %v", err)
 					mu.Unlock()
-					return
+					continue
 				}
 
-				// Asynchronously publish to pubsub
-				result := topic.Publish(ctx, &pubsub.Message{
-					Data: serializedMention,
-				})
-
-				go func(res *pubsub.PublishResult) {
-					defer writeWG.Done()
-					_, err := result.Get(ctx)
-					if err != nil {
-						mu.Lock()
-						readErr = fmt.Errorf("error publishing mention message: %v", err)
-						mu.Unlock()
-						return
-					}
-				}(result)
+				// Write to ticker mentions topic
+				deliveryWG.Add(1)
+				err = producer.Produce(&kafka.Message{
+					TopicPartition: kafka.TopicPartition{Topic: common.StringToPtr(common.TICKER_MENTIONS), Partition: kafka.PartitionAny},
+					Value:          serializedMention,
+				}, deliveryChan)
+				if err != nil {
+					readErr = fmt.Errorf("kafka.Produce: %v", err)
+				}
 
 			}
-
-			// Update counter
-			mu.Lock()
-			count++
-			readWG.Done()
-			mu.Unlock()
-
-			msg.Ack()
 		}
 	}()
+	span.End()
 
-	// Receive messages for N sec
+	// Consume messages from Kafka
+	_, span = (*tracer).Start(ctx, "kafka.ReadMessage")
 	for {
-		ctx, cancel := context.WithTimeout(ctx, WAIT_INTERVAL)
-		defer cancel()
-
-		// Reset count
-		count = 0
-
-		// Receive blocks until the context is cancelled or an error occurs.
-		err := sub.Receive(ctx, func(ctx context.Context, msg *pubsub.Message) {
-			if readErr != nil {
-				cancel()
-			}
-			readWG.Add(1)
-			cm <- msg
-		})
-		if err != nil {
-			return totalCount, err
-		}
-
-		readWG.Wait()
-		if readErr != nil {
-			return totalCount, readErr
-		}
-
-		totalCount += count
-
-		// If no messages were received in this window, break
-		if count == 0 {
+		msg, err := consumer.ReadMessage(CONSUMER_TIMEOUT)
+		if err != nil && err.(kafka.Error).Code() == kafka.ErrTimedOut {
 			break
+		} else if err != nil {
+			return count, fmt.Errorf("kafka.ReadMessage: %v", err)
 		}
+
+		offset, err := strconv.Atoi(msg.TopicPartition.Offset.String())
+		if err != nil {
+			return count, fmt.Errorf("strconv.Atoi: %v", err)
+		}
+		offsets[fmt.Sprint(msg.TopicPartition.Partition)] = offset + 1
+
+		// Check for errors occurring in goroutines
+		if readErr != nil {
+			return count, readErr
+		} else if writeErr != nil {
+			return count, writeErr
+		}
+
+		readWG.Add(1)
+		readChan <- msg
+
 	}
 
-	writeWG.Wait()
+	span.End()
+	_, span = (*tracer).Start(ctx, "kafka.Produce")
 
-	return totalCount, nil
+	producer.Flush(PRODUCER_TIMEOUT_MS)
+	readWG.Wait()
+	deliveryWG.Wait()
+	span.End()
+
+	// Check for errors occurring in goroutines
+	if readErr != nil {
+		return count, readErr
+	} else if writeErr != nil {
+		return count, writeErr
+	}
+
+	// Save offsets to firestore
+	_, span = (*tracer).Start(ctx, "firestore.SaveOffsets")
+	if err := saveOffsetsToFS(ctx, fsClient, checkpointKey, offsets); err != nil {
+		return count, err
+	}
+	span.End()
+
+	return count, nil
 
 }
 

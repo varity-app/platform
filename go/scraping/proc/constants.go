@@ -4,6 +4,13 @@ import "time"
 
 const WAIT_INTERVAL time.Duration = 2 * time.Second
 
+// Firestore collection for checkpointing kafka offsets
+const FIRESTORE_KAFKA_OFFSETS = "kafka-offsets"
+
+// Kafka timeouts
+const CONSUMER_TIMEOUT time.Duration = 3 * time.Second / 2
+const PRODUCER_TIMEOUT_MS int = 1000 // 1 second
+
 var TICKER_BLACKLIST []string = []string{
 	"WSB",
 	"USA",

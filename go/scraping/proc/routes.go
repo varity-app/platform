@@ -7,8 +7,10 @@ import (
 
 	"github.com/VarityPlatform/scraping/common"
 
+	"github.com/confluentinc/confluent-kafka-go/kafka"
+
 	"cloud.google.com/go/bigquery"
-	"cloud.google.com/go/pubsub"
+	"cloud.google.com/go/firestore"
 	"github.com/labstack/echo/v4"
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
@@ -19,19 +21,19 @@ type Response struct {
 }
 
 // Set up echo routes
-func setupRoutes(web *echo.Echo, psClient *pubsub.Client, bqClient *bigquery.Client, tracer *trace.Tracer, allTickers []common.IEXTicker) error {
+func setupRoutes(web *echo.Echo, fsClient *firestore.Client, producer *kafka.Producer, consumer *kafka.Consumer, bqClient *bigquery.Client, tracer *trace.Tracer, allTickers []common.IEXTicker) error {
 
-	web.GET("/proc/reddit/submissions", func(ctx echo.Context) error {
+	web.GET("/proc/reddit/submissions/extract", func(ctx echo.Context) error {
 
 		// Create context for new process
 		readCtx := ctx.Request().Context()
 
 		// Create tracer span
-		readCtx, span := (*tracer).Start(readCtx, "proc.reddit.submissions")
+		readCtx, span := (*tracer).Start(readCtx, "proc.reddit.submissions.extract")
 		defer span.End()
 
 		// Process reddit submissions
-		count, err := readRedditSubmission(readCtx, psClient, allTickers)
+		count, err := extractRedditSubmissionsTickers(readCtx, fsClient, producer, consumer, allTickers, tracer)
 		if err != nil {
 			log.Println(err)
 			span.RecordError(err)
@@ -43,17 +45,17 @@ func setupRoutes(web *echo.Echo, psClient *pubsub.Client, bqClient *bigquery.Cli
 		return ctx.JSON(http.StatusOK, response)
 	})
 
-	web.GET("/proc/reddit/comments", func(ctx echo.Context) error {
+	web.GET("/proc/reddit/comments/extract", func(ctx echo.Context) error {
 
 		// Create context for new process
 		readCtx := ctx.Request().Context()
 
 		// Create tracer span
-		readCtx, span := (*tracer).Start(readCtx, "proc.reddit.comments")
+		readCtx, span := (*tracer).Start(readCtx, "proc.reddit.comments.extract")
 		defer span.End()
 
 		// Process reddit comment
-		count, err := readRedditComment(readCtx, psClient, allTickers)
+		count, err := extractRedditCommentsTickers(readCtx, fsClient, producer, consumer, allTickers, tracer)
 		if err != nil {
 			log.Println(err)
 			span.RecordError(err)
@@ -65,27 +67,27 @@ func setupRoutes(web *echo.Echo, psClient *pubsub.Client, bqClient *bigquery.Cli
 		return ctx.JSON(http.StatusOK, response)
 	})
 
-	web.GET("/proc/ticker_mentions", func(ctx echo.Context) error {
+	// web.GET("/proc/ticker_mentions", func(ctx echo.Context) error {
 
-		// Create context for new process
-		readCtx := ctx.Request().Context()
+	// 	// Create context for new process
+	// 	readCtx := ctx.Request().Context()
 
-		// Create tracer span
-		readCtx, span := (*tracer).Start(readCtx, "proc.ticker_mentions")
-		defer span.End()
+	// 	// Create tracer span
+	// 	readCtx, span := (*tracer).Start(readCtx, "proc.ticker_mentions")
+	// 	defer span.End()
 
-		// Process ticker mentions
-		count, err := readTickerMentions(readCtx, psClient, bqClient, tracer)
-		if err != nil {
-			log.Println(err)
-			span.RecordError(err)
-			span.SetStatus(codes.Error, "critical error")
-			return echo.NewHTTPError(http.StatusInternalServerError)
-		}
+	// 	// Process ticker mentions
+	// 	count, err := readTickerMentions(readCtx, psClient, bqClient, tracer)
+	// 	if err != nil {
+	// 		log.Println(err)
+	// 		span.RecordError(err)
+	// 		span.SetStatus(codes.Error, "critical error")
+	// 		return echo.NewHTTPError(http.StatusInternalServerError)
+	// 	}
 
-		response := Response{Message: fmt.Sprintf("Processed %d ticker mentions.", count)}
-		return ctx.JSON(http.StatusOK, response)
-	})
+	// 	response := Response{Message: fmt.Sprintf("Processed %d ticker mentions.", count)}
+	// 	return ctx.JSON(http.StatusOK, response)
+	// })
 
 	return nil
 }

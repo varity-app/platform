@@ -3,13 +3,16 @@ package main
 import (
 	"context"
 	"log"
+	"os"
 
 	"github.com/VarityPlatform/scraping/common"
+
+	"github.com/confluentinc/confluent-kafka-go/kafka"
 
 	"github.com/spf13/viper"
 
 	"cloud.google.com/go/bigquery"
-	"cloud.google.com/go/pubsub"
+	"cloud.google.com/go/firestore"
 	"github.com/labstack/echo/v4"
 
 	texporter "github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/trace"
@@ -51,12 +54,39 @@ func main() {
 	log.Println(len(allTickers))
 	span.End()
 
-	// Initialize pubsub client
-	psClient, err := pubsub.NewClient(ctx, common.GCP_PROJECT_ID)
+	// Init firestore client
+	fsClient, err := firestore.NewClient(ctx, common.GCP_PROJECT_ID)
 	if err != nil {
-		log.Fatalln(err)
+		log.Fatalf("firestore.GetClient: %v", err)
 	}
-	defer psClient.Close()
+	defer fsClient.Close()
+
+	// Initialize kafka producer
+	producer, err := kafka.NewProducer(&kafka.ConfigMap{
+		"bootstrap.servers": os.Getenv("KAFKA_BOOTSTRAP_SERVERS"),
+		"security.protocol": "SASL_SSL",
+		"sasl.mechanisms":   "PLAIN",
+		"sasl.username":     os.Getenv("KAFKA_AUTH_KEY"),
+		"sasl.password":     os.Getenv("KAFKA_AUTH_SECRET"),
+	})
+	if err != nil {
+		log.Fatalf("kafka.GetProducer: %v", err)
+	}
+
+	// Initialize kafka consumer
+	consumer, err := kafka.NewConsumer(&kafka.ConfigMap{
+		"bootstrap.servers":        os.Getenv("KAFKA_BOOTSTRAP_SERVERS"),
+		"security.protocol":        "SASL_SSL",
+		"sasl.mechanisms":          "PLAIN",
+		"sasl.username":            os.Getenv("KAFKA_AUTH_KEY"),
+		"sasl.password":            os.Getenv("KAFKA_AUTH_SECRET"),
+		"group.id":                 "consumers",
+		"enable.auto.offset.store": "false",
+	})
+	if err != nil {
+		log.Fatalf("kafka.NewConsumer: %v", err)
+	}
+	defer consumer.Close()
 
 	// Initialize bigquery client
 	bqClient, err := bigquery.NewClient(ctx, common.GCP_PROJECT_ID)
@@ -66,7 +96,7 @@ func main() {
 
 	// Initialize webserver
 	web := echo.New()
-	err = setupRoutes(web, psClient, bqClient, &tracer, allTickers)
+	err = setupRoutes(web, fsClient, producer, consumer, bqClient, &tracer, allTickers)
 	if err != nil {
 		log.Fatalln(err)
 	}

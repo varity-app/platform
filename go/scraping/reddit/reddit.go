@@ -94,10 +94,13 @@ func scrapeSubmissions(ctx context.Context, redditClient *reddit.Client, fsClien
 		}
 
 		wg.Add(1) // Add wait counter
-		producer.Produce(&kafka.Message{
-			TopicPartition: kafka.TopicPartition{Topic: stringToPtr(common.REDDIT_SUBMISSIONS), Partition: kafka.PartitionAny},
+		err = producer.Produce(&kafka.Message{
+			TopicPartition: kafka.TopicPartition{Topic: common.StringToPtr(common.REDDIT_SUBMISSIONS), Partition: kafka.PartitionAny},
 			Value:          serializedSubmission,
 		}, deliveryChan)
+		if err != nil {
+			return 0, fmt.Errorf("kafka.Produce: %v", err)
+		}
 	}
 
 	// Flush queue
@@ -172,7 +175,7 @@ func scrapeComments(ctx context.Context, redditClient *reddit.Client, fsClient *
 
 		wg.Add(1) // Add wait counter
 		producer.Produce(&kafka.Message{
-			TopicPartition: kafka.TopicPartition{Topic: stringToPtr(common.REDDIT_COMMENTS), Partition: kafka.PartitionAny},
+			TopicPartition: kafka.TopicPartition{Topic: common.StringToPtr(common.REDDIT_COMMENTS), Partition: kafka.PartitionAny},
 			Value:          serializedComment,
 		}, deliveryChan)
 	}
@@ -251,9 +254,4 @@ func addOptions(s string, opt interface{}) (string, error) {
 
 	origURL.RawQuery = origValues.Encode()
 	return origURL.String(), nil
-}
-
-// Utility function
-func stringToPtr(s string) *string {
-	return &s
 }

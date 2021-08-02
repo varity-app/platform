@@ -27,6 +27,9 @@ const REDDIT_COMMENTS string = "reddit-comments"
 // General
 const TICKER_MENTIONS string = "ticker-mentions"
 
+// Kafka
+const KAFKA_PARTITION_COUNT int = 2
+
 // Data parent sources
 const PARENT_SOURCE_REDDIT_COMMENT string = "reddit-comment"
 const PARENT_SOURCE_REDDIT_SUBMISSION_TITLE string = "reddit-submission-title"

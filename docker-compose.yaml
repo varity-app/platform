@@ -6,8 +6,7 @@ services:
       dockerfile: ./res/scraping/reddit-go/Dockerfile
       target: prod
     image: reddit-scraper
-    ports:
-      - "8000:8000"
+    network_mode: host
     environment:
       REDDIT_USERNAME: ${REDDIT_USERNAME}
       REDDIT_PASSWORD: ${REDDIT_PASSWORD}
@@ -23,9 +22,19 @@ services:
   proc:
     build:
       context: .
-      dockerfile: ../res/scraping/proc/Dockerfile
-    image: prod
+      dockerfile: ./res/scraping/proc/Dockerfile
+      target: prod
+    image: proc
+    network_mode: host
     environment:
+      KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_BOOTSTRAP_SERVERS}
+      KAFKA_AUTH_KEY: ${KAFKA_AUTH_KEY}
+      KAFKA_AUTH_SECRET: ${KAFKA_AUTH_SECRET}
+      POSTGRES_HOST: ${POSTGRES_HOST}
+      POSTGRES_PORT: ${POSTGRES_PORT}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USERNAME: ${POSTGRES_USERNAME}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       GOOGLE_APPLICATION_CREDENTIALS: /google/credentials.json
     volumes:
       - ${GOOGLE_APPLICATION_CREDENTIALS}:/google/credentials.json:ro

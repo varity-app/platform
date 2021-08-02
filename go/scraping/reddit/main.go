@@ -73,7 +73,7 @@ func main() {
 		"sasl.password":     os.Getenv("KAFKA_AUTH_SECRET"),
 	})
 	if err != nil {
-		log.Fatalf("kafka.GetProducer: %v", err)
+		log.Fatalf("kafka.NewProducer: %v", err)
 	}
 
 	defer producer.Close()
