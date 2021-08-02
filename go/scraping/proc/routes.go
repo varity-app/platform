@@ -33,7 +33,7 @@ func setupRoutes(web *echo.Echo, fsClient *firestore.Client, producer *kafka.Pro
 		defer span.End()
 
 		// Process reddit submissions
-		count, err := extractRedditSubmissionsTickers(readCtx, fsClient, producer, consumer, allTickers, tracer)
+		count, err := extractTickersKafka(readCtx, fsClient, producer, consumer, allTickers, tracer, common.REDDIT_SUBMISSIONS, handleKafkaSubmissions)
 		if err != nil {
 			log.Println(err)
 			span.RecordError(err)
@@ -55,7 +55,7 @@ func setupRoutes(web *echo.Echo, fsClient *firestore.Client, producer *kafka.Pro
 		defer span.End()
 
 		// Process reddit comment
-		count, err := extractRedditCommentsTickers(readCtx, fsClient, producer, consumer, allTickers, tracer)
+		count, err := extractTickersKafka(readCtx, fsClient, producer, consumer, allTickers, tracer, common.REDDIT_COMMENTS, handleKafkaComments)
 		if err != nil {
 			log.Println(err)
 			span.RecordError(err)
