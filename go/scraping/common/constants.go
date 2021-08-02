@@ -18,6 +18,8 @@ const TOPIC_TICKER_MENTIONS string = "ticker-mentions"
 // Bigquery
 const BIGQUERY_DATASET_SCRAPING string = "scraping"
 
+const BIGQUERY_TABLE_REDDIT_SUBMISSIONS string = "reddit_submissions_v2"
+const BIGQUERY_TABLE_REDDIT_COMMENTS string = "reddit_comments_v2"
 const BIGQUERY_TABLE_TICKER_MENTIONS string = "ticker_mentions_v2"
 
 // General reddit

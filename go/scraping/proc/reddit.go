@@ -17,6 +17,26 @@ import (
 
 var questionRegex *regexp.Regexp = regexp.MustCompile(`\?`)
 
+// Convert a kafka message into a reddit submission proto
+func kafkaToRedditSubmission(msg *kafka.Message) (interface{}, error) {
+	submission := &redditPB.RedditSubmission{}
+	if err := proto.Unmarshal(msg.Value, submission); err != nil {
+		return nil, fmt.Errorf("protobuf.Unmarshal: %v", err)
+	}
+
+	return submission, nil
+}
+
+// Convert a kafka message into a reddit submission proto
+func kafkaToRedditComment(msg *kafka.Message) (interface{}, error) {
+	comment := &redditPB.RedditComment{}
+	if err := proto.Unmarshal(msg.Value, comment); err != nil {
+		return nil, fmt.Errorf("protobuf.Unmarshal: %v", err)
+	}
+
+	return comment, nil
+}
+
 // Handler for processing kafka messages containing reddit submissions
 func handleKafkaSubmissions(producer *kafka.Producer, readChan chan *kafka.Message, deliveryChan chan kafka.Event, mu *sync.Mutex, readErr *error, readWG *sync.WaitGroup, deliveryWG *sync.WaitGroup, count *int, allTickers []common.IEXTicker) {
 	for msg := range readChan {

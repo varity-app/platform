@@ -23,6 +23,7 @@ type Response struct {
 // Set up echo routes
 func setupRoutes(web *echo.Echo, fsClient *firestore.Client, producer *kafka.Producer, consumer *kafka.Consumer, bqClient *bigquery.Client, tracer *trace.Tracer, allTickers []common.IEXTicker) error {
 
+	// Extract tickers from reddit submissions
 	web.GET("/proc/reddit/submissions/extract", func(ctx echo.Context) error {
 
 		// Create context for new process
@@ -45,6 +46,30 @@ func setupRoutes(web *echo.Echo, fsClient *firestore.Client, producer *kafka.Pro
 		return ctx.JSON(http.StatusOK, response)
 	})
 
+	// Sink reddit submissions to bigquery
+	web.GET("/proc/reddit/submissions/sink", func(ctx echo.Context) error {
+
+		// Create context for new process
+		readCtx := ctx.Request().Context()
+
+		// Create tracer span
+		readCtx, span := (*tracer).Start(readCtx, "proc.reddit.submissions.sink")
+		defer span.End()
+
+		// Process reddit submissions
+		count, err := sinkKafkaToBigquery(readCtx, fsClient, bqClient, consumer, tracer, common.REDDIT_SUBMISSIONS, common.BIGQUERY_TABLE_REDDIT_SUBMISSIONS, kafkaToRedditSubmission)
+		if err != nil {
+			log.Println(err)
+			span.RecordError(err)
+			span.SetStatus(codes.Error, "critical error")
+			return echo.NewHTTPError(http.StatusInternalServerError)
+		}
+
+		response := Response{Message: fmt.Sprintf("Processed %d reddit submissions.", count)}
+		return ctx.JSON(http.StatusOK, response)
+	})
+
+	// Extract ticker mentions from reddit comments
 	web.GET("/proc/reddit/comments/extract", func(ctx echo.Context) error {
 
 		// Create context for new process
@@ -67,27 +92,51 @@ func setupRoutes(web *echo.Echo, fsClient *firestore.Client, producer *kafka.Pro
 		return ctx.JSON(http.StatusOK, response)
 	})
 
-	// web.GET("/proc/ticker_mentions", func(ctx echo.Context) error {
+	// Sink reddit comments to bigquery
+	web.GET("/proc/reddit/comments/sink", func(ctx echo.Context) error {
 
-	// 	// Create context for new process
-	// 	readCtx := ctx.Request().Context()
+		// Create context for new process
+		readCtx := ctx.Request().Context()
 
-	// 	// Create tracer span
-	// 	readCtx, span := (*tracer).Start(readCtx, "proc.ticker_mentions")
-	// 	defer span.End()
+		// Create tracer span
+		readCtx, span := (*tracer).Start(readCtx, "proc.reddit.comments.sink")
+		defer span.End()
 
-	// 	// Process ticker mentions
-	// 	count, err := readTickerMentions(readCtx, psClient, bqClient, tracer)
-	// 	if err != nil {
-	// 		log.Println(err)
-	// 		span.RecordError(err)
-	// 		span.SetStatus(codes.Error, "critical error")
-	// 		return echo.NewHTTPError(http.StatusInternalServerError)
-	// 	}
+		// Process reddit comments
+		count, err := sinkKafkaToBigquery(readCtx, fsClient, bqClient, consumer, tracer, common.REDDIT_COMMENTS, common.BIGQUERY_TABLE_REDDIT_COMMENTS, kafkaToRedditComment)
+		if err != nil {
+			log.Println(err)
+			span.RecordError(err)
+			span.SetStatus(codes.Error, "critical error")
+			return echo.NewHTTPError(http.StatusInternalServerError)
+		}
 
-	// 	response := Response{Message: fmt.Sprintf("Processed %d ticker mentions.", count)}
-	// 	return ctx.JSON(http.StatusOK, response)
-	// })
+		response := Response{Message: fmt.Sprintf("Processed %d reddit comments.", count)}
+		return ctx.JSON(http.StatusOK, response)
+	})
+
+	// Sink ticker mentions to bigquery
+	web.GET("/proc/tickerMentions/sink", func(ctx echo.Context) error {
+
+		// Create context for new process
+		readCtx := ctx.Request().Context()
+
+		// Create tracer span
+		readCtx, span := (*tracer).Start(readCtx, "proc.tickerMentions.sink")
+		defer span.End()
+
+		// Process reddit comments
+		count, err := sinkKafkaToBigquery(readCtx, fsClient, bqClient, consumer, tracer, common.TICKER_MENTIONS, common.BIGQUERY_TABLE_TICKER_MENTIONS, kafkaToTickerMention)
+		if err != nil {
+			log.Println(err)
+			span.RecordError(err)
+			span.SetStatus(codes.Error, "critical error")
+			return echo.NewHTTPError(http.StatusInternalServerError)
+		}
+
+		response := Response{Message: fmt.Sprintf("Processed %d ticker mentions.", count)}
+		return ctx.JSON(http.StatusOK, response)
+	})
 
 	return nil
 }
