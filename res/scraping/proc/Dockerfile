@@ -1,15 +1,8 @@
-# Install kafka
-FROM golang:1.16.6-buster AS base
-
-WORKDIR /root
-RUN git clone https://github.com/edenhill/librdkafka.git
-WORKDIR /root/librdkafka
-RUN ./configure --prefix=/opt/librdkafka
-RUN make -j4
-RUN make install
-
 # Build module
-FROM base AS builder
+FROM golang:1.16.6-alpine AS builder
+
+# Install librdkafka
+RUN apk add --no-cache librdkafka-dev build-base
 
 # Copy source
 WORKDIR /opt
@@ -19,10 +12,12 @@ COPY go/scraping/proc/ ./proc/
 
 WORKDIR /opt/proc
 RUN go mod download
-RUN go build .
+RUN CGO_ENABLED=1 GOOS=linux go build -tags dynamic . 
 
 # Prod module
-FROM base AS prod
+FROM alpine:edge AS prod
+
+RUN apk add --no-cache librdkafka
 
 # Copy binary
 WORKDIR /app
