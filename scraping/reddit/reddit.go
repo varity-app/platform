@@ -15,6 +15,8 @@ import (
 	"go.opentelemetry.io/otel/trace"
 
 	"github.com/VarityPlatform/scraping/common"
+	rpb "github.com/VarityPlatform/scraping/protobuf/reddit"
+
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"github.com/google/go-querystring/query"
 	"google.golang.org/protobuf/proto"
@@ -44,28 +46,9 @@ func initReddit() (*reddit.Client, error) {
 }
 
 // Scrape submissions from reddit
-func scrapeSubmissions(ctx context.Context, redditClient *reddit.Client, fsClient *firestore.Client, psClient *pubsub.Client, producer *kafka.Producer, subreddit string, tracer *trace.Tracer) (int, error) {
-
-	// Fetch posts
-	ctx, span := (*tracer).Start(ctx, "query.Reddit")
-	posts, _, err := redditClient.Subreddit.NewPosts(ctx, subreddit, &reddit.ListOptions{
-		Limit: LIMIT,
-	})
-	if err != nil {
-		return 0, fmt.Errorf("fetch.Post: %v", err)
-	}
-	span.End()
-
-	// Check with datastore for unseen posts
-	ctx, span = (*tracer).Start(ctx, "query.Datastore")
-	newPosts, err := getNewDSSubmissions(ctx, fsClient, posts)
-	if err != nil {
-		return 0, err
-	}
-	span.End()
+func publishSubmissions(ctx context.Context, producer *kafka.Producer, submissions []*rpb.RedditSubmission) error {
 
 	// Send submissions to kafka
-	_, span = (*tracer).Start(ctx, "kafka.PublishSubmissions")
 	wg := new(sync.WaitGroup)
 	var writeErr error = nil
 
@@ -83,14 +66,12 @@ func scrapeSubmissions(ctx context.Context, redditClient *reddit.Client, fsClien
 		}
 	}()
 
-	for _, submission := range newPosts {
-		// Convert to proto
-		submissionProto := submissionToProto(submission)
+	for _, submission := range submissions {
 
 		// Serialize
-		serializedSubmission, err := proto.Marshal(submissionProto)
+		serializedSubmission, err := proto.Marshal(submission)
 		if err != nil {
-			return 0, fmt.Errorf("serialize.Submission: %v", err)
+			return fmt.Errorf("serialize.Submission: %v", err)
 		}
 
 		wg.Add(1) // Add wait counter
@@ -99,7 +80,7 @@ func scrapeSubmissions(ctx context.Context, redditClient *reddit.Client, fsClien
 			Value:          serializedSubmission,
 		}, deliveryChan)
 		if err != nil {
-			return 0, fmt.Errorf("kafka.Produce: %v", err)
+			return fmt.Errorf("kafka.Produce: %v", err)
 		}
 	}
 
@@ -109,18 +90,10 @@ func scrapeSubmissions(ctx context.Context, redditClient *reddit.Client, fsClien
 	// Wait for all messages to process in the delivery report handler
 	wg.Wait()
 	if writeErr != nil {
-		return 0, writeErr
+		return writeErr
 	}
-	span.End()
 
-	// Save newly processed submissions to datastore
-	ctx, span = (*tracer).Start(ctx, "datastore.WriteSubmissions")
-	if err = saveNewDSSubmissions(ctx, fsClient, newPosts); err != nil {
-		return 0, fmt.Errorf("datastore.SaveSubmissions: %v", err)
-	}
-	span.End()
-
-	return len(newPosts), nil
+	return nil
 }
 
 // Scrape comments from reddit

@@ -6,6 +6,8 @@ import (
 	"os"
 
 	"github.com/VarityPlatform/scraping/common"
+	"github.com/VarityPlatform/scraping/scrapers"
+	"github.com/vartanbeno/go-reddit/v2/reddit"
 
 	"cloud.google.com/go/firestore"
 	"cloud.google.com/go/pubsub"
@@ -27,12 +29,38 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	redditClient, err := initReddit()
-	if err != nil {
-		log.Fatal(err)
-	}
+	// redditClient, err := initReddit()
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
 
 	ctx := context.Background()
+
+	credentials := reddit.Credentials{
+		ID:       os.Getenv("REDDIT_CLIENT_ID"),
+		Secret:   os.Getenv("REDDIT_CLIENT_SECRET"),
+		Username: os.Getenv("REDDIT_USERNAME"),
+		Password: os.Getenv("REDDIT_PASSWORD"),
+	}
+	submissionsScraper, err := initSubmissionsScraper(
+		ctx,
+		credentials,
+		scrapers.MemoryOpts{CollectionName: REDDIT_SUBMISSIONS + "-" + viper.GetString("deploymentMode")},
+	)
+	if err != nil {
+		log.Fatalf("initSubmissionsScraper: %v", err)
+	}
+	defer submissionsScraper.Close()
+
+	commentsScraper, err := initCommentsScraper(
+		ctx,
+		credentials,
+		scrapers.MemoryOpts{CollectionName: REDDIT_COMMENTS + "-" + viper.GetString("deploymentMode")},
+	)
+	if err != nil {
+		log.Fatalf("initCommentssScraper: %v", err)
+	}
+	defer commentsScraper.Close()
 
 	// Create trace exporter
 	exporter, err := texporter.NewExporter(texporter.WithProjectID(common.GCP_PROJECT_ID))
@@ -80,7 +108,7 @@ func main() {
 
 	// Initialize webserver
 	web := echo.New()
-	err = setupRoutes(web, redditClient, fsClient, psClient, producer, &tracer)
+	err = setupRoutes(web, submissionsScraper, commentsScraper, producer, &tracer)
 	if err != nil {
 		log.Fatalln(err)
 	}
