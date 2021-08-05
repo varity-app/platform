@@ -1,7 +1,7 @@
 terraform {
   required_providers {
     confluentcloud = {
-      source = "Mongey/confluentcloud"
+      source  = "Mongey/confluentcloud"
       version = "~> 0.0.11"
     }
     kafka = {
@@ -30,7 +30,7 @@ resource "confluentcloud_kafka_cluster" "scraping" {
 }
 
 resource "confluentcloud_api_key" "svc" {
-  
+
   cluster_id     = confluentcloud_kafka_cluster.scraping.id
   environment_id = confluentcloud_environment.environment.id
 }

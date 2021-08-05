@@ -14,7 +14,7 @@ resource "kafka_topic" "reddit_submissions" {
   partitions         = 2
   config = {
     "cleanup.policy" = "delete"
-    "retention.ms" = "604800000"
+    "retention.ms"   = "604800000"
   }
 }
 
@@ -24,7 +24,7 @@ resource "kafka_topic" "reddit_comments" {
   partitions         = 2
   config = {
     "cleanup.policy" = "delete"
-    "retention.ms" = "604800000"
+    "retention.ms"   = "604800000"
   }
 }
 
@@ -34,6 +34,6 @@ resource "kafka_topic" "ticker_mentions" {
   partitions         = 2
   config = {
     "cleanup.policy" = "delete"
-    "retention.ms" = "604800000"
+    "retention.ms"   = "604800000"
   }
 }

@@ -51,3 +51,14 @@ module "confluent" {
 
   deployment = var.deployment
 }
+
+module "cloud_run" {
+  source = "../modules/cloud_run"
+
+  deployment                = var.deployment
+  cloud_sql_connection_name = module.cloud_sql.connection_name
+
+  kafka_url_secret_id    = module.confluent.kafka_url_secret_id
+  kafka_key_secret_id    = module.confluent.kafka_key_secret_id
+  kafka_secret_secret_id = module.confluent.kafka_secret_secret_id
+}
