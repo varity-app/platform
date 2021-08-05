@@ -15,6 +15,17 @@ variable "region" {
   default     = "us-east1"
 }
 
+variable "container_registry" {
+  description = "Base URL of the container registry"
+  type        = string
+  default     = "gcr.io"
+}
+
+variable "release" {
+  description = "Varity release"
+  type        = string
+}
+
 variable "cloud_sql_connection_name" {
   description = "Connection name belonging to the Cloud SQL instance"
   type        = string

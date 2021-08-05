@@ -56,6 +56,7 @@ module "cloud_run" {
   source = "../modules/cloud_run"
 
   deployment                = var.deployment
+  release                   = var.release
   cloud_sql_connection_name = module.cloud_sql.connection_name
 
   kafka_url_secret_id    = module.confluent.kafka_url_secret_id

@@ -12,7 +12,7 @@ resource "google_cloud_run_service" "proc" {
     spec {
       container_concurrency = 1
       containers {
-        image = "gcr.io/varity/dev/scraping/proc:v0.8.0"
+        image = "${var.container_registry}/${var.project}/${var.deployment}/scraping/proc:${var.release}"
         env {
           name  = "POSTGRES_ADDRESS"
           value = "/cloudsql/${var.cloud_sql_connection_name}/.s.PGSQL.5432"
@@ -82,7 +82,7 @@ resource "google_cloud_run_service" "proc" {
 
     metadata {
       annotations = {
-    "autoscaling.knative.dev/maxScale"      = "10"
+        "autoscaling.knative.dev/maxScale"      = "10"
         "run.googleapis.com/cloudsql-instances" = var.cloud_sql_connection_name
       }
     }
@@ -116,9 +116,9 @@ resource "google_cloud_run_service" "scrape_reddit" {
 
   template {
     spec {
-      container_concurrency = 1
+      container_concurrency = 8
       containers {
-        image = "gcr.io/varity/dev/scraping/reddit-go:v0.8.0"
+        image = "${var.container_registry}/${var.project}/${var.deployment}/scraping/reddit-scraper:${var.release}"
 
         env {
           name = "REDDIT_CLIENT_ID"
@@ -161,7 +161,7 @@ resource "google_cloud_run_service" "scrape_reddit" {
         }
 
         env {
-          name = "REDDIT_USER_AGENT"
+          name  = "REDDIT_USER_AGENT"
           value = "varity.app@v0.8.0"
         }
 
@@ -200,9 +200,9 @@ resource "google_cloud_run_service" "scrape_reddit" {
 
   metadata {
     annotations = {
-    "autoscaling.knative.dev/maxScale"      = "10"
-      generated-by                      = "magic-modules"
-      "run.googleapis.com/launch-stage" = "BETA"
+      "autoscaling.knative.dev/maxScale" = "10"
+      generated-by                       = "magic-modules"
+      "run.googleapis.com/launch-stage"  = "BETA"
     }
   }
   traffic {

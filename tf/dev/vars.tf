@@ -4,7 +4,7 @@ variable "deployment" {
   default     = "dev"
 }
 
-# variable "release" {
-#   description = "Varity release"
-#   type        = string
-# }
+variable "release" {
+  description = "Varity release"
+  type        = string
+}
