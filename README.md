@@ -1,5 +1,6 @@
 # Varity Scraping Infrastructure
-[![Build](https://github.com/VarityPlatform/varity-scraping/actions/workflows/main-workflow.yml/badge.svg)](https://github.com/VarityPlatform/varity-scraping/actions/workflows/main-workflow.yml)
+[![Test and Validate](https://github.com/VarityPlatform/varity-scraping/actions/workflows/validate.yml/badge.svg)](https://github.com/VarityPlatform/varity-scraping/actions/workflows/validate.yml)
+[![Release](https://github.com/VarityPlatform/varity-scraping/actions/workflows/release.yml/badge.svg)](https://github.com/VarityPlatform/varity-scraping/actions/workflows/release.yml)
 
 ## Deployment
 Almost every part of deployment is automated with GitHub actions and [Terraform](https://terraform.io).  See more information in the [tf](./tf/README.md) directory.
