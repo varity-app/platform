@@ -1,107 +1,170 @@
 package main
 
 import (
-	"regexp"
+	"context"
+	"fmt"
+	"os"
+	"strconv"
+	"sync"
 
 	"github.com/VarityPlatform/scraping/common"
-	"github.com/go-pg/pg/v10"
+
+	"github.com/confluentinc/confluent-kafka-go/kafka"
 )
 
-const TICKER_SPAM_THRESHOLD int = 5
+// KafkaTickerProcessorHandler is a function type that handles kafka messages and sends ticker mentions on another topic.
+type KafkaTickerProcessorHandler func(producer *kafka.Producer, readChan chan *kafka.Message, deliveryChan chan kafka.Event, mu *sync.Mutex, readErr *error, readWG *sync.WaitGroup, deliveryWG *sync.WaitGroup, count *int, allTickers []common.IEXTicker)
 
-var urls *regexp.Regexp = regexp.MustCompile(`https?:\/\/.*[\r\n]*`)
-var alphaNumeric *regexp.Regexp = regexp.MustCompile(`[^a-zA-Z0-9 \n\.]`)
-var capsSpam *regexp.Regexp = regexp.MustCompile(`([A-Z]{1,3}.?[A-Z]{1,3})(\W[A-Z].?[A-Z]+)+`)
-var tickerRegex *regexp.Regexp = regexp.MustCompile(`[A-Z][A-Z0-9.]*[A-Z0-9]`)
-var wordRegex *regexp.Regexp = regexp.MustCompile(`\w+`)
-
-// Extract tickers from string
-func extractTickersString(s string, tickerList []common.IEXTicker) []common.IEXTicker {
-
-	// Remove urls
-	s = urls.ReplaceAllString(s, "")
-
-	// Remove alphanumeric characters
-	s = alphaNumeric.ReplaceAllString(s, "")
-
-	// Remove caps spam
-	s = capsSpam.ReplaceAllString(s, "")
-
-	// Find ticker look-a-likes
-	tickers := tickerRegex.FindAllString(s, -1)
-
-	// Cross reference with provided list of valid tickers
-	validTickers := []common.IEXTicker{}
-	for _, ticker := range tickers {
-		blacklisted := false
-		// Check if ticker is blacklisted
-		for _, blacklistedTicker := range TICKER_BLACKLIST {
-			if ticker == blacklistedTicker {
-				blacklisted = true
-			}
-		}
-
-		if blacklisted {
-			continue
-		}
-
-		// Check for existing valid ticker
-		for _, realTicker := range tickerList {
-			if ticker == realTicker.Symbol {
-				validTickers = append(validTickers, realTicker)
-			}
-		}
-	}
-
-	// If there are more than N tickers, count as spam and discard
-	if len(validTickers) > TICKER_SPAM_THRESHOLD {
-		return []common.IEXTicker{}
-	}
-
-	return validTickers
+// KafkaTickerProcessor reads a Kafka topic and parses the messages for tickers.
+type KafkaTickerProcessor struct {
+	allTickers    []common.IEXTicker
+	consumer      *kafka.Consumer
+	producer      *kafka.Producer
+	offsetManager *OffsetManager
 }
 
-// Extract short name mentions from strings
-func extractShortNamesString(s string, tickerList []common.IEXTicker) []common.IEXTicker {
-	// Extract all alphanumeric words
-	words := wordRegex.FindAllString(s, -1)
+// NewKafkaTickerProcessor initializes a new KafkaTickerProcessor
+func NewKafkaTickerProcessor(ctx context.Context, opts OffsetManagerOpts, allTickers []common.IEXTicker) (*KafkaTickerProcessor, error) {
+	// Initialize kafka producer
+	producer, err := kafka.NewProducer(&kafka.ConfigMap{
+		"bootstrap.servers": os.Getenv("KAFKA_BOOTSTRAP_SERVERS"),
+		"security.protocol": "SASL_SSL",
+		"sasl.mechanisms":   "PLAIN",
+		"sasl.username":     os.Getenv("KAFKA_AUTH_KEY"),
+		"sasl.password":     os.Getenv("KAFKA_AUTH_SECRET"),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("kafka.GetProducer: %v", err)
+	}
 
-	// Find mentioned tickers
-	mentionedTickers := []common.IEXTicker{}
-	for _, ticker := range tickerList {
+	// Initialize kafka consumer
+	consumer, err := kafka.NewConsumer(&kafka.ConfigMap{
+		"bootstrap.servers":        os.Getenv("KAFKA_BOOTSTRAP_SERVERS"),
+		"security.protocol":        "SASL_SSL",
+		"sasl.mechanisms":          "PLAIN",
+		"sasl.username":            os.Getenv("KAFKA_AUTH_KEY"),
+		"sasl.password":            os.Getenv("KAFKA_AUTH_SECRET"),
+		"group.id":                 "proc",
+		"enable.auto.offset.store": "false",
+	})
+	if err != nil {
+		return nil, fmt.Errorf("kafka.NewConsumer: %v", err)
+	}
 
-		if ticker.ShortName == "" {
-			continue
-		}
+	offsetManager, err := NewOffsetManager(ctx, opts)
+	if err != nil {
+		return nil, err
+	}
 
-		for _, word := range words {
-			if word == ticker.ShortName {
-				mentionedTickers = append(mentionedTickers, ticker)
+	// Return pointer
+	return &KafkaTickerProcessor{
+		allTickers:    allTickers,
+		consumer:      consumer,
+		producer:      producer,
+		offsetManager: offsetManager,
+	}, nil
+}
+
+// Close closes the ticker processor's connection
+func (processor *KafkaTickerProcessor) Close() error {
+	processor.producer.Close()
+	if err := processor.consumer.Close(); err != nil {
+		return err
+	}
+
+	return processor.offsetManager.Close()
+}
+
+// ProcessTopic processes a kafka topic for ticker mentions
+func (processor *KafkaTickerProcessor) ProcessTopic(ctx context.Context, topic string, handler KafkaTickerProcessorHandler) (int, error) {
+	var mu sync.Mutex
+	count := 0
+
+	// Subscribe to topic
+	err := processor.consumer.Unassign()
+	if err != nil {
+		return count, fmt.Errorf("kafka.Unassign: %v", err)
+	}
+	checkpointKey := topic + "-proc"
+	partitions, offsets, err := processor.offsetManager.Fetch(ctx, topic, checkpointKey)
+	if err != nil {
+		return count, fmt.Errorf("kafka.FetchOffsets: %v", err)
+	}
+	err = processor.consumer.Assign(partitions)
+	if err != nil {
+		return count, fmt.Errorf("kafka.SubscribeTopic: %v", err)
+	}
+
+	// Delivery report handler for produced messages
+	deliveryChan := make(chan kafka.Event)
+	defer close(deliveryChan)
+	deliveryWG := new(sync.WaitGroup)
+	var writeErr error
+	go func() {
+		for e := range deliveryChan {
+			switch ev := e.(type) {
+			case *kafka.Message:
+				if ev.TopicPartition.Error != nil {
+					mu.Lock()
+					writeErr = fmt.Errorf("kafka.ProduceMessage: %v", ev.TopicPartition)
+					mu.Unlock()
+				}
+				deliveryWG.Done()
 			}
 		}
-	}
+	}()
 
-	return mentionedTickers
-}
+	// Handle read messages from kafka
+	readChan := make(chan *kafka.Message)
+	defer close(readChan)
+	readWG := new(sync.WaitGroup)
+	var readErr error
+	go handler(processor.producer, readChan, deliveryChan, &mu, &readErr, readWG, deliveryWG, &count, processor.allTickers)
 
-// Get frequency counts of tickers
-func calcTickerFrequency(tickerList []common.IEXTicker) ([]common.IEXTicker, map[string]int) {
-	frequencies := make(map[string]int)
-	uniqueTickers := []common.IEXTicker{}
-
-	for _, ticker := range tickerList {
-		if frequencies[ticker.Symbol] == 0 {
-			uniqueTickers = append(uniqueTickers, ticker)
+	// Consume messages from Kafka
+	for {
+		msg, err := processor.consumer.ReadMessage(ConsumerTimeout)
+		if err != nil && err.(kafka.Error).Code() == kafka.ErrTimedOut {
+			break
+		} else if err != nil {
+			return count, fmt.Errorf("kafka.ReadMessage: %v", err)
 		}
-		frequencies[ticker.Symbol] += 1
+
+		// Update offsets
+		offset, err := strconv.Atoi(msg.TopicPartition.Offset.String())
+		if err != nil {
+			return count, fmt.Errorf("strconv.Atoi: %v", err)
+		}
+		offsets[fmt.Sprint(msg.TopicPartition.Partition)] = offset + 1
+
+		// Check for errors occurring in goroutines
+		if readErr != nil {
+			return count, readErr
+		} else if writeErr != nil {
+			return count, writeErr
+		}
+
+		readWG.Add(1)
+		readChan <- msg
+
 	}
 
-	return uniqueTickers, frequencies
-}
+	// Wait for processes to finish
+	processor.producer.Flush(ProducerTimeoutMS)
+	readWG.Wait()
+	deliveryWG.Wait()
 
-// Fetch tickers from postgres
-func fetchTickers(db *pg.DB) ([]common.IEXTicker, error) {
-	var tickers []common.IEXTicker
-	_, err := db.Query(&tickers, `SELECT symbol, short_name FROM tickers WHERE exchange IN ('NYS', 'NAS')`)
-	return tickers, err
+	// Check for errors occurring in goroutines
+	if readErr != nil {
+		return count, readErr
+	} else if writeErr != nil {
+		return count, writeErr
+	}
+
+	// Save offsets to firestore
+	if err := processor.offsetManager.Save(ctx, checkpointKey, offsets); err != nil {
+		return count, err
+	}
+
+	return count, nil
 }

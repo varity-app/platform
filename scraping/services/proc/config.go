@@ -13,7 +13,7 @@ func initConfig() error {
 	viper.AutomaticEnv()
 
 	// Application deployment mode (dev or prod)
-	viper.SetDefault("deploymentMode", common.DEPLOYMENT_MODE_DEV)
+	viper.SetDefault("deploymentMode", common.DeploymentModeDev)
 	err := viper.BindEnv("deploymentMode", "DEPLOYMENT_MODE")
 	if err != nil {
 		return fmt.Errorf("error binding env variable: %v", err)
