@@ -2,11 +2,11 @@ module reddit-scraper
 
 go 1.16
 
-replace github.com/VarityPlatform/scraping/scrapers => ../scrapers
+replace github.com/VarityPlatform/scraping/scrapers => ../../scrapers
 
-replace github.com/VarityPlatform/scraping/common => ../common
+replace github.com/VarityPlatform/scraping/common => ../../common
 
-replace github.com/VarityPlatform/scraping/protobuf/reddit => ../protobuf/reddit
+replace github.com/VarityPlatform/scraping/protobuf/reddit => ../../protobuf/reddit
 
 require (
 	cloud.google.com/go/firestore v1.5.0

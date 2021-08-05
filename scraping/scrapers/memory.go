@@ -25,7 +25,7 @@ type MemoryOpts struct {
 func NewMemory(ctx context.Context, opts MemoryOpts) (*Memory, error) {
 
 	// Init firestore client
-	fsClient, err := firestore.NewClient(ctx, common.GCP_PROJECT_ID)
+	fsClient, err := firestore.NewClient(ctx, common.GcpProjectId)
 	if err != nil {
 		return nil, fmt.Errorf("firestore.NewClient: %v", err)
 	}

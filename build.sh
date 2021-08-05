@@ -10,7 +10,7 @@ SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd -P)
 declare DOCKER_REPO_BASE='gcr.io/varity'
 
 declare -a IMAGES=(
-  'scraping/reddit-go'
+  'scraping/reddit-scraper'
   'scraping/proc'
 )
 

@@ -3,7 +3,7 @@ services:
   reddit-scraper:
     build:
       context: .
-      dockerfile: ./res/scraping/reddit-go/Dockerfile
+      dockerfile: ./res/scraping/reddit-scraper/Dockerfile
       target: prod
     image: reddit-scraper
     network_mode: host
