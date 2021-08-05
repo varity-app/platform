@@ -1,15 +1,20 @@
 resource "google_bigquery_table" "reddit_submissions" {
   project    = var.project
   dataset_id = google_bigquery_dataset.scraping.dataset_id
-  table_id   = "reddit_submissions"
+  table_id   = "reddit_submissions_v2"
 
   time_partitioning {
     type  = "DAY"
-    field = "created_utc"
+    field = "timestamp"
   }
 
   labels = {
     deployment = var.deployment
+  }
+
+
+  lifecycle {
+    prevent_destroy = true
   }
 
   schema = <<EOF
@@ -30,17 +35,12 @@ resource "google_bigquery_table" "reddit_submissions" {
     "mode": "REQUIRED"
   },
   {
-    "name": "created_utc",
+    "name": "timestamp",
     "type": "TIMESTAMP",
     "mode": "REQUIRED"
   },
   {
-    "name": "name",
-    "type": "STRING",
-    "mode": "REQUIRED"
-  },
-  {
-    "name": "selftext",
+    "name": "body",
     "type": "STRING",
     "mode": "NULLABLE"
   },
@@ -50,44 +50,24 @@ resource "google_bigquery_table" "reddit_submissions" {
     "mode": "REQUIRED"
   },
   {
-    "name": "is_original_content",
-    "type": "BOOL",
-    "mode": "REQUIRED"
-  },
-  {
-    "name": "is_text",
-    "type": "BOOL",
-    "mode": "REQUIRED"
-  },
-  {
-    "name": "nsfw",
-    "type": "BOOL",
-    "mode": "REQUIRED"
-  },
-  {
-    "name": "num_comments",
-    "type": "INT64",
-    "mode": "NULLABLE"
-  },
-  {
-    "name": "permalink",
+    "name": "author_id",
     "type": "STRING",
     "mode": "REQUIRED"
   },
   {
-    "name": "upvotes",
-    "type": "INT64",
-    "mode": "NULLABLE"
+    "name": "is_self",
+    "type": "BOOL",
+    "mode": "REQUIRED"
   },
   {
-    "name": "upvote_ratio",
-    "type": "FLOAT64",
+    "name": "permalink",
+    "type": "STRING",
     "mode": "NULLABLE"
   },
   {
     "name": "url",
     "type": "STRING",
-    "mode": "REQUIRED"
+    "mode": "NULLABLE"
   }
 ]
 EOF
@@ -97,15 +77,19 @@ EOF
 resource "google_bigquery_table" "reddit_comments" {
   project    = var.project
   dataset_id = google_bigquery_dataset.scraping.dataset_id
-  table_id   = "reddit_comments"
+  table_id   = "reddit_comments_v2"
 
   time_partitioning {
     type  = "DAY"
-    field = "created_utc"
+    field = "timestamp"
   }
 
   labels = {
     deployment = var.deployment
+  }
+
+  lifecycle {
+    prevent_destroy = true
   }
 
   schema = <<EOF
@@ -131,7 +115,12 @@ resource "google_bigquery_table" "reddit_comments" {
     "mode": "REQUIRED"
   },
   {
-    "name": "created_utc",
+    "name": "author_id",
+    "type": "STRING",
+    "mode": "REQUIRED"
+  },
+  {
+    "name": "timestamp",
     "type": "TIMESTAMP",
     "mode": "REQUIRED"
   },
@@ -141,54 +130,8 @@ resource "google_bigquery_table" "reddit_comments" {
     "mode": "REQUIRED"
   },
   {
-    "name": "upvotes",
-    "type": "INT64",
-    "mode": "NULLABLE"
-  }
-]
-EOF
-
-}
-
-resource "google_bigquery_table" "scraped_posts" {
-  project    = var.project
-  dataset_id = google_bigquery_dataset.scraping.dataset_id
-  table_id   = "scraped_posts"
-
-  time_partitioning {
-    type  = "DAY"
-    field = "timestamp"
-  }
-
-  labels = {
-    deployment = var.deployment
-  }
-
-  schema = <<EOF
-[
-  {
-    "name": "data_source",
+    "name": "permalink",
     "type": "STRING",
-    "mode": "REQUIRED"
-  },
-  {
-    "name": "parent_source",
-    "type": "STRING",
-    "mode": "REQUIRED"
-  },
-  {
-    "name": "parent_id",
-    "type": "STRING",
-    "mode": "REQUIRED"
-  },
-  {
-    "name": "text",
-    "type": "STRING",
-    "mode": "REQUIRED"
-  },
-  {
-    "name": "timestamp",
-    "type": "TIMESTAMP",
     "mode": "REQUIRED"
   }
 ]
@@ -199,7 +142,7 @@ EOF
 resource "google_bigquery_table" "ticker_mentions" {
   project    = var.project
   dataset_id = google_bigquery_dataset.scraping.dataset_id
-  table_id   = "ticker_mentions"
+  table_id   = "ticker_mentions_v2"
 
   time_partitioning {
     type  = "DAY"
@@ -210,15 +153,14 @@ resource "google_bigquery_table" "ticker_mentions" {
     deployment = var.deployment
   }
 
+  lifecycle {
+    prevent_destroy = true
+  }
+
   schema = <<EOF
 [
   {
-    "name": "ticker",
-    "type": "STRING",
-    "mode": "REQUIRED"
-  },
-  {
-    "name": "data_source",
+    "name": "symbol",
     "type": "STRING",
     "mode": "REQUIRED"
   },
@@ -238,8 +180,23 @@ resource "google_bigquery_table" "ticker_mentions" {
     "mode": "REQUIRED"
   },
   {
-    "name": "mention_type",
-    "type": "STRING",
+    "name": "symbol_counts",
+    "type": "INT64",
+    "mode": "REQUIRED"
+  },
+  {
+    "name": "short_name_counts",
+    "type": "INT64",
+    "mode": "REQUIRED"
+  },
+  {
+    "name": "word_count",
+    "type": "INT64",
+    "mode": "REQUIRED"
+  },
+  {
+    "name": "question_mark_count",
+    "type": "INT64",
     "mode": "REQUIRED"
   }
 ]

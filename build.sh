@@ -7,12 +7,11 @@ SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd -P)
 
 ###### CONSTANTS #####
 
-declare DOCKER_REPO_BASE='gcr.io/varity/scraping'
+declare DOCKER_REPO_BASE='gcr.io/varity'
 
 declare -a IMAGES=(
-  'reddit-scraper' \
-  'historical-reddit-scraper' \
-  'beam-executor' \
+  'scraping/reddit-scraper'
+  'scraping/proc'
 )
 
 ######################
@@ -97,13 +96,12 @@ build_image() {
     image_names=${args[0]}
   fi
 
-  echo ${image_names[@]}
+  echo "Will build: ${image_names[@]}"
   
   for image_name in $image_names; do
-    local stage_dir=${SCRIPT_DIR}/staging/${image_name}
     local tag_name=${DOCKER_REPO_BASE}/${deployment}/${image_name}:${release}
 
-    docker build -t ${tag_name} -f ${SCRIPT_DIR}/res/${image_name}/Dockerfile src
+    DOCKERKIT=1 docker build -t ${tag_name} --target prod -f ${SCRIPT_DIR}/res/${image_name}/Dockerfile .
     if [[ -n "${publish}" ]]; then
       echo 'Pushing image...'
       docker push ${tag_name}

@@ -1,9 +1,9 @@
-name: Main Workflow
+name: Release
 
 on:
   push:
-    tags:
-      - 'v*.*.*'
+    tags: 'v*.*.*'
+    branches: main
 
 jobs:
   test-python:
@@ -31,8 +31,22 @@ jobs:
     - name: Analysing the code with pylint
       run: cd src && python -m pylint *
 
+  lint-go:
+    name: Lint Go modules
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Go
+      uses: actions/setup-go@v2
+      with:
+        go-version: 1.16
+    - name: Lint
+      run: |
+        go get -u golang.org/x/lint/golint
+        LINT=`golint ./...` && echo $LINT && test `echo -n $LINT | wc -c` -eq 0
+
   build-images:
-    needs: test-python
+    needs: [test-python, lint-go]
     name: Build and Publish to GCR
     runs-on: ubuntu-latest
     steps:
@@ -50,5 +64,5 @@ jobs:
       run: |
         gcloud auth configure-docker
         export TAG=`echo $GITHUB_REF | awk -F/ '{print $NF}'`
-        echo Building ${TAG}...
-        ./build.sh --prod --publish --release $TAG
+        echo Building ${TAG#v}...
+        ./build.sh --prod --publish --release ${TAG#v}

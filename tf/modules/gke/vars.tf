@@ -34,6 +34,6 @@ variable "subreddits" {
 
 variable "container_repository" {
   description = "URL and prefix of the container repository"
-  type = string
-  default = "gcr.io/varity/scraping"
+  type        = string
+  default     = "gcr.io/varity/scraping"
 }
