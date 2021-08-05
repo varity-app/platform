@@ -25,7 +25,7 @@ type KafkaBigquerySink struct {
 // NewKafkaBigquerySink initializes a new KafkaBigQuery sink
 func NewKafkaBigquerySink(ctx context.Context, opts OffsetManagerOpts) (*KafkaBigquerySink, error) {
 	// Initialize bigquery client
-	bqClient, err := bigquery.NewClient(ctx, common.GcpProjectId)
+	bqClient, err := bigquery.NewClient(ctx, common.GCPProjectID)
 	if err != nil {
 		return nil, fmt.Errorf("bigquery.NewClient: %v", err)
 	}
@@ -145,11 +145,7 @@ func (sink *KafkaBigquerySink) SinkTopic(ctx context.Context, topic string, tabl
 	return count, nil
 }
 
-// Sink a kafka stream to bigquery
-// func sinkKafkaToBigquery(ctx context.Context, fsClient *firestore.Client, bqClient *bigquery.Client, consumer *kafka.Consumer, tracer *trace.Tracer, topic string, tableName string, converter kafkaProtoConverter) (int, error) {
-
-// }
-
+// Save a batch to bigquery
 func (sink *KafkaBigquerySink) saveBigqueryBatch(ctx context.Context, inserter *bigquery.Inserter, items []interface{}, writeErr *error, writeWG *sync.WaitGroup) {
 	// Upload to bigquery
 	if err := inserter.Put(ctx, items); err != nil {

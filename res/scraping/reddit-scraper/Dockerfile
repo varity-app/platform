@@ -13,7 +13,8 @@ COPY scraping/services/reddit-scraper/ ./services/reddit-scraper/
 
 WORKDIR /opt/services/reddit-scraper
 RUN go mod download
-RUN CGO_ENABLED=1 GOOS=linux go build -tags dynamic . 
+RUN CGO_ENABLED=1 go test . -tags dynamic
+RUN CGO_ENABLED=1 go build -tags dynamic . 
 
 # Prod module
 FROM alpine:edge AS prod

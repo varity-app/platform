@@ -14,13 +14,17 @@ import (
 	"github.com/go-pg/pg/v10"
 )
 
-const SHORT_NAME_FREQUENCY uint32 = 10
-const NUM_PG_WORKERS int = 12
+// ShortNameFrequency is the maximum amount of times a word can be seen in the corpus
+// of company names before it is deemed to common to be a "short name" of a company.
+const ShortNameFrequency uint32 = 10
+
+// NumPostgresWorkers is the count of parallel goroutines used to write to postgres
+const NumPostgresWorkers int = 12
 
 // Fetch tickers form IEX Cloud
 func extractTickers(client *http.Client, token string) []common.IEXTicker {
 	// Send request to IEX cloud
-	resp, err := iexRequest(client, IEX_BASE_URL+"/ref-data/symbols", token)
+	resp, err := iexRequest(client, IexBaseURL+"/ref-data/symbols", token)
 	if err != nil {
 		log.Fatalln("Error fetching tickers from IEXCloud:", err.Error())
 	}
@@ -68,7 +72,7 @@ func addShortName(tickers []common.IEXTicker) []common.IEXTicker {
 	// Count frequencies of each word
 	frequencies := make(map[string]uint32)
 	for _, word := range filteredWords {
-		frequencies[word] += 1
+		frequencies[word]++
 	}
 
 	// Assign short name to a word if it's infrequent
@@ -76,7 +80,7 @@ func addShortName(tickers []common.IEXTicker) []common.IEXTicker {
 		nameWords := strings.Split(ticker.Name, " ")
 
 		for _, word := range nameWords {
-			if !alphaRegex.MatchString(word) && frequencies[word] <= SHORT_NAME_FREQUENCY {
+			if !alphaRegex.MatchString(word) && frequencies[word] <= ShortNameFrequency {
 				tickers[idx].ShortName = word
 				break
 			}
@@ -100,7 +104,7 @@ func loadTickers(db *pg.DB, tickers []common.IEXTicker) error {
 
 	// Create workers
 	wg := new(sync.WaitGroup)
-	for i := 0; i < NUM_PG_WORKERS; i++ {
+	for i := 0; i < NumPostgresWorkers; i++ {
 
 		wg.Add(1)
 		go func() {

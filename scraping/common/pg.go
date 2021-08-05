@@ -6,7 +6,8 @@ import (
 	"github.com/go-pg/pg/v10"
 )
 
-// Initialize postgres
+// InitPostgres is a helper function for initializing a pg.DB instance
+// with credentials read from environment variables.
 func InitPostgres() *pg.DB {
 	address := os.Getenv("POSTGRES_ADDRESS")
 	database := os.Getenv("POSTGRES_DB")

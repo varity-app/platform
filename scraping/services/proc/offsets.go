@@ -26,7 +26,7 @@ type OffsetManagerOpts struct {
 
 // NewOffsetManager initializes a new OffsetManager
 func NewOffsetManager(ctx context.Context, opts OffsetManagerOpts) (*OffsetManager, error) {
-	fsClient, err := firestore.NewClient(ctx, common.GcpProjectId)
+	fsClient, err := firestore.NewClient(ctx, common.GCPProjectID)
 	if err != nil {
 		return nil, fmt.Errorf("firestore.GetClient: %v", err)
 	}

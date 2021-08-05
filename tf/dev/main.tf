@@ -21,11 +21,11 @@ provider "google" {
   zone    = "us-east1-c"
 }
 
-module "pubsub" {
-  source = "../modules/pubsub"
+# module "pubsub" {
+#   source = "../modules/pubsub"
 
-  deployment = var.deployment
-}
+#   deployment = var.deployment
+# }
 
 # module "gke" {
 #   source = "../modules/gke"

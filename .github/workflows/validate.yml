@@ -29,8 +29,8 @@ jobs:
     - name: Analysing the code with pylint
       run: cd src && python -m pylint *
 
-  test-go:
-    name: Test Go modules
+  lint-go:
+    name: Lint Go modules
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
@@ -38,15 +38,10 @@ jobs:
       uses: actions/setup-go@v2
       with:
         go-version: 1.16
-    - name: Test certain modules
+    - name: Lint
       run: |
-        go_dirs=(go/scraping/reddit go/scraping/proc go/scraping/common)
-        for dir in $go_dirs; do
-          echo $dir
-          pushd $dir > /dev/null
-          go test .
-          popd > /dev/null
-        done
+        go get -u golang.org/x/lint/golint
+        LINT=`golint ./...` && echo $LINT && test `echo -n $LINT | wc -c` -eq 0
 
   build-images:
     name: Validate Docker Images
@@ -60,4 +55,4 @@ jobs:
         gcloud auth configure-docker
         export TAG=`echo $GITHUB_REF | awk -F/ '{print $NF}'`
         echo Building ${TAG}...
-        ./build.sh --prod --release $TAG
+        ./build.sh --release $TAG

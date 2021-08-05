@@ -22,7 +22,7 @@ func main() {
 	ctx := context.Background()
 
 	// Create trace exporter
-	exporter, err := texporter.NewExporter(texporter.WithProjectID(common.GcpProjectId))
+	exporter, err := texporter.NewExporter(texporter.WithProjectID(common.GCPProjectID))
 	if err != nil {
 		log.Fatalf("texporter.NewExporter: %v", err)
 	}

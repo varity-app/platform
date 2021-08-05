@@ -5,7 +5,8 @@ import (
 	"os"
 )
 
-const IEX_BASE_URL string = "https://cloud.iexapis.com/stable"
+// IexBaseURL is the base URL for the IEX Cloud API
+const IexBaseURL string = "https://cloud.iexapis.com/stable"
 
 // Send http GET request to IEX Cloud
 func iexRequest(client *http.Client, path string, token string) (*http.Response, error) {

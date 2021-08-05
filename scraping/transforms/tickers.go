@@ -8,6 +8,8 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
+// TickerSpamThreshold is describes the threshold of number of ticker mentions past which
+// posts are flagged as spam and no tickers are returned.
 const TickerSpamThreshold int = 5
 
 var urls *regexp.Regexp = regexp.MustCompile(`https?:\/\/.*[\r\n]*`)
@@ -109,7 +111,7 @@ func (extractor *TickerExtractor) CalcTickerFrequency(tickerList []common.IEXTic
 		if frequencies[ticker.Symbol] == 0 {
 			uniqueTickers = append(uniqueTickers, ticker)
 		}
-		frequencies[ticker.Symbol] += 1
+		frequencies[ticker.Symbol]++
 	}
 
 	return uniqueTickers, frequencies

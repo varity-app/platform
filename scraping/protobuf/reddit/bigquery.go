@@ -20,6 +20,7 @@ func (submission *RedditSubmission) Save() (map[string]bigquery.Value, string, e
 	}, bigquery.NoDedupeID, nil
 }
 
+// Save implements the ValueSaver interface.  This is used for bigquery.
 func (comment *RedditComment) Save() (map[string]bigquery.Value, string, error) {
 	return map[string]bigquery.Value{
 		"comment_id":    comment.GetCommentId(),
