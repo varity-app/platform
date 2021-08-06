@@ -64,6 +64,7 @@ func main() {
 
 	// Initialize webserver
 	web := echo.New()
+	web.HideBanner = true
 	err = setupRoutes(web, processor, sink, &tracer, allTickers)
 	if err != nil {
 		log.Fatalln(err)

@@ -87,6 +87,7 @@ func main() {
 
 	// Initialize webserver
 	web := echo.New()
+	web.HideBanner = true
 	err = setupRoutes(web, submissionsScraper, commentsScraper, producer, &tracer)
 	if err != nil {
 		log.Fatalln(err)
