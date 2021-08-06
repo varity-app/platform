@@ -6,6 +6,7 @@ import (
 
 	"github.com/VarityPlatform/scraping/common"
 	"github.com/VarityPlatform/scraping/scrapers"
+	"github.com/VarityPlatform/scraping/scrapers/reddit/historical"
 
 	"github.com/spf13/viper"
 
@@ -19,14 +20,15 @@ func main() {
 	ctx := context.Background()
 
 	// Initialize scrapers
-	submissionsScraper, err := initSubmissionsScraper(ctx, scrapers.MemoryOpts{
+	scraperOpts := historical.ScraperOpts{ProxyURL: viper.GetString("proxy.url")}
+	submissionsScraper, err := initSubmissionsScraper(ctx, scraperOpts, scrapers.MemoryOpts{
 		CollectionName: common.RedditSubmissions + "-" + viper.GetString("deploymentMode"),
 	})
 	if err != nil {
 		log.Fatalf("scraper.Init: %v", err)
 	}
 
-	commentsScraper, err := initCommentsScraper(ctx, scrapers.MemoryOpts{
+	commentsScraper, err := initCommentsScraper(ctx, scraperOpts, scrapers.MemoryOpts{
 		CollectionName: common.RedditComments + "-" + viper.GetString("deploymentMode"),
 	})
 	if err != nil {

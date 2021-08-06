@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 	"time"
@@ -48,7 +47,8 @@ func initRoutes(web *echo.Echo, submissionsScraper *historical.SubmissionsScrape
 
 		submissions, err := submissionsScraper.Scrape(ctx, body.Subreddit, before, after, body.Limit)
 		if err != nil {
-			return fmt.Errorf("submissionsScraper.Scrape: %v", err)
+			log.Printf("submissionsScraper.Scrape: %v", err)
+			return err
 		}
 
 		for _, submission := range submissions {

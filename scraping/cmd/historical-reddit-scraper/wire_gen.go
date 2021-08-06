@@ -13,24 +13,24 @@ import (
 
 // Injectors from wire.go:
 
-func initSubmissionsScraper(ctx context.Context, memoryOpts scrapers.MemoryOpts) (*historical.SubmissionsScraper, error) {
+func initSubmissionsScraper(ctx context.Context, scraperOpts historical.ScraperOpts, memoryOpts scrapers.MemoryOpts) (*historical.SubmissionsScraper, error) {
 	memory, err := scrapers.NewMemory(ctx, memoryOpts)
 	if err != nil {
 		return nil, err
 	}
-	submissionsScraper, err := historical.NewSubmissionsScraper(memoryOpts, memory)
+	submissionsScraper, err := historical.NewSubmissionsScraper(scraperOpts, memoryOpts, memory)
 	if err != nil {
 		return nil, err
 	}
 	return submissionsScraper, nil
 }
 
-func initCommentsScraper(ctx context.Context, memoryOpts scrapers.MemoryOpts) (*historical.CommentsScraper, error) {
+func initCommentsScraper(ctx context.Context, scraperOpts historical.ScraperOpts, memoryOpts scrapers.MemoryOpts) (*historical.CommentsScraper, error) {
 	memory, err := scrapers.NewMemory(ctx, memoryOpts)
 	if err != nil {
 		return nil, err
 	}
-	commentsScraper, err := historical.NewCommentsScraper(memoryOpts, memory)
+	commentsScraper, err := historical.NewCommentsScraper(scraperOpts, memoryOpts, memory)
 	if err != nil {
 		return nil, err
 	}

@@ -2,10 +2,13 @@ package historical
 
 import (
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
+	"net/url"
 	"time"
 
 	"github.com/VarityPlatform/scraping/scrapers"
@@ -35,10 +38,24 @@ type CommentsScraper struct {
 	memory *scrapers.Memory
 }
 
-// NewCommentsScraper initializes a new historical comments scraper
-func NewCommentsScraper(opts scrapers.MemoryOpts, memory *scrapers.Memory) (*CommentsScraper, error) {
+// NewCommentsScraper initializes a new historical submissions scraper
+func NewCommentsScraper(scraperOpts ScraperOpts, opts scrapers.MemoryOpts, memory *scrapers.Memory) (*CommentsScraper, error) {
+
+	// Parse proxy url
+	proxyURL, err := url.Parse(scraperOpts.ProxyURL)
+	if err != nil {
+		log.Println(err)
+	}
+
+	// Define proxy transport
+	// TLS verification is disabled since the application is proxying through Till
+	transport := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+		Proxy:           http.ProxyURL(proxyURL),
+	}
+
 	return &CommentsScraper{
-		client: &http.Client{},
+		client: &http.Client{Transport: transport},
 		memory: memory,
 	}, nil
 }

@@ -12,12 +12,12 @@ import (
 	"github.com/google/wire"
 )
 
-func initSubmissionsScraper(ctx context.Context, memoryOpts scrapers.MemoryOpts) (*historical.SubmissionsScraper, error) {
+func initSubmissionsScraper(ctx context.Context, scraperOpts historical.ScraperOpts, memoryOpts scrapers.MemoryOpts) (*historical.SubmissionsScraper, error) {
 	wire.Build(historical.SuperSet)
 	return &historical.SubmissionsScraper{}, nil
 }
 
-func initCommentsScraper(ctx context.Context, memoryOpts scrapers.MemoryOpts) (*historical.CommentsScraper, error) {
+func initCommentsScraper(ctx context.Context, scraperOpts historical.ScraperOpts, memoryOpts scrapers.MemoryOpts) (*historical.CommentsScraper, error) {
 	wire.Build(historical.SuperSet)
 	return &historical.CommentsScraper{}, nil
 }

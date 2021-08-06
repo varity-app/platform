@@ -21,7 +21,13 @@ func initConfig() error {
 	viper.SetDefault("port", 8000)
 	err = viper.BindEnv("port", "PORT")
 	if err != nil {
-		return fmt.Errorf("error binding env variable: %v", err)
+		return fmt.Errorf("viper.BindEnv: %v", err)
+	}
+
+	viper.SetDefault("proxy.url", "http://localhost:2933")
+	err = viper.BindEnv("proxy.url", "PROXY_URL")
+	if err != nil {
+		return fmt.Errorf("viper.BindEnv: %v", err)
 	}
 
 	return nil
