@@ -37,3 +37,13 @@ services:
       GOOGLE_APPLICATION_CREDENTIALS: /google/credentials.json
     volumes:
       - ${GOOGLE_APPLICATION_CREDENTIALS}:/google/credentials.json:ro
+
+  historical-reddit-scraper:
+    build:
+      context: .
+      dockerfile: ./res/scraping/historical-reddit-scraper/Dockerfile
+      target: prod
+    network_mode: host
+    image: historical-reddit-scraper
+    environment:
+      TILL_TOKEN: ${TILL_TOKEN}

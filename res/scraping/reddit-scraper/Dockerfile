@@ -9,9 +9,9 @@ WORKDIR /opt
 COPY scraping/common/ ./common/
 COPY scraping/protobuf/ ./protobuf/
 COPY scraping/scrapers/ ./scrapers/
-COPY scraping/services/reddit-scraper/ ./services/reddit-scraper/
+COPY scraping/cmd/reddit-scraper/ ./cmd/reddit-scraper/
 
-WORKDIR /opt/services/reddit-scraper
+WORKDIR /opt/cmd/reddit-scraper
 RUN go mod download
 RUN CGO_ENABLED=1 go test . -tags dynamic
 RUN CGO_ENABLED=1 go build -tags dynamic . 
@@ -23,6 +23,6 @@ RUN apk add --no-cache librdkafka
 
 # Copy binary
 WORKDIR /app
-COPY --from=builder /opt/services/reddit-scraper/reddit-scraper .
+COPY --from=builder /opt/cmd/reddit-scraper/reddit-scraper .
 
 ENTRYPOINT ./reddit-scraper
