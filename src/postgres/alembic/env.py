@@ -34,16 +34,16 @@ target_metadata = models.Base.metadata
 # Load postgres credentials from environment
 USERNAME = env.get("POSTGRES_USERNAME")
 PASSWORD = env.get("POSTGRES_PASSWORD")
-HOST = env.get("POSTGRES_HOST")
+ADDRESS = env.get("POSTGRES_ADDRESS")
 DB = env.get("POSTGRES_DB")
 
 assert USERNAME is not None
 assert PASSWORD is not None
-assert HOST is not None
+assert ADDRESS is not None
 assert DB is not None
 
 config.set_main_option(
-    "sqlalchemy.url", f"postgresql://{USERNAME}:{PASSWORD}@{HOST}/{DB}"
+    "sqlalchemy.url", f"postgresql://{USERNAME}:{PASSWORD}@{ADDRESS}/{DB}"
 )
 
 

@@ -15,6 +15,12 @@ terraform {
   }
 }
 
+provider "google" {
+  project = "varity"
+  region  = "us-east1"
+  zone    = "us-east1-c"
+}
+
 # module "gke" {
 #   source = "../modules/gke"
 

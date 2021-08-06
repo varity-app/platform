@@ -3,6 +3,8 @@ package main
 import (
 	"net/http"
 	"os"
+
+	"github.com/VarityPlatform/scraping/common"
 )
 
 // IexBaseURL is the base URL for the IEX Cloud API
@@ -28,7 +30,7 @@ func iexRequest(client *http.Client, path string, token string) (*http.Response,
 func main() {
 	token := os.Getenv("IEX_TOKEN")
 	client := &http.Client{}
-	db := initPostgres()
+	db := common.InitPostgres()
 
 	tickersETL(db, client, token)
 }

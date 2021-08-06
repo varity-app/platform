@@ -47,6 +47,23 @@ resource "google_cloud_scheduler_job" "scrape_reddit_submissions_smallstreetbets
   }
 }
 
+resource "google_cloud_scheduler_job" "scrape_reddit_submissions_stocks" {
+  name             = "scrape-reddit-submissions-stocks-${var.deployment}"
+  description      = "Scrape reddit submissions from a specified subreddit"
+  schedule         = "*/1 * * * *"
+  time_zone        = "America/New_York"
+  attempt_deadline = "320s"
+
+  http_target {
+    http_method = "GET"
+    uri         = "${google_cloud_run_service.scrape_reddit.status[0].url}/scraping/reddit/submissions/stocks"
+
+    oidc_token {
+      service_account_email = google_service_account.scheduler_svc.email
+    }
+  }
+}
+
 resource "google_cloud_scheduler_job" "scrape_reddit_comments_wallstreetbets" {
   name             = "scrape-reddit-comments-wallstreetbets-${var.deployment}"
   description      = "Scrape reddit comments from a specified subreddit"
@@ -75,6 +92,23 @@ resource "google_cloud_scheduler_job" "scrape_reddit_comments_smallstreetbets" {
   http_target {
     http_method = "GET"
     uri         = "${google_cloud_run_service.scrape_reddit.status[0].url}/scraping/reddit/comments/smallstreetbets"
+
+    oidc_token {
+      service_account_email = google_service_account.scheduler_svc.email
+    }
+  }
+}
+
+resource "google_cloud_scheduler_job" "scrape_reddit_comments_stocks" {
+  name             = "scrape-reddit-comments-stocks-${var.deployment}"
+  description      = "Scrape reddit comments from a specified subreddit"
+  schedule         = "*/1 * * * *"
+  time_zone        = "America/New_York"
+  attempt_deadline = "320s"
+
+  http_target {
+    http_method = "GET"
+    uri         = "${google_cloud_run_service.scrape_reddit.status[0].url}/scraping/reddit/comments/stocks"
 
     oidc_token {
       service_account_email = google_service_account.scheduler_svc.email
