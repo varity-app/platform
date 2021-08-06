@@ -6,7 +6,8 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/VarityPlatform/scraping/scrapers"
+	redditLive "github.com/VarityPlatform/scraping/scrapers/reddit/live"
+
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 
 	"github.com/labstack/echo/v4"
@@ -19,7 +20,7 @@ type response struct {
 }
 
 // Set up echo routes
-func setupRoutes(web *echo.Echo, submissionsScraper *scrapers.RedditSubmissionsScraper, commentsScraper *scrapers.RedditCommentsScraper, producer *kafka.Producer, tracer *trace.Tracer) error {
+func setupRoutes(web *echo.Echo, submissionsScraper *redditLive.RedditSubmissionsScraper, commentsScraper *redditLive.RedditCommentsScraper, producer *kafka.Producer, tracer *trace.Tracer) error {
 
 	web.GET("/scraping/reddit/submissions/:subreddit", func(ctx echo.Context) error {
 

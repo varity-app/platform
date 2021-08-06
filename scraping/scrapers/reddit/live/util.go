@@ -1,4 +1,4 @@
-package scrapers
+package live
 
 import (
 	"net/url"

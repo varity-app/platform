@@ -8,29 +8,30 @@ package main
 import (
 	"context"
 	"github.com/VarityPlatform/scraping/scrapers"
+	"github.com/VarityPlatform/scraping/scrapers/reddit/live"
 	"github.com/vartanbeno/go-reddit/v2/reddit"
 )
 
 // Injectors from wire.go:
 
-func initSubmissionsScraper(ctx context.Context, redditCredentials reddit.Credentials, memoryOpts scrapers.MemoryOpts) (*scrapers.RedditSubmissionsScraper, error) {
+func initSubmissionsScraper(ctx context.Context, redditCredentials reddit.Credentials, memoryOpts scrapers.MemoryOpts) (*live.RedditSubmissionsScraper, error) {
 	memory, err := scrapers.NewMemory(ctx, memoryOpts)
 	if err != nil {
 		return nil, err
 	}
-	redditSubmissionsScraper, err := scrapers.NewRedditSubmissionsScraper(redditCredentials, memory)
+	redditSubmissionsScraper, err := live.NewRedditSubmissionsScraper(redditCredentials, memory)
 	if err != nil {
 		return nil, err
 	}
 	return redditSubmissionsScraper, nil
 }
 
-func initCommentsScraper(ctx context.Context, redditCredentials reddit.Credentials, memoryOpts scrapers.MemoryOpts) (*scrapers.RedditCommentsScraper, error) {
+func initCommentsScraper(ctx context.Context, redditCredentials reddit.Credentials, memoryOpts scrapers.MemoryOpts) (*live.RedditCommentsScraper, error) {
 	memory, err := scrapers.NewMemory(ctx, memoryOpts)
 	if err != nil {
 		return nil, err
 	}
-	redditCommentsScraper, err := scrapers.NewRedditCommentsScraper(redditCredentials, memory)
+	redditCommentsScraper, err := live.NewRedditCommentsScraper(redditCredentials, memory)
 	if err != nil {
 		return nil, err
 	}

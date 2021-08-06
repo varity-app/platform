@@ -1,4 +1,4 @@
-package scrapers
+package live
 
 import (
 	"context"
@@ -8,16 +8,18 @@ import (
 
 	rpb "github.com/VarityPlatform/scraping/protobuf/reddit"
 	"google.golang.org/protobuf/types/known/timestamppb"
+
+	"github.com/VarityPlatform/scraping/scrapers"
 )
 
 // RedditSubmissionsScraper Scrapes comments from reddit
 type RedditSubmissionsScraper struct {
 	redditClient *reddit.Client
-	memory       *Memory
+	memory       *scrapers.Memory
 }
 
 // NewRedditSubmissionsScraper Initialize a new RedditSubmissionScraper
-func NewRedditSubmissionsScraper(redditCredentials reddit.Credentials, memory *Memory) (*RedditSubmissionsScraper, error) {
+func NewRedditSubmissionsScraper(redditCredentials reddit.Credentials, memory *scrapers.Memory) (*RedditSubmissionsScraper, error) {
 	redditClient, err := reddit.NewClient(redditCredentials, reddit.WithUserAgent(RedditUserAgent))
 	if err != nil {
 		return nil, fmt.Errorf("reddit.NewClient: %v", err)
