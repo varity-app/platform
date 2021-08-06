@@ -39,7 +39,7 @@ func main() {
 	submissionsScraper, err := initSubmissionsScraper(
 		ctx,
 		credentials,
-		scrapers.MemoryOpts{CollectionName: common.RedditSubmissions + "-" + viper.GetString("deploymentMode")},
+		scrapers.MemoryOpts{CollectionName: common.RedditSubmissions + "-v2-" + viper.GetString("deploymentMode")},
 	)
 	if err != nil {
 		log.Fatalf("initSubmissionsScraper: %v", err)
@@ -49,10 +49,10 @@ func main() {
 	commentsScraper, err := initCommentsScraper(
 		ctx,
 		credentials,
-		scrapers.MemoryOpts{CollectionName: common.RedditComments + "-" + viper.GetString("deploymentMode")},
+		scrapers.MemoryOpts{CollectionName: common.RedditComments + "-v2-" + viper.GetString("deploymentMode")},
 	)
 	if err != nil {
-		log.Fatalf("initCommentssScraper: %v", err)
+		log.Fatalf("initCommentsScraper: %v", err)
 	}
 	defer commentsScraper.Close()
 

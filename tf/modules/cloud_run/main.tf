@@ -13,6 +13,12 @@ resource "google_cloud_run_service" "proc" {
       container_concurrency = 1
       containers {
         image = "${var.container_registry}/${var.project}/${var.deployment}/scraping/proc:${var.release}"
+
+        env {
+          name = "DEPLOYMENT_MODE"
+          value = var.deployment
+        }
+
         env {
           name  = "POSTGRES_ADDRESS"
           value = "/cloudsql/${var.cloud_sql_connection_name}/.s.PGSQL.5432"
@@ -119,6 +125,11 @@ resource "google_cloud_run_service" "scrape_reddit" {
       container_concurrency = 8
       containers {
         image = "${var.container_registry}/${var.project}/${var.deployment}/scraping/reddit-scraper:${var.release}"
+
+        env {
+          name = "DEPLOYMENT_MODE"
+          value = var.deployment
+        }
 
         env {
           name = "REDDIT_CLIENT_ID"
