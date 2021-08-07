@@ -9,11 +9,8 @@ import (
 	"github.com/VarityPlatform/scraping/scrapers"
 	"github.com/vartanbeno/go-reddit/v2/reddit"
 
-	"github.com/confluentinc/confluent-kafka-go/kafka"
-
-	texporter "github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/trace"
-	"go.opentelemetry.io/otel"
-	sdktrace "go.opentelemetry.io/otel/sdk/trace"
+	// "github.com/confluentinc/confluent-kafka-go/kafka"
+	"github.com/VarityPlatform/scraping/data/kafka"
 
 	"github.com/labstack/echo/v4"
 
@@ -56,39 +53,21 @@ func main() {
 	}
 	defer commentsScraper.Close()
 
-	// Create trace exporter
-	exporter, err := texporter.NewExporter(texporter.WithProjectID(common.GCPProjectID))
-	if err != nil {
-		log.Fatalf("texporter.NewExporter: %v", err)
-	}
-
-	// Create trace provider with the exporter
-	traceProbability := viper.GetFloat64("tracing.probability")
-	tp := sdktrace.NewTracerProvider(
-		sdktrace.WithBatcher(exporter),
-		sdktrace.WithSampler(sdktrace.TraceIDRatioBased(traceProbability)),
-	)
-	defer tp.ForceFlush(ctx) // flushes any pending spans
-	otel.SetTracerProvider(tp)
-	tracer := otel.GetTracerProvider().Tracer("varity.app/scraping")
-
-	// Init kafka client
-	producer, err := kafka.NewProducer(&kafka.ConfigMap{
-		"bootstrap.servers": os.Getenv("KAFKA_BOOTSTRAP_SERVERS"),
-		"security.protocol": "SASL_SSL",
-		"sasl.mechanisms":   "PLAIN",
-		"sasl.username":     os.Getenv("KAFKA_AUTH_KEY"),
-		"sasl.password":     os.Getenv("KAFKA_AUTH_SECRET"),
+	// Initialize publisher
+	publisher, err := initPublisher(ctx, kafka.KafkaOpts{
+		BootstrapServers: os.Getenv("KAFKA_BOOTSTRAP_SERVERS"),
+		Username:         os.Getenv("KAFKA_AUTH_KEY"),
+		Password:         os.Getenv("KAFKA_AUTH_SECRET"),
 	})
 	if err != nil {
-		log.Fatalf("kafka.NewProducer: %v", err)
+		log.Fatalf("kafka.NewPublisher: %v", err)
 	}
-	defer producer.Close()
+	defer publisher.Close()
 
 	// Initialize webserver
 	web := echo.New()
 	web.HideBanner = true
-	err = setupRoutes(web, submissionsScraper, commentsScraper, producer, &tracer)
+	err = setupRoutes(web, submissionsScraper, commentsScraper, publisher)
 	if err != nil {
 		log.Fatalln(err)
 	}

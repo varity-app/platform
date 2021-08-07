@@ -7,6 +7,7 @@ package main
 
 import (
 	"context"
+	"github.com/VarityPlatform/scraping/data/kafka"
 	"github.com/VarityPlatform/scraping/scrapers"
 	"github.com/VarityPlatform/scraping/scrapers/reddit/live"
 	"github.com/vartanbeno/go-reddit/v2/reddit"
@@ -36,4 +37,12 @@ func initCommentsScraper(ctx context.Context, redditCredentials reddit.Credentia
 		return nil, err
 	}
 	return redditCommentsScraper, nil
+}
+
+func initPublisher(ctx context.Context, kafkaOpts kafka.KafkaOpts) (*kafka.Publisher, error) {
+	publisher, err := kafka.NewPublisher(kafkaOpts)
+	if err != nil {
+		return nil, err
+	}
+	return publisher, nil
 }

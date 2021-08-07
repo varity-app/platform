@@ -6,13 +6,12 @@ import (
 	"net/http"
 	"strconv"
 
-	redditLive "github.com/VarityPlatform/scraping/scrapers/reddit/live"
+	"github.com/VarityPlatform/scraping/common"
+	"github.com/VarityPlatform/scraping/scrapers/reddit/live"
 
-	"github.com/confluentinc/confluent-kafka-go/kafka"
+	"github.com/VarityPlatform/scraping/data/kafka"
 
 	"github.com/labstack/echo/v4"
-
-	"go.opentelemetry.io/otel/trace"
 )
 
 type response struct {
@@ -20,12 +19,12 @@ type response struct {
 }
 
 // Set up echo routes
-func setupRoutes(web *echo.Echo, submissionsScraper *redditLive.RedditSubmissionsScraper, commentsScraper *redditLive.RedditCommentsScraper, producer *kafka.Producer, tracer *trace.Tracer) error {
+func setupRoutes(web *echo.Echo, submissionsScraper *live.RedditSubmissionsScraper, commentsScraper *live.RedditCommentsScraper, publisher *kafka.Publisher) error {
 
-	web.GET("/scraping/reddit/submissions/:subreddit", func(ctx echo.Context) error {
+	web.GET("/scraping/reddit/submissions/:subreddit", func(c echo.Context) error {
 
-		subreddit := ctx.Param("subreddit")
-		qLimit := ctx.QueryParam("limit")
+		subreddit := c.Param("subreddit")
+		qLimit := c.QueryParam("limit")
 		limit, err := strconv.Atoi(qLimit)
 		if err != nil {
 			limit = 100
@@ -36,41 +35,44 @@ func setupRoutes(web *echo.Echo, submissionsScraper *redditLive.RedditSubmission
 		}
 
 		// Create context for new process
-		reqCtx := ctx.Request().Context()
-
-		// Create tracer span
-		reqCtx, span := (*tracer).Start(reqCtx, "scrape.reddit.submissions")
-		defer span.End()
+		ctx := c.Request().Context()
 
 		// Scrape submissions from reddit
-		submissions, err := submissionsScraper.Scrape(reqCtx, subreddit, limit)
+		submissions, err := submissionsScraper.Scrape(ctx, subreddit, limit)
 		if err != nil {
 			log.Println(err)
 			return echo.NewHTTPError(http.StatusInternalServerError)
 		}
 
+		// Serialize messages
+		serializedMsgs, err := serializeSubmissions(submissions)
+		if err != nil {
+			log.Println(err)
+			return err
+		}
+
 		// Publish submissions to kafka
-		err = publishSubmissions(reqCtx, producer, submissions)
+		err = publisher.Publish(serializedMsgs, common.RedditSubmissions)
 		if err != nil {
 			log.Println(err)
 			return echo.NewHTTPError(http.StatusInternalServerError)
 		}
 
 		// Commit submissions to memory
-		err = submissionsScraper.CommitSeen(reqCtx, submissions)
+		err = submissionsScraper.CommitSeen(ctx, submissions)
 		if err != nil {
 			log.Println(err)
 			return echo.NewHTTPError(http.StatusInternalServerError)
 		}
 
 		response := response{Message: fmt.Sprintf("Scraped %d reddit submissions from r/%s.", len(submissions), subreddit)}
-		return ctx.JSON(http.StatusOK, response)
+		return c.JSON(http.StatusOK, response)
 	})
 
-	web.GET("/scraping/reddit/comments/:subreddit", func(ctx echo.Context) error {
+	web.GET("/scraping/reddit/comments/:subreddit", func(c echo.Context) error {
 
-		subreddit := ctx.Param("subreddit")
-		qLimit := ctx.QueryParam("limit")
+		subreddit := c.Param("subreddit")
+		qLimit := c.QueryParam("limit")
 		limit, err := strconv.Atoi(qLimit)
 		if err != nil {
 			limit = 100
@@ -81,35 +83,38 @@ func setupRoutes(web *echo.Echo, submissionsScraper *redditLive.RedditSubmission
 		}
 
 		// Create context for new process
-		reqCtx := ctx.Request().Context()
-
-		// Create tracer span
-		reqCtx, span := (*tracer).Start(reqCtx, "scrape.reddit.comments")
-		defer span.End()
+		ctx := c.Request().Context()
 
 		// Scrape comments from reddit
-		comments, err := commentsScraper.Scrape(reqCtx, subreddit, limit)
+		comments, err := commentsScraper.Scrape(ctx, subreddit, limit)
 		if err != nil {
 			log.Println(err)
 			return echo.NewHTTPError(http.StatusInternalServerError)
 		}
 
-		// Publish comments to kafka
-		err = publishComments(reqCtx, producer, comments)
+		// Serialize messages
+		serializedMsgs, err := serializeComments(comments)
+		if err != nil {
+			log.Println(err)
+			return err
+		}
+
+		// Publish submissions to kafka
+		err = publisher.Publish(serializedMsgs, common.RedditComments)
 		if err != nil {
 			log.Println(err)
 			return echo.NewHTTPError(http.StatusInternalServerError)
 		}
 
 		// Commit comments to memory
-		err = commentsScraper.CommitSeen(reqCtx, comments)
+		err = commentsScraper.CommitSeen(ctx, comments)
 		if err != nil {
 			log.Println(err)
 			return echo.NewHTTPError(http.StatusInternalServerError)
 		}
 
 		response := response{Message: fmt.Sprintf("Scraped %d reddit comments from r/%s.", len(comments), subreddit)}
-		return ctx.JSON(http.StatusOK, response)
+		return c.JSON(http.StatusOK, response)
 	})
 
 	return nil
