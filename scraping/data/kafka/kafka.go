@@ -10,4 +10,4 @@ type KafkaOpts struct {
 }
 
 // SuperSet is the wire superset for the kafka module
-var SuperSet = wire.NewSet(NewPublisher, NewProcessor, NewOffsetManager)
+var SuperSet = wire.NewSet(NewPublisher, NewProcessor, NewOffsetManager, NewBigquerySink)

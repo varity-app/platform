@@ -6,10 +6,10 @@ import (
 	"net/http"
 
 	"github.com/VarityPlatform/scraping/common"
+	"github.com/VarityPlatform/scraping/data/kafka"
+	"github.com/spf13/viper"
 
 	"github.com/labstack/echo/v4"
-	"go.opentelemetry.io/otel/codes"
-	"go.opentelemetry.io/otel/trace"
 )
 
 type response struct {
@@ -17,121 +17,102 @@ type response struct {
 }
 
 // Set up echo routes
-func setupRoutes(web *echo.Echo, processor *KafkaTickerProcessor, sink *KafkaBigquerySink, tracer *trace.Tracer, allTickers []common.IEXTicker) error {
+func setupRoutes(web *echo.Echo, processor *kafka.Processor, sink *kafka.BigquerySink, allTickers []common.IEXTicker) error {
+	datasetName := common.BigqueryDatasetScraping + "_" + viper.GetString("deploymentMode")
 
 	// Extract tickers from reddit submissions
-	web.GET("/scraping/proc/reddit/submissions/extract", func(ctx echo.Context) error {
+	web.GET("/scraping/proc/reddit/submissions/extract", func(c echo.Context) error {
 
 		// Create context for new process
-		readCtx := ctx.Request().Context()
+		ctx := c.Request().Context()
 
-		// Create tracer span
-		readCtx, span := (*tracer).Start(readCtx, "proc.reddit.submissions.extract")
-		defer span.End()
+		// Initialize handler
+		handler := NewRedditSubmissionHandler(allTickers)
+		checkpointKey := common.RedditSubmissions + "-proc"
 
 		// Process reddit submissions
-		count, err := processor.ProcessTopic(readCtx, common.RedditSubmissions, handleSubmissionTickerProcessing)
+		count, err := processor.ProcessTopic(ctx, common.RedditSubmissions, checkpointKey, handler)
 		if err != nil {
 			log.Println(err)
-			span.RecordError(err)
-			span.SetStatus(codes.Error, "critical error")
 			return echo.NewHTTPError(http.StatusInternalServerError)
 		}
 
 		response := response{Message: fmt.Sprintf("Processed %d reddit submissions.", count)}
-		return ctx.JSON(http.StatusOK, response)
+		return c.JSON(http.StatusOK, response)
 	})
 
 	// Sink reddit submissions to bigquery
-	web.GET("/scraping/proc/reddit/submissions/sink", func(ctx echo.Context) error {
+	web.GET("/scraping/proc/reddit/submissions/sink", func(c echo.Context) error {
 
 		// Create context for new process
-		readCtx := ctx.Request().Context()
-
-		// Create tracer span
-		readCtx, span := (*tracer).Start(readCtx, "proc.reddit.submissions.sink")
-		defer span.End()
+		ctx := c.Request().Context()
 
 		// Process reddit submissions
-		count, err := sink.SinkTopic(readCtx, common.RedditSubmissions, common.BigqueryTableRedditSubmissions, kafkaToRedditSubmission)
+		checkpointKey := common.RedditSubmissions + "-proc"
+		count, err := sink.SinkTopic(ctx, common.RedditSubmissions, checkpointKey, datasetName, common.BigqueryTableRedditSubmissions, SinkBatchSize, convertKafkaToSubmission)
 		if err != nil {
 			log.Println(err)
-			span.RecordError(err)
-			span.SetStatus(codes.Error, "critical error")
 			return echo.NewHTTPError(http.StatusInternalServerError)
 		}
 
 		response := response{Message: fmt.Sprintf("Processed %d reddit submissions.", count)}
-		return ctx.JSON(http.StatusOK, response)
+		return c.JSON(http.StatusOK, response)
 	})
 
 	// Extract tickers from reddit comments
-	web.GET("/scraping/proc/reddit/comments/extract", func(ctx echo.Context) error {
+	web.GET("/scraping/proc/reddit/comments/extract", func(c echo.Context) error {
 
 		// Create context for new process
-		readCtx := ctx.Request().Context()
+		ctx := c.Request().Context()
 
-		// Create tracer span
-		readCtx, span := (*tracer).Start(readCtx, "proc.reddit.comments.extract")
-		defer span.End()
+		// Initialize handler
+		handler := NewRedditCommentHandler(allTickers)
+		checkpointKey := common.RedditComments + "-proc"
 
-		// Process reddit comments
-		count, err := processor.ProcessTopic(readCtx, common.RedditComments, handleCommentTickerProcessing)
+		// Process reddit submissions
+		count, err := processor.ProcessTopic(ctx, common.RedditComments, checkpointKey, handler)
 		if err != nil {
 			log.Println(err)
-			span.RecordError(err)
-			span.SetStatus(codes.Error, "critical error")
 			return echo.NewHTTPError(http.StatusInternalServerError)
 		}
 
 		response := response{Message: fmt.Sprintf("Processed %d reddit comments.", count)}
-		return ctx.JSON(http.StatusOK, response)
+		return c.JSON(http.StatusOK, response)
 	})
 
 	// Sink reddit comments to bigquery
-	web.GET("/scraping/proc/reddit/comments/sink", func(ctx echo.Context) error {
+	web.GET("/scraping/proc/reddit/comments/sink", func(c echo.Context) error {
 
 		// Create context for new process
-		readCtx := ctx.Request().Context()
-
-		// Create tracer span
-		readCtx, span := (*tracer).Start(readCtx, "proc.reddit.comments.sink")
-		defer span.End()
+		ctx := c.Request().Context()
 
 		// Process reddit comments
-		count, err := sink.SinkTopic(readCtx, common.RedditComments, common.BigqueryTableRedditComments, kafkaToRedditComment)
+		checkpointKey := common.RedditComments + "-proc"
+		count, err := sink.SinkTopic(ctx, common.RedditComments, checkpointKey, datasetName, common.BigqueryTableRedditComments, SinkBatchSize, convertKafkaToComment)
 		if err != nil {
 			log.Println(err)
-			span.RecordError(err)
-			span.SetStatus(codes.Error, "critical error")
 			return echo.NewHTTPError(http.StatusInternalServerError)
 		}
 
 		response := response{Message: fmt.Sprintf("Processed %d reddit comments.", count)}
-		return ctx.JSON(http.StatusOK, response)
+		return c.JSON(http.StatusOK, response)
 	})
 
 	// Sink ticker mentions to bigquery
-	web.GET("/scraping/proc/tickerMentions/sink", func(ctx echo.Context) error {
+	web.GET("/scraping/proc/tickerMentions/sink", func(c echo.Context) error {
 
 		// Create context for new process
-		readCtx := ctx.Request().Context()
-
-		// Create tracer span
-		readCtx, span := (*tracer).Start(readCtx, "proc.tickerMentions.sink")
-		defer span.End()
-
+		ctx := c.Request().Context()
 		// Process reddit comments
-		count, err := sink.SinkTopic(readCtx, common.TickerMentions, common.BigqueryTableTickerMentions, kafkaToTickerMention)
+		checkpointKey := common.TickerMentions + "-proc"
+		count, err := sink.SinkTopic(ctx, common.TickerMentions, checkpointKey, datasetName, common.BigqueryTableTickerMentions, SinkBatchSize, convertKafkaToTickerMention)
 		if err != nil {
 			log.Println(err)
-			span.RecordError(err)
-			span.SetStatus(codes.Error, "critical error")
 			return echo.NewHTTPError(http.StatusInternalServerError)
 		}
 
 		response := response{Message: fmt.Sprintf("Processed %d ticker mentions.", count)}
-		return ctx.JSON(http.StatusOK, response)
+		return c.JSON(http.StatusOK, response)
 	})
 
 	return nil

@@ -21,7 +21,7 @@ type OffsetManager struct {
 
 // OffsetManagerOpts is a config struct for initializing a new OffsetManager
 type OffsetManagerOpts struct {
-	collectionName string
+	CollectionName string
 }
 
 // NewOffsetManager initializes a new OffsetManager
@@ -33,7 +33,7 @@ func NewOffsetManager(ctx context.Context, opts OffsetManagerOpts) (*OffsetManag
 
 	return &OffsetManager{
 		fsClient:       fsClient,
-		collectionName: opts.collectionName,
+		collectionName: opts.CollectionName,
 	}, nil
 }
 

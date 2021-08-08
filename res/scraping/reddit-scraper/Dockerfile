@@ -9,6 +9,7 @@ WORKDIR /opt
 COPY scraping/common/ ./common/
 COPY scraping/protobuf/ ./protobuf/
 COPY scraping/scrapers/ ./scrapers/
+COPY scraping/data/kafka/ ./data/kafka/
 COPY scraping/cmd/reddit-scraper/ ./cmd/reddit-scraper/
 
 WORKDIR /opt/cmd/reddit-scraper

@@ -9,6 +9,7 @@ WORKDIR /opt
 COPY scraping/common/ ./common/
 COPY scraping/protobuf/ ./protobuf/
 COPY scraping/transforms/ ./transforms/
+COPY scraping/data/kafka/ ./data/kafka/
 COPY scraping/cmd/proc/ ./cmd/proc/
 
 WORKDIR /opt/cmd/proc
