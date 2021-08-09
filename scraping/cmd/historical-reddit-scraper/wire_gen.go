@@ -7,32 +7,41 @@ package main
 
 import (
 	"context"
+	"github.com/VarityPlatform/scraping/data/kafka"
 	"github.com/VarityPlatform/scraping/scrapers"
 	"github.com/VarityPlatform/scraping/scrapers/reddit/historical"
 )
 
 // Injectors from wire.go:
 
-func initSubmissionsScraper(ctx context.Context, scraperOpts historical.ScraperOpts, memoryOpts scrapers.MemoryOpts) (*historical.SubmissionsScraper, error) {
+func initSubmissionsScraper(ctx context.Context, memoryOpts scrapers.MemoryOpts) (*historical.SubmissionsScraper, error) {
 	memory, err := scrapers.NewMemory(ctx, memoryOpts)
 	if err != nil {
 		return nil, err
 	}
-	submissionsScraper, err := historical.NewSubmissionsScraper(scraperOpts, memoryOpts, memory)
+	submissionsScraper, err := historical.NewSubmissionsScraper(memory)
 	if err != nil {
 		return nil, err
 	}
 	return submissionsScraper, nil
 }
 
-func initCommentsScraper(ctx context.Context, scraperOpts historical.ScraperOpts, memoryOpts scrapers.MemoryOpts) (*historical.CommentsScraper, error) {
+func initCommentsScraper(ctx context.Context, memoryOpts scrapers.MemoryOpts) (*historical.CommentsScraper, error) {
 	memory, err := scrapers.NewMemory(ctx, memoryOpts)
 	if err != nil {
 		return nil, err
 	}
-	commentsScraper, err := historical.NewCommentsScraper(scraperOpts, memoryOpts, memory)
+	commentsScraper, err := historical.NewCommentsScraper(memory)
 	if err != nil {
 		return nil, err
 	}
 	return commentsScraper, nil
+}
+
+func initPublisher(ctx context.Context, kafkaOpts kafka.KafkaOpts) (*kafka.Publisher, error) {
+	publisher, err := kafka.NewPublisher(kafkaOpts)
+	if err != nil {
+		return nil, err
+	}
+	return publisher, nil
 }

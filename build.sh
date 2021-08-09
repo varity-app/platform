@@ -11,6 +11,7 @@ declare DOCKER_REPO_BASE='gcr.io/varity'
 
 declare -a IMAGES=(
   'scraping/reddit-scraper'
+  'scraping/historical-reddit-scraper'
   'scraping/proc'
 )
 

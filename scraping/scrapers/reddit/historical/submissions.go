@@ -2,13 +2,10 @@ package historical
 
 import (
 	"context"
-	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
-	"net/url"
 	"time"
 
 	"github.com/VarityPlatform/scraping/scrapers"
@@ -41,23 +38,10 @@ type SubmissionsScraper struct {
 }
 
 // NewSubmissionsScraper initializes a new historical submissions scraper
-func NewSubmissionsScraper(scraperOpts ScraperOpts, opts scrapers.MemoryOpts, memory *scrapers.Memory) (*SubmissionsScraper, error) {
-
-	// Parse proxy url
-	proxyURL, err := url.Parse(scraperOpts.ProxyURL)
-	if err != nil {
-		log.Println(err)
-	}
-
-	// Define proxy transport
-	// TLS verification is disabled since the application is proxying through Till
-	transport := &http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-		Proxy:           http.ProxyURL(proxyURL),
-	}
+func NewSubmissionsScraper(memory *scrapers.Memory) (*SubmissionsScraper, error) {
 
 	return &SubmissionsScraper{
-		client: &http.Client{Transport: transport},
+		client: &http.Client{},
 		memory: memory,
 	}, nil
 }

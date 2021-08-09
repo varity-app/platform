@@ -1,15 +1,30 @@
-# Fetch till from github
-FROM debian:buster-slim as prod
+# Build go module
+FROM golang:1.16.6-alpine AS builder
 
-RUN : \
-    && apt-get update \
-    && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends wget ca-certificates \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/* \
-    && :
+# Install librdkafka
+RUN apk add --no-cache librdkafka-dev build-base wget ca-certificates
 
-WORKDIR /opt
-RUN wget https://github.com/DataHenHQ/till/releases/download/v0.8.0/till_0.8.0_Linux_x86_64.tar.gz
-RUN tar -xf till_0.8.0_Linux_x86_64.tar.gz
+# Build go module
+WORKDIR /app
+COPY scraping/common/ ./common/
+COPY scraping/protobuf/ ./protobuf/
+COPY scraping/transforms/ ./transforms/
+COPY scraping/scrapers/ ./scrapers/
+COPY scraping/data/kafka/ ./data/kafka/
+COPY scraping/cmd/historical-reddit-scraper/ ./cmd/historical-reddit-scraper/
 
-ENTRYPOINT /opt/till serve -t ${TILL_TOKEN}
+WORKDIR /app/cmd/historical-reddit-scraper
+RUN go mod download
+RUN CGO_ENABLED=1 go test -tags dynamic .
+RUN CGO_ENABLED=1 go build -tags dynamic .
+
+# Build prod image
+FROM alpine:edge AS prod
+
+RUN apk add --no-cache librdkafka-dev
+
+# Copy binaries from builder
+WORKDIR /app
+COPY --from=builder /app/cmd/historical-reddit-scraper/historical-reddit-scraper .
+
+ENTRYPOINT /app/historical-reddit-scraper
