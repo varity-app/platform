@@ -26,7 +26,7 @@ func initCommentsScraper(ctx context.Context, redditCredentials reddit.Credentia
 	return &live.RedditCommentsScraper{}, nil
 }
 
-func initPublisher(ctx context.Context, kafkaOpts kafka.KafkaOpts) (*kafka.Publisher, error) {
+func initPublisher(ctx context.Context, kafkaOpts kafka.Opts) (*kafka.Publisher, error) {
 	wire.Build(kafka.SuperSet)
 	return &kafka.Publisher{}, nil
 }

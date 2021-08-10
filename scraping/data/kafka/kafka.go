@@ -2,8 +2,8 @@ package kafka
 
 import "github.com/google/wire"
 
-// KafkaOpts is a struct containing parameters for a new kafka producer
-type KafkaOpts struct {
+// Opts is a struct containing parameters for a new kafka producer
+type Opts struct {
 	BootstrapServers string
 	Username         string
 	Password         string

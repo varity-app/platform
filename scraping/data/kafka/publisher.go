@@ -13,7 +13,7 @@ type Publisher struct {
 }
 
 // NewPublisher initializes a new kafka Publisher
-func NewPublisher(opts KafkaOpts) (*Publisher, error) {
+func NewPublisher(opts Opts) (*Publisher, error) {
 
 	// Create producer
 	producer, err := kafka.NewProducer(&kafka.ConfigMap{

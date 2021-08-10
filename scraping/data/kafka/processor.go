@@ -23,7 +23,7 @@ type Processor struct {
 }
 
 // NewProcessor initializes a new Processor
-func NewProcessor(ctx context.Context, offsetManager *OffsetManager, opts KafkaOpts) (*Processor, error) {
+func NewProcessor(ctx context.Context, offsetManager *OffsetManager, opts Opts) (*Processor, error) {
 	// Initialize kafka producer
 	producer, err := kafka.NewProducer(&kafka.ConfigMap{
 		"bootstrap.servers": opts.BootstrapServers,
@@ -59,13 +59,13 @@ func NewProcessor(ctx context.Context, offsetManager *OffsetManager, opts KafkaO
 }
 
 // Close closes the ticker processor's connection
-func (processor *Processor) Close() error {
-	processor.producer.Close()
-	if err := processor.consumer.Close(); err != nil {
+func (p *Processor) Close() error {
+	p.producer.Close()
+	if err := p.consumer.Close(); err != nil {
 		return err
 	}
 
-	return processor.offsetManager.Close()
+	return p.offsetManager.Close()
 }
 
 // ProcessTopic processes a kafka topic for ticker mentions

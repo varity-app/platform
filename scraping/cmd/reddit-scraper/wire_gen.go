@@ -39,7 +39,7 @@ func initCommentsScraper(ctx context.Context, redditCredentials reddit.Credentia
 	return redditCommentsScraper, nil
 }
 
-func initPublisher(ctx context.Context, kafkaOpts kafka.KafkaOpts) (*kafka.Publisher, error) {
+func initPublisher(ctx context.Context, kafkaOpts kafka.Opts) (*kafka.Publisher, error) {
 	publisher, err := kafka.NewPublisher(kafkaOpts)
 	if err != nil {
 		return nil, err

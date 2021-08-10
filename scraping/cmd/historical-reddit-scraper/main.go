@@ -36,7 +36,7 @@ func main() {
 	}
 
 	// Initialize publisher
-	publisher, err := initPublisher(ctx, kafka.KafkaOpts{
+	publisher, err := initPublisher(ctx, kafka.Opts{
 		BootstrapServers: os.Getenv("KAFKA_BOOTSTRAP_SERVERS"),
 		Username:         os.Getenv("KAFKA_AUTH_KEY"),
 		Password:         os.Getenv("KAFKA_AUTH_SECRET"),

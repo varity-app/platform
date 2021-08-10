@@ -21,5 +21,7 @@ require (
 	github.com/google/wire v0.5.0
 	github.com/labstack/echo/v4 v4.5.0
 	github.com/spf13/viper v1.8.1
+	golang.org/x/sys v0.0.0-20210809222454-d867a43fc93e // indirect
+	golang.org/x/tools v0.1.5 // indirect
 	google.golang.org/protobuf v1.27.1
 )

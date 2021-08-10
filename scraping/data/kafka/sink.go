@@ -23,7 +23,7 @@ type BigquerySink struct {
 }
 
 // NewBigquerySink initializes a new KafkaBigQuery sink
-func NewBigquerySink(ctx context.Context, offsetManager *OffsetManager, opts KafkaOpts) (*BigquerySink, error) {
+func NewBigquerySink(ctx context.Context, offsetManager *OffsetManager, opts Opts) (*BigquerySink, error) {
 	// Initialize bigquery client
 	bqClient, err := bigquery.NewClient(ctx, common.GCPProjectID)
 	if err != nil {
@@ -149,7 +149,7 @@ func (s *BigquerySink) subscribe(ctx context.Context, topic string, checkpointKe
 }
 
 // Save a batch to bigquery
-func (sink *BigquerySink) saveBigqueryBatch(ctx context.Context, inserter *bigquery.Inserter, items []interface{}, writeErr *error, writeWG *sync.WaitGroup) {
+func (s *BigquerySink) saveBigqueryBatch(ctx context.Context, inserter *bigquery.Inserter, items []interface{}, writeErr *error, writeWG *sync.WaitGroup) {
 	// Upload to bigquery
 	if err := inserter.Put(ctx, items); err != nil {
 		*writeErr = fmt.Errorf("bigquery.Insert: %v", err)

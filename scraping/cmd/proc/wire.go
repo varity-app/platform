@@ -11,12 +11,12 @@ import (
 	"github.com/google/wire"
 )
 
-func initProcessor(ctx context.Context, kafkaOpts kafka.KafkaOpts, offsetOpts kafka.OffsetManagerOpts) (*kafka.Processor, error) {
+func initProcessor(ctx context.Context, kafkaOpts kafka.Opts, offsetOpts kafka.OffsetManagerOpts) (*kafka.Processor, error) {
 	wire.Build(kafka.SuperSet)
 	return &kafka.Processor{}, nil
 }
 
-func initSink(ctx context.Context, kafkaOpts kafka.KafkaOpts, offsetOpts kafka.OffsetManagerOpts) (*kafka.BigquerySink, error) {
+func initSink(ctx context.Context, kafkaOpts kafka.Opts, offsetOpts kafka.OffsetManagerOpts) (*kafka.BigquerySink, error) {
 	wire.Build(kafka.SuperSet)
 	return &kafka.BigquerySink{}, nil
 }

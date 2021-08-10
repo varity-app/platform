@@ -32,7 +32,7 @@ func main() {
 	// Initialize kafka structs
 	offsetsCollectionName := FirestoreKafkaOffsets + "-" + viper.GetString("deploymentMode")
 	offsetOpts := kafka.OffsetManagerOpts{CollectionName: offsetsCollectionName}
-	kafkaOpts := kafka.KafkaOpts{
+	kafkaOpts := kafka.Opts{
 		BootstrapServers: os.Getenv("KAFKA_BOOTSTRAP_SERVERS"),
 		Username:         os.Getenv("KAFKA_AUTH_KEY"),
 		Password:         os.Getenv("KAFKA_AUTH_SECRET"),
