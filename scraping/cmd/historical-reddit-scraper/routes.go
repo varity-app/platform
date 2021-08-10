@@ -32,7 +32,8 @@ func initRoutes(web *echo.Echo, submissionsScraper *historical.SubmissionsScrape
 
 		body := new(ScrapingRequestBody)
 		if err := c.Bind(body); err != nil {
-			return echo.NewHTTPError(http.StatusBadRequest, "Invalid request body: "+err.Error())
+			log.Println(err)
+			return err
 		}
 
 		// Parse time fields
@@ -66,7 +67,11 @@ func initRoutes(web *echo.Echo, submissionsScraper *historical.SubmissionsScrape
 		publisher.Publish(msgs, common.RedditSubmissions)
 
 		// Save seen msgs to memory
-		submissionsScraper.CommitSeen(ctx, submissions)
+		err = submissionsScraper.CommitSeen(ctx, submissions)
+		if err != nil {
+			log.Printf("submissions.CommitSeen: %v", err)
+			return err
+		}
 
 		response := response{Message: fmt.Sprintf("Scraped %d reddit submissions from r/%s.", len(submissions), body.Subreddit)}
 		return c.JSON(http.StatusOK, response)
@@ -77,7 +82,8 @@ func initRoutes(web *echo.Echo, submissionsScraper *historical.SubmissionsScrape
 
 		body := new(ScrapingRequestBody)
 		if err := c.Bind(body); err != nil {
-			return echo.NewHTTPError(http.StatusBadRequest, "Invalid request body: "+err.Error())
+			log.Println(err)
+			return err
 		}
 
 		// Parse time fields
@@ -111,7 +117,11 @@ func initRoutes(web *echo.Echo, submissionsScraper *historical.SubmissionsScrape
 		publisher.Publish(msgs, common.RedditComments)
 
 		// Save seen msgs to memory
-		commentsScraper.CommitSeen(ctx, comments)
+		err = commentsScraper.CommitSeen(ctx, comments)
+		if err != nil {
+			log.Printf("comments.CommitSeen: %v", err)
+			return err
+		}
 
 		response := response{Message: fmt.Sprintf("Scraped %d reddit comments from r/%s.", len(comments), body.Subreddit)}
 		return c.JSON(http.StatusOK, response)

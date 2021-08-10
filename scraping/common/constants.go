@@ -3,6 +3,9 @@ package common
 // GCPProjectID is the google cloud project name
 const GCPProjectID string = "varity"
 
+// GCPRegion is the google cloud region
+const GCPRegion string = "us-east1"
+
 // DeploymentModeDev is a "dev" deployment
 const DeploymentModeDev string = "dev"
 
