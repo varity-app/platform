@@ -69,12 +69,12 @@ func (p *Processor) Close() error {
 }
 
 // ProcessTopic processes a kafka topic for ticker mentions
-func (p *Processor) ProcessTopic(ctx context.Context, topic string, checkpointKey string, handler ProcessorHandler) (int, error) {
+func (p *Processor) ProcessTopic(ctx context.Context, inputTopic string, outputTopic string, checkpointKey string, handler ProcessorHandler) (int, error) {
 	var mu sync.Mutex
 	count := 0
 
 	// Subscribe to topic
-	offsets, err := p.subscribe(ctx, topic, checkpointKey)
+	offsets, err := p.subscribe(ctx, inputTopic, checkpointKey)
 	if err != nil {
 		return count, err
 	}
@@ -108,7 +108,7 @@ func (p *Processor) ProcessTopic(ctx context.Context, topic string, checkpointKe
 				// Write to ticker mentions topic
 				deliveryWG.Add(1)
 				err = p.producer.Produce(&kafka.Message{
-					TopicPartition: kafka.TopicPartition{Topic: &topic, Partition: kafka.PartitionAny},
+					TopicPartition: kafka.TopicPartition{Topic: &outputTopic, Partition: kafka.PartitionAny},
 					Value:          newMsg,
 				}, deliveryChan)
 				if err != nil {

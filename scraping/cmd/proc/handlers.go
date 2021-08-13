@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/VarityPlatform/scraping/common"
 	rpb "github.com/VarityPlatform/scraping/protobuf/reddit"
@@ -62,18 +63,24 @@ func NewRedditCommentHandler(tickers []common.IEXTicker) *RedditCommentHandler {
 	}
 }
 
-// Process processes a kafka message for a reddit submission, extracts tickers,
+// Process processes a kafka message for a reddit comment, extracts tickers,
 // and returns the serialized array of tickers.
 func (h *RedditCommentHandler) Process(msg *kafka.Message) ([][]byte, error) {
 
-	// Parse submission from kafka message
-	submission := &rpb.RedditComment{}
-	if err := proto.Unmarshal(msg.Value, submission); err != nil {
+	// Parse comment from kafka message
+	comment := &rpb.RedditComment{}
+	if err := proto.Unmarshal(msg.Value, comment); err != nil {
+		log.Println(msg.Value)
+		submission := &rpb.RedditSubmission{}
+		if err := proto.Unmarshal(msg.Value, submission); err != nil {
+			log.Println("Fuck main.")
+		}
+		log.Println(submission)
 		return nil, fmt.Errorf("protobuf.Unmarshal: %v", err)
 	}
 
-	// Parse tickers from submission
-	mentions := transforms.TransformRedditComment(h.Extractor, submission)
+	// Parse tickers from comment
+	mentions := transforms.TransformRedditComment(h.Extractor, comment)
 
 	// Serialize tickers into bytes
 	results := [][]byte{}

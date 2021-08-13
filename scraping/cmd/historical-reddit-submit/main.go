@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"strings"
 	"sync"
 
 	"github.com/VarityPlatform/scraping/common"
@@ -13,16 +14,19 @@ import (
 )
 
 // SubmissionsIntervalMinutes is the interval in minutes at which submissions will be scraped
-const SubmissionsIntervalMinutes int = 5
+const SubmissionsIntervalMinutes int = 3
 
 // CommentsIntervalMinutes is the interval in minutes at which comments will be scraped
 const CommentsIntervalMinutes int = 1
 
 // NumWorkers is the number of parallel workers that will create new Cloud Tasks
-const NumWorkers int = 10
+const NumWorkers int = 20
 
 // Limit is the maximum number of posts to scrape from one request.  100 is the max value allowed by PSAW.
 const Limit int = 100
+
+// Wallstreetbets is a literal for "wallstreetbets"
+const Wallstreetbets string = "wallstreetbets"
 
 // Entrypoint method
 func main() {
@@ -64,7 +68,14 @@ func main() {
 			}
 
 			// Generate list of ranges
-			befores, afters := generateDates(start, end, SubmissionsIntervalMinutes)
+			intervalMultiple := 1
+			if strings.ToLower(subreddit) != Wallstreetbets {
+				intervalMultiple *= 5
+			}
+			if end.Year() < 2020 {
+				intervalMultiple *= 4
+			}
+			befores, afters := generateDates(start, end, SubmissionsIntervalMinutes*intervalMultiple)
 
 			// Create worker threads
 			bodiesChan := make(chan *requestBody)
@@ -128,7 +139,14 @@ func main() {
 			}
 
 			// Generate list of ranges
-			befores, afters := generateDates(start, end, CommentsIntervalMinutes)
+			intervalMultiple := 1
+			if strings.ToLower(subreddit) != Wallstreetbets {
+				intervalMultiple *= 5
+			}
+			if end.Year() < 2020 {
+				intervalMultiple *= 4
+			}
+			befores, afters := generateDates(start, end, CommentsIntervalMinutes*intervalMultiple)
 
 			// Create worker threads
 			bodiesChan := make(chan *requestBody)

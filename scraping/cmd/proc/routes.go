@@ -31,7 +31,7 @@ func setupRoutes(web *echo.Echo, processor *kafka.Processor, sink *kafka.Bigquer
 		checkpointKey := common.RedditSubmissions + "-proc"
 
 		// Process reddit submissions
-		count, err := processor.ProcessTopic(ctx, common.RedditSubmissions, checkpointKey, handler)
+		count, err := processor.ProcessTopic(ctx, common.RedditSubmissions, common.TickerMentions, checkpointKey, handler)
 		if err != nil {
 			log.Println(err)
 			return echo.NewHTTPError(http.StatusInternalServerError)
@@ -70,7 +70,7 @@ func setupRoutes(web *echo.Echo, processor *kafka.Processor, sink *kafka.Bigquer
 		checkpointKey := common.RedditComments + "-proc"
 
 		// Process reddit submissions
-		count, err := processor.ProcessTopic(ctx, common.RedditComments, checkpointKey, handler)
+		count, err := processor.ProcessTopic(ctx, common.RedditComments, common.TickerMentions, checkpointKey, handler)
 		if err != nil {
 			log.Println(err)
 			return echo.NewHTTPError(http.StatusInternalServerError)
