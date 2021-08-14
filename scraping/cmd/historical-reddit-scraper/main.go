@@ -3,10 +3,8 @@ package main
 import (
 	"context"
 	"log"
-	"os"
 
 	"github.com/VarityPlatform/scraping/common"
-	"github.com/VarityPlatform/scraping/data/kafka"
 	"github.com/VarityPlatform/scraping/scrapers"
 
 	"github.com/spf13/viper"
@@ -35,21 +33,10 @@ func main() {
 		log.Fatalf("scraper.Init: %v", err)
 	}
 
-	// Initialize publisher
-	publisher, err := initPublisher(ctx, kafka.Opts{
-		BootstrapServers: os.Getenv("KAFKA_BOOTSTRAP_SERVERS"),
-		Username:         os.Getenv("KAFKA_AUTH_KEY"),
-		Password:         os.Getenv("KAFKA_AUTH_SECRET"),
-	})
-	if err != nil {
-		log.Fatalf("kafka.NewPublisher: %v", err)
-	}
-	defer publisher.Close()
-
 	// Initialize webserver
 	web := echo.New()
 	web.HideBanner = true
-	initRoutes(web, submissionsScraper, commentsScraper, publisher)
+	initRoutes(web, submissionsScraper, commentsScraper)
 
 	// Start webserver
 	port := viper.GetString("port")

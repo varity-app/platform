@@ -7,7 +7,6 @@ import (
 
 	"cloud.google.com/go/firestore"
 	"github.com/VarityPlatform/scraping/common"
-	"github.com/confluentinc/confluent-kafka-go/kafka"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -43,7 +42,7 @@ func (manager *OffsetManager) Close() error {
 }
 
 // Fetch takes a kafka topic name and an offset firestore document key, and returns an array of kafka TopicPartitions
-func (manager *OffsetManager) Fetch(ctx context.Context, topic string, key string) ([]kafka.TopicPartition, map[string]int, error) {
+func (manager *OffsetManager) Fetch(ctx context.Context, key string) (map[string]int, error) {
 	collection := manager.fsClient.Collection(manager.collectionName)
 	ref := collection.Doc(key)
 
@@ -51,9 +50,9 @@ func (manager *OffsetManager) Fetch(ctx context.Context, topic string, key strin
 	snap, err := ref.Get(ctx)
 	if status.Code(err) == codes.NotFound {
 		offsets := make(map[string]int)
-		return manager.mapOffsetsToPartitions(topic, offsets), offsets, nil
+		return offsets, nil
 	} else if err != nil {
-		return nil, nil, fmt.Errorf("offsetManager.GetOffsets: %v", err)
+		return nil, fmt.Errorf("offsetManager.GetOffsets: %v", err)
 	}
 
 	data := snap.Data()
@@ -63,31 +62,12 @@ func (manager *OffsetManager) Fetch(ctx context.Context, topic string, key strin
 	for key, value := range data {
 		newValue, err := strconv.Atoi(fmt.Sprint(value))
 		if err != nil {
-			return nil, nil, fmt.Errorf("offsetManager.DecodeOffsets: %v", err)
+			return nil, fmt.Errorf("offsetManager.DecodeOffsets: %v", err)
 		}
 		offsets[key] = newValue
 	}
 
-	topicPartitions := manager.mapOffsetsToPartitions(topic, offsets)
-
-	return topicPartitions, offsets, err
-}
-
-// mapOffsetsToPartitions takes a kafka topic and a map of offsets and returns an array of kafka TopicPartitions
-// ready to be used by the kafka client library
-func (manager *OffsetManager) mapOffsetsToPartitions(topic string, offsets map[string]int) []kafka.TopicPartition {
-
-	partitions := []kafka.TopicPartition{}
-
-	for partition := 0; partition < common.KafkaPartitionsCount; partition++ {
-		partitions = append(partitions, kafka.TopicPartition{
-			Topic:     &topic,
-			Partition: int32(partition),
-			Offset:    kafka.Offset(offsets[fmt.Sprint(partition)]),
-		})
-	}
-
-	return partitions
+	return offsets, err
 }
 
 // Save kafka offsets to firestore

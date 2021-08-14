@@ -38,8 +38,8 @@ func initCommentsScraper(ctx context.Context, memoryOpts scrapers.MemoryOpts) (*
 	return commentsScraper, nil
 }
 
-func initPublisher(ctx context.Context, kafkaOpts kafka.Opts) (*kafka.Publisher, error) {
-	publisher, err := kafka.NewPublisher(kafkaOpts)
+func initPublisher(ctx context.Context, opts kafka.PublisherOpts) (*kafka.Publisher, error) {
+	publisher, err := kafka.NewPublisher(opts)
 	if err != nil {
 		return nil, err
 	}

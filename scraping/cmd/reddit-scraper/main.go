@@ -9,9 +9,6 @@ import (
 	"github.com/VarityPlatform/scraping/scrapers"
 	"github.com/vartanbeno/go-reddit/v2/reddit"
 
-	// "github.com/confluentinc/confluent-kafka-go/kafka"
-	"github.com/VarityPlatform/scraping/data/kafka"
-
 	"github.com/labstack/echo/v4"
 
 	"github.com/spf13/viper"
@@ -53,21 +50,10 @@ func main() {
 	}
 	defer commentsScraper.Close()
 
-	// Initialize publisher
-	publisher, err := initPublisher(ctx, kafka.Opts{
-		BootstrapServers: os.Getenv("KAFKA_BOOTSTRAP_SERVERS"),
-		Username:         os.Getenv("KAFKA_AUTH_KEY"),
-		Password:         os.Getenv("KAFKA_AUTH_SECRET"),
-	})
-	if err != nil {
-		log.Fatalf("kafka.NewPublisher: %v", err)
-	}
-	defer publisher.Close()
-
 	// Initialize webserver
 	web := echo.New()
 	web.HideBanner = true
-	err = setupRoutes(web, submissionsScraper, commentsScraper, publisher)
+	err = setupRoutes(web, submissionsScraper, commentsScraper)
 	if err != nil {
 		log.Fatalln(err)
 	}

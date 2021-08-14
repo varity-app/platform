@@ -1,80 +1,68 @@
 package kafka
 
 import (
+	"context"
+	"crypto/tls"
 	"fmt"
-	"sync"
 
-	"github.com/confluentinc/confluent-kafka-go/kafka"
+	"github.com/segmentio/kafka-go"
+	"github.com/segmentio/kafka-go/sasl/plain"
 )
+
+// PublisherOpts is a struct used to pass configuration parameters to the NewPublisher constructor
+type PublisherOpts struct {
+	BootstrapServers string
+	Username         string
+	Password         string
+	Topic            string
+}
 
 // Publisher publishes messages to a kafka topic
 type Publisher struct {
-	producer *kafka.Producer
+	writer *kafka.Writer
 }
 
 // NewPublisher initializes a new kafka Publisher
-func NewPublisher(opts Opts) (*Publisher, error) {
+func NewPublisher(opts PublisherOpts) (*Publisher, error) {
 
-	// Create producer
-	producer, err := kafka.NewProducer(&kafka.ConfigMap{
-		"bootstrap.servers": opts.BootstrapServers,
-		"security.protocol": "SASL_SSL",
-		"sasl.mechanisms":   "PLAIN",
-		"sasl.username":     opts.Username,
-		"sasl.password":     opts.Password,
-	})
-	if err != nil {
-		return nil, fmt.Errorf("kafka.NewProducer: %v", err)
+	// SASL mechanism
+	mechanism := plain.Mechanism{
+		Username: opts.Username,
+		Password: opts.Password,
+	}
+
+	// Initialize a kafka writer
+	writer := &kafka.Writer{
+		Addr:      kafka.TCP(opts.BootstrapServers),
+		Topic:     opts.Topic,
+		BatchSize: 1,
+		Transport: &kafka.Transport{
+			TLS:  &tls.Config{},
+			SASL: mechanism,
+		},
 	}
 
 	return &Publisher{
-		producer: producer,
+		writer: writer,
 	}, nil
 }
 
 // Close closes a Publisher's connection to the server
-func (p *Publisher) Close() {
-	p.producer.Close()
+func (p *Publisher) Close() error {
+	return p.writer.Close()
 }
 
 // Publish sends messages to a specific kafka topic
-func (p *Publisher) Publish(msgs [][]byte, topic string) error {
+func (p *Publisher) Publish(ctx context.Context, msgs [][]byte) error {
 	// Send submissions to kafka
-	wg := new(sync.WaitGroup)
-	var writeErr error = nil
 
-	// Delivery report handler for produced messages
-	deliveryChan := make(chan kafka.Event)
-	go func() {
-		for e := range deliveryChan {
-			switch ev := e.(type) {
-			case *kafka.Message:
-				if ev.TopicPartition.Error != nil {
-					writeErr = fmt.Errorf("kafka.ProduceMessage: %v", ev.TopicPartition)
-				}
-				wg.Done()
-			}
-		}
-	}()
-
+	var kafkaMsgs []kafka.Message
 	for _, msg := range msgs {
-		wg.Add(1) // Add wait counter
-		err := p.producer.Produce(&kafka.Message{
-			TopicPartition: kafka.TopicPartition{Topic: &topic, Partition: kafka.PartitionAny},
-			Value:          msg,
-		}, deliveryChan)
-		if err != nil {
-			return fmt.Errorf("kafka.Produce: %v", err)
-		}
+		kafkaMsgs = append(kafkaMsgs, kafka.Message{Value: msg})
 	}
 
-	// Flush queue
-	p.producer.Flush(ProducerTimeoutMS)
-
-	// Wait for all messages to process in the delivery report handler
-	wg.Wait()
-	if writeErr != nil {
-		return writeErr
+	if err := p.writer.WriteMessages(ctx, kafkaMsgs...); err != nil {
+		return fmt.Errorf("kafka.WriteMessages: %v", err)
 	}
 
 	return nil

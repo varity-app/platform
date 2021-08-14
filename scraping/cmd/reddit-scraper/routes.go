@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"strconv"
 
 	"github.com/VarityPlatform/scraping/common"
@@ -19,8 +20,14 @@ type response struct {
 }
 
 // Set up echo routes
-func setupRoutes(web *echo.Echo, submissionsScraper *live.RedditSubmissionsScraper, commentsScraper *live.RedditCommentsScraper, publisher *kafka.Publisher) error {
+func setupRoutes(web *echo.Echo, submissionsScraper *live.RedditSubmissionsScraper, commentsScraper *live.RedditCommentsScraper) error {
 
+	// Kafka auth
+	bootstrapServers := os.Getenv("KAFKA_BOOTSTRAP_SERVERS")
+	username := os.Getenv("KAFKA_AUTH_KEY")
+	password := os.Getenv("KAFKA_AUTH_SECRET")
+
+	// Scrape most recent submissions
 	web.GET("/scraping/reddit/submissions/:subreddit", func(c echo.Context) error {
 
 		subreddit := c.Param("subreddit")
@@ -37,6 +44,19 @@ func setupRoutes(web *echo.Echo, submissionsScraper *live.RedditSubmissionsScrap
 		// Create context for new process
 		ctx := c.Request().Context()
 
+		// Initialize publisher
+		publisher, err := initPublisher(ctx, kafka.PublisherOpts{
+			BootstrapServers: bootstrapServers,
+			Username:         username,
+			Password:         password,
+			Topic:            common.RedditSubmissions,
+		})
+		if err != nil {
+			log.Printf("kafka.NewPublisher: %v", err)
+			return err
+		}
+		defer publisher.Close()
+
 		// Scrape submissions from reddit
 		submissions, err := submissionsScraper.Scrape(ctx, subreddit, limit)
 		if err != nil {
@@ -52,7 +72,7 @@ func setupRoutes(web *echo.Echo, submissionsScraper *live.RedditSubmissionsScrap
 		}
 
 		// Publish submissions to kafka
-		err = publisher.Publish(serializedMsgs, common.RedditSubmissions)
+		err = publisher.Publish(ctx, serializedMsgs)
 		if err != nil {
 			log.Println(err)
 			return echo.NewHTTPError(http.StatusInternalServerError)
@@ -69,6 +89,7 @@ func setupRoutes(web *echo.Echo, submissionsScraper *live.RedditSubmissionsScrap
 		return c.JSON(http.StatusOK, response)
 	})
 
+	// Scrape most recent comments
 	web.GET("/scraping/reddit/comments/:subreddit", func(c echo.Context) error {
 
 		subreddit := c.Param("subreddit")
@@ -85,6 +106,19 @@ func setupRoutes(web *echo.Echo, submissionsScraper *live.RedditSubmissionsScrap
 		// Create context for new process
 		ctx := c.Request().Context()
 
+		// Initialize publisher
+		publisher, err := initPublisher(ctx, kafka.PublisherOpts{
+			BootstrapServers: bootstrapServers,
+			Username:         username,
+			Password:         password,
+			Topic:            common.RedditComments,
+		})
+		if err != nil {
+			log.Printf("kafka.NewPublisher: %v", err)
+			return err
+		}
+		defer publisher.Close()
+
 		// Scrape comments from reddit
 		comments, err := commentsScraper.Scrape(ctx, subreddit, limit)
 		if err != nil {
@@ -100,7 +134,7 @@ func setupRoutes(web *echo.Echo, submissionsScraper *live.RedditSubmissionsScrap
 		}
 
 		// Publish submissions to kafka
-		err = publisher.Publish(serializedMsgs, common.RedditComments)
+		err = publisher.Publish(ctx, serializedMsgs)
 		if err != nil {
 			log.Println(err)
 			return echo.NewHTTPError(http.StatusInternalServerError)

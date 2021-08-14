@@ -23,7 +23,7 @@ func initCommentsScraper(ctx context.Context, memoryOpts scrapers.MemoryOpts) (*
 	return &historical.CommentsScraper{}, nil
 }
 
-func initPublisher(ctx context.Context, kafkaOpts kafka.Opts) (*kafka.Publisher, error) {
+func initPublisher(ctx context.Context, opts kafka.PublisherOpts) (*kafka.Publisher, error) {
 	wire.Build(kafka.SuperSet)
 	return &kafka.Publisher{}, nil
 }

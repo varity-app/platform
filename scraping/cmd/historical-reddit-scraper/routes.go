@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/labstack/echo/v4"
@@ -26,15 +27,38 @@ type ScrapingRequestBody struct {
 }
 
 // Initialize routes
-func initRoutes(web *echo.Echo, submissionsScraper *historical.SubmissionsScraper, commentsScraper *historical.CommentsScraper, publisher *kafka.Publisher) {
+func initRoutes(web *echo.Echo, submissionsScraper *historical.SubmissionsScraper, commentsScraper *historical.CommentsScraper) {
 
+	// Kafka auth
+	bootstrapServers := os.Getenv("KAFKA_BOOTSTRAP_SERVERS")
+	username := os.Getenv("KAFKA_AUTH_KEY")
+	password := os.Getenv("KAFKA_AUTH_SECRET")
+
+	// Scrape submissions
 	web.POST("/scraping/reddit/historical/submissions", func(c echo.Context) error {
 
+		// Create context
+		ctx := c.Request().Context()
+
+		// Parse request body
 		body := new(ScrapingRequestBody)
 		if err := c.Bind(body); err != nil {
 			log.Println(err)
 			return err
 		}
+
+		// Initialize publisher
+		publisher, err := initPublisher(ctx, kafka.PublisherOpts{
+			BootstrapServers: bootstrapServers,
+			Username:         username,
+			Password:         password,
+			Topic:            common.RedditSubmissions,
+		})
+		if err != nil {
+			log.Printf("kafka.NewPublisher: %v", err)
+			return err
+		}
+		defer publisher.Close()
 
 		// Parse time fields
 		before, err := time.Parse(time.RFC3339, body.Before)
@@ -47,8 +71,6 @@ func initRoutes(web *echo.Echo, submissionsScraper *historical.SubmissionsScrape
 		if err != nil {
 			return echo.NewHTTPError(http.StatusBadRequest, "Field `after` is not of valid date format (`YYYY-MM-DDThh:mm:ssZ`)")
 		}
-
-		ctx := c.Request().Context()
 
 		submissions, err := submissionsScraper.Scrape(ctx, body.Subreddit, before, after, body.Limit)
 		if err != nil {
@@ -64,7 +86,9 @@ func initRoutes(web *echo.Echo, submissionsScraper *historical.SubmissionsScrape
 		}
 
 		// Publish to kafka
-		publisher.Publish(msgs, common.RedditSubmissions)
+		if err := publisher.Publish(ctx, msgs); err != nil {
+			log.Printf("publisher.Publish: %v", err)
+		}
 
 		// Save seen msgs to memory
 		err = submissionsScraper.CommitSeen(ctx, submissions)
@@ -78,13 +102,31 @@ func initRoutes(web *echo.Echo, submissionsScraper *historical.SubmissionsScrape
 
 	})
 
+	// Scrape comments
 	web.POST("/scraping/reddit/historical/comments", func(c echo.Context) error {
 
+		// Create context
+		ctx := c.Request().Context()
+
+		// Parse request body
 		body := new(ScrapingRequestBody)
 		if err := c.Bind(body); err != nil {
 			log.Println(err)
 			return err
 		}
+
+		// Initialize publisher
+		publisher, err := initPublisher(ctx, kafka.PublisherOpts{
+			BootstrapServers: bootstrapServers,
+			Username:         username,
+			Password:         password,
+			Topic:            common.RedditComments,
+		})
+		if err != nil {
+			log.Println(fmt.Errorf("kafka.NewPublisher: %v", err))
+			return err
+		}
+		defer publisher.Close()
 
 		// Parse time fields
 		before, err := time.Parse(time.RFC3339, body.Before)
@@ -97,8 +139,6 @@ func initRoutes(web *echo.Echo, submissionsScraper *historical.SubmissionsScrape
 		if err != nil {
 			return echo.NewHTTPError(http.StatusBadRequest, "Field `after` is not of valid date format (`YYYY-MM-DDThh:mm:ssZ`)")
 		}
-
-		ctx := c.Request().Context()
 
 		comments, err := commentsScraper.Scrape(ctx, body.Subreddit, before, after, body.Limit)
 		if err != nil {
@@ -114,7 +154,9 @@ func initRoutes(web *echo.Echo, submissionsScraper *historical.SubmissionsScrape
 		}
 
 		// Publish to kafka
-		publisher.Publish(msgs, common.RedditComments)
+		if err := publisher.Publish(ctx, msgs); err != nil {
+			log.Printf("publisher.Publish: %v", err)
+		}
 
 		// Save seen msgs to memory
 		err = commentsScraper.CommitSeen(ctx, comments)

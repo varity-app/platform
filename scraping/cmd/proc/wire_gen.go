@@ -12,24 +12,21 @@ import (
 
 // Injectors from wire.go:
 
-func initProcessor(ctx context.Context, kafkaOpts kafka.Opts, offsetOpts kafka.OffsetManagerOpts) (*kafka.Processor, error) {
+func initProcessor(ctx context.Context, opts kafka.ProcessorOpts, offsetOpts kafka.OffsetManagerOpts) (*kafka.Processor, error) {
 	offsetManager, err := kafka.NewOffsetManager(ctx, offsetOpts)
 	if err != nil {
 		return nil, err
 	}
-	processor, err := kafka.NewProcessor(ctx, offsetManager, kafkaOpts)
-	if err != nil {
-		return nil, err
-	}
+	processor := kafka.NewProcessor(ctx, offsetManager, opts)
 	return processor, nil
 }
 
-func initSink(ctx context.Context, kafkaOpts kafka.Opts, offsetOpts kafka.OffsetManagerOpts) (*kafka.BigquerySink, error) {
+func initSink(ctx context.Context, opts kafka.BigquerySinkOpts, offsetOpts kafka.OffsetManagerOpts) (*kafka.BigquerySink, error) {
 	offsetManager, err := kafka.NewOffsetManager(ctx, offsetOpts)
 	if err != nil {
 		return nil, err
 	}
-	bigquerySink, err := kafka.NewBigquerySink(ctx, offsetManager, kafkaOpts)
+	bigquerySink, err := kafka.NewBigquerySink(ctx, offsetManager, opts)
 	if err != nil {
 		return nil, err
 	}

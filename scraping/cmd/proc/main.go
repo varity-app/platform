@@ -1,9 +1,7 @@
 package main
 
 import (
-	"context"
 	"log"
-	"os"
 
 	"github.com/VarityPlatform/scraping/common"
 	"github.com/VarityPlatform/scraping/data/kafka"
@@ -16,8 +14,6 @@ import (
 // Entrypoint method
 func main() {
 	initConfig()
-
-	ctx := context.Background()
 
 	// Initialize postgres
 	db := common.InitPostgres()
@@ -32,27 +28,11 @@ func main() {
 	// Initialize kafka structs
 	offsetsCollectionName := FirestoreKafkaOffsets + "-" + viper.GetString("deploymentMode")
 	offsetOpts := kafka.OffsetManagerOpts{CollectionName: offsetsCollectionName}
-	kafkaOpts := kafka.Opts{
-		BootstrapServers: os.Getenv("KAFKA_BOOTSTRAP_SERVERS"),
-		Username:         os.Getenv("KAFKA_AUTH_KEY"),
-		Password:         os.Getenv("KAFKA_AUTH_SECRET"),
-	}
-	processor, err := initProcessor(ctx, kafkaOpts, offsetOpts)
-	if err != nil {
-		log.Fatalf("kafkaTickerProcessor.New: %v", err)
-	}
-	defer processor.Close()
-
-	sink, err := initSink(ctx, kafkaOpts, offsetOpts)
-	if err != nil {
-		log.Fatalf("kafkaBigquerySink.New: %v", err)
-	}
-	defer sink.Close()
 
 	// Initialize webserver
 	web := echo.New()
 	web.HideBanner = true
-	err = setupRoutes(web, processor, sink, allTickers)
+	err = setupRoutes(web, offsetOpts, allTickers)
 	if err != nil {
 		log.Fatalln(err)
 	}

@@ -2,15 +2,14 @@ package main
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/VarityPlatform/scraping/common"
 	rpb "github.com/VarityPlatform/scraping/protobuf/reddit"
 	"github.com/VarityPlatform/scraping/transforms"
 
-	"google.golang.org/protobuf/proto"
+	"github.com/segmentio/kafka-go"
 
-	"github.com/confluentinc/confluent-kafka-go/kafka"
+	"google.golang.org/protobuf/proto"
 )
 
 // RedditSubmissionHandler is a handler for the KafkaProcessor reading the reddit-submissions topic
@@ -70,12 +69,6 @@ func (h *RedditCommentHandler) Process(msg *kafka.Message) ([][]byte, error) {
 	// Parse comment from kafka message
 	comment := &rpb.RedditComment{}
 	if err := proto.Unmarshal(msg.Value, comment); err != nil {
-		log.Println(msg.Value)
-		submission := &rpb.RedditSubmission{}
-		if err := proto.Unmarshal(msg.Value, submission); err != nil {
-			log.Println("Fuck main.")
-		}
-		log.Println(submission)
 		return nil, fmt.Errorf("protobuf.Unmarshal: %v", err)
 	}
 

@@ -6,7 +6,7 @@ import (
 	pb "github.com/VarityPlatform/scraping/protobuf/common"
 	rpb "github.com/VarityPlatform/scraping/protobuf/reddit"
 
-	"github.com/confluentinc/confluent-kafka-go/kafka"
+	"github.com/segmentio/kafka-go"
 
 	"google.golang.org/protobuf/proto"
 )
