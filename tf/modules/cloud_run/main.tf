@@ -10,7 +10,7 @@ resource "google_cloud_run_service" "proc" {
 
   template {
     spec {
-      container_concurrency = 1
+      container_concurrency = 8
       containers {
         image = "${var.container_registry}/${var.project}/${var.deployment}/scraping/proc:${var.release}"
 

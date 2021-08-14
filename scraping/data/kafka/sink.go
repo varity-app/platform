@@ -237,11 +237,16 @@ func (s *BigquerySink) sinkMessages(ctx context.Context, inserter *bigquery.Inse
 				return
 			default:
 				batch = append(batch, msg)
-				if len(batch) == batchSize {
+
+				// Insert batch into Bigquery
+				if len(batch) >= batchSize {
 					if err := inserter.Put(ctx, batch); err != nil {
 						errc <- fmt.Errorf("bigquery.Insert: %v", err)
 						return
 					}
+
+					// Reset batch
+					batch = []interface{}{}
 				}
 			}
 		}
