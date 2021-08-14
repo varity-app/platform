@@ -72,8 +72,11 @@ func main() {
 			if strings.ToLower(subreddit) != Wallstreetbets {
 				intervalMultiple *= 5
 			}
+			if end.Year() < 2021 {
+				intervalMultiple *= 2
+			}
 			if end.Year() < 2020 {
-				intervalMultiple *= 4
+				intervalMultiple *= 2
 			}
 			befores, afters := generateDates(start, end, SubmissionsIntervalMinutes*intervalMultiple)
 
@@ -143,8 +146,11 @@ func main() {
 			if strings.ToLower(subreddit) != Wallstreetbets {
 				intervalMultiple *= 5
 			}
+			if end.Year() < 2021 {
+				intervalMultiple *= 2
+			}
 			if end.Year() < 2020 {
-				intervalMultiple *= 4
+				intervalMultiple *= 2
 			}
 			befores, afters := generateDates(start, end, CommentsIntervalMinutes*intervalMultiple)
 
