@@ -37,3 +37,18 @@ services:
       GOOGLE_APPLICATION_CREDENTIALS: /google/credentials.json
     volumes:
       - ${GOOGLE_APPLICATION_CREDENTIALS}:/google/credentials.json:ro
+
+  historical-reddit-scraper:
+    build:
+      context: .
+      dockerfile: ./res/scraping/historical-reddit-scraper/Dockerfile
+      target: prod
+    network_mode: host
+    image: historical-reddit-scraper
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_BOOTSTRAP_SERVERS}
+      KAFKA_AUTH_KEY: ${KAFKA_AUTH_KEY}
+      KAFKA_AUTH_SECRET: ${KAFKA_AUTH_SECRET}
+      GOOGLE_APPLICATION_CREDENTIALS: /google/credentials.json
+    volumes:
+      - ${GOOGLE_APPLICATION_CREDENTIALS}:/google/credentials.json:ro
