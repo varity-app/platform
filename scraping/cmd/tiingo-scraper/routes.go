@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"os"
 	"time"
@@ -29,10 +28,20 @@ func setupRoutes(web *echo.Echo, allTickers []tickers.IEXTicker) {
 		ctx := c.Request().Context()
 
 		// Parse start and end date from request body
-		startDate, err := time.Parse(tiingo.DateFormat, c.Param("start_date"))
-		if err != nil {
-			log.Printf("time.Parse: %v", err)
-			return echo.ErrBadRequest
+		var startDate time.Time
+		if c.Param("start_date") == "1d" {
+			startDate = time.Now().Add(-1 * 24 * time.Hour)
+		} else if c.Param("start_date") == "3d" {
+			startDate = time.Now().Add(-3 * 24 * time.Hour)
+		} else if c.Param("start_date") == "7d" {
+			startDate = time.Now().Add(-7 * 24 * time.Hour)
+		} else {
+			d, err := time.Parse(tiingo.DateFormat, c.Param("start_date"))
+			if err != nil {
+				log.Printf("time.Parse: %v", err)
+				return echo.ErrBadRequest
+			}
+			startDate = d
 		}
 		endDate := time.Now()
 
@@ -51,73 +60,10 @@ func setupRoutes(web *echo.Echo, allTickers []tickers.IEXTicker) {
 		// Spawn off a certain number of threads
 		var errcs []<-chan error
 		for i := 0; i < numThreads; i++ {
+			chunkSize := len(allTickers)/numThreads + 1
+			tickersChunk := allTickers[i*chunkSize : min((i+1)*chunkSize, len(allTickers))]
 
-			tickersChan := make(chan tickers.IEXTicker)
-			priceBatches := make(chan []prices.EODPrice)
-
-			scrapeErrc := make(chan error, 1)
-			sinkErrc := make(chan error, 1)
-
-			// Create scraping thread
-			go func() {
-				defer close(scrapeErrc)
-				defer close(priceBatches)
-
-				for ticker := range tickersChan {
-
-					// Fetch prices from Tiingo
-					scrapedPrices, err := scraper.Scrape(ctx, ticker.Symbol, startDate, endDate)
-					if err != nil {
-						scrapeErrc <- fmt.Errorf("scraper.Scrape: %v", err)
-						return
-					}
-					if len(scrapedPrices) == 0 {
-						continue
-					}
-
-					// Send batch to output channel
-					select {
-					case <-ctx.Done():
-						return
-					case priceBatches <- scrapedPrices:
-					}
-				}
-			}()
-
-			// Create sink thread
-			go func() {
-				defer close(sinkErrc)
-
-				for batch := range priceBatches {
-					select {
-					case <-ctx.Done():
-						return
-					default:
-						// Save prices to BigQuery
-						err := sink.Sink(ctx, batch)
-						if err != nil {
-							sinkErrc <- fmt.Errorf("sink.Sink: %v", err)
-							return
-						}
-					}
-				}
-			}()
-
-			// Send tickers to the channel
-			go func(i int) {
-				defer close(tickersChan)
-				chunkSize := len(allTickers)/numThreads + 1
-
-				// Send a chunk of tickers to the ticker channel
-				for _, ticker := range allTickers[i*chunkSize : min((i+1)*chunkSize, len(allTickers))] {
-					select {
-					case <-ctx.Done():
-						return
-					case tickersChan <- ticker:
-					}
-				}
-			}(i)
-
+			scrapeErrc, sinkErrc := pricesPipeline(ctx, scraper, sink, tickersChunk, startDate, endDate)
 			errcs = append(errcs, scrapeErrc, sinkErrc)
 		}
 

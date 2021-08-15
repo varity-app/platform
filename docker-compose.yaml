@@ -52,3 +52,20 @@ services:
       GOOGLE_APPLICATION_CREDENTIALS: /google/credentials.json
     volumes:
       - ${GOOGLE_APPLICATION_CREDENTIALS}:/google/credentials.json:ro
+
+  tiingo-scraper:
+    build:
+      context: .
+      dockerfile: ./res/scraping/tiingo/Dockerfile
+      target: prod
+    network_mode: host
+    image: tiingo-scraper
+    environment:
+      TIINGO_TOKEN: ${TIINGO_TOKEN}
+      POSTGRES_ADDRESS: ${POSTGRES_ADDRESS}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USERNAME: ${POSTGRES_USERNAME}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      GOOGLE_APPLICATION_CREDENTIALS: /google/credentials.json
+    volumes:
+      - ${GOOGLE_APPLICATION_CREDENTIALS}:/google/credentials.json:ro

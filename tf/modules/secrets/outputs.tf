@@ -67,3 +67,8 @@ output "postgres_password_secret_id" {
   value     = data.google_secret_manager_secret_version.postgres_password.secret
   sensitive = true
 }
+
+output "tiingo_token_secret_id" {
+  value     = data.google_secret_manager_secret_version.tiingo_token.secret
+  sensitive = true
+}

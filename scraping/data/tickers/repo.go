@@ -9,7 +9,7 @@ import (
 	"github.com/go-pg/pg/v10"
 )
 
-// TickerRepo is an abstraction class for interfacing with the Postgres database
+// IEXTickerRepo is an abstraction class for interfacing with the Postgres database
 // in which tickers are stored.
 type IEXTickerRepo struct {
 	db *pg.DB

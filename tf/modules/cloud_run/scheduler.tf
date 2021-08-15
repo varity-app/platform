@@ -204,3 +204,20 @@ resource "google_cloud_scheduler_job" "proc_ticker_mentions_sink" {
     }
   }
 }
+
+resource "google_cloud_scheduler_job" "recent_prices" {
+  name             = "update-recent-prices-${var.deployment}"
+  description      = "Update EOD prices from the Tiingo API"
+  schedule         = "0 0 * * * "
+  time_zone        = "America/New_York"
+  attempt_deadline = "900s"
+
+  http_target {
+    http_method = "GET"
+    uri         = "${google_cloud_run_service.tiingo.status[0].url}/scraping/tiingo/prices/3d"
+
+    oidc_token {
+      service_account_email = google_service_account.scheduler_svc.email
+    }
+  }
+}

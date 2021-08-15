@@ -72,6 +72,7 @@ func (s *EODPricesScraper) request(symbol string, startDate, endDate time.Time) 
 	q.Add("token", s.token)
 	q.Add("startDate", startDate.Format(DateFormat))
 	q.Add("endDate", endDate.Format(DateFormat))
+	q.Add("resampleFreq", "daily")
 
 	req.URL.RawQuery = q.Encode()
 

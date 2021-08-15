@@ -32,3 +32,8 @@ data "google_secret_manager_secret_version" "postgres_password" {
   secret  = "varity-postgres-password"
   project = var.project
 }
+
+data "google_secret_manager_secret_version" "tiingo_token" {
+  secret  = "varity-tiingo-token"
+  project = var.project
+}
