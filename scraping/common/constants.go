@@ -24,6 +24,9 @@ const BigqueryTableRedditComments string = "reddit_comments_v2"
 // BigqueryTableTickerMentions refers to the ticker mentions v2 bigquery table
 const BigqueryTableTickerMentions string = "ticker_mentions_v2"
 
+// BigqueryTableEODPrices refers to the eod_prices bigquery table
+const BigqueryTableEODPrices string = "eod_prices"
+
 // RedditSubmissions is just a general placeholder for "reddit-submissions"
 const RedditSubmissions string = "reddit-submissions"
 
