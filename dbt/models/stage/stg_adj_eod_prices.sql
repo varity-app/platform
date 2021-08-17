@@ -14,13 +14,12 @@ FROM
     SELECT
       symbol,
       date,
-      EXP(
-        SUM(LOG(split)) OVER (
-          PARTITION BY symbol
-          ORDER BY
-            date
-        )
-      ) as net_split_factor
+      EXP(SUM(LOG(split)) OVER (
+        PARTITION BY symbol
+        ORDER BY
+          date
+        ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+      )) AS net_split_factor
     FROM
       {{ ref('src_eod_prices') }}
   ) split_factors

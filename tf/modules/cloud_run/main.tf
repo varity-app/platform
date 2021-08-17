@@ -311,6 +311,7 @@ resource "google_cloud_run_service" "tiingo" {
   template {
     spec {
       container_concurrency = 8
+      timeout_seconds = 900
       containers {
         image = "${var.container_registry}/${var.project}/${var.deployment}/scraping/tiingo:${var.release}"
 
