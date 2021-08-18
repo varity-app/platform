@@ -1,7 +1,7 @@
 WITH posts_titles AS (
     SELECT
         parent_id,
-        count(symbol) = 1 AS targeted
+        count(distinct symbol) = 1 AS targeted
     FROM {{ ref('src_submissions_mentions') }}
     WHERE parent_source = 'reddit-submission-title'
     GROUP BY
