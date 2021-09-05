@@ -1,10 +1,28 @@
+WITH comment_frequencies AS (
+    SELECT
+        author_id,
+        subreddit,
+        TIMESTAMP_TRUNC(timestamp, MONTH) as month,
+        count(*) as posts_count
+    FROM {{ ref('src_comments') }}
+    GROUP BY author_id, subreddit, 3
+), submission_frequencies AS (
+    SELECT
+        author_id,
+        subreddit,
+        TIMESTAMP_TRUNC(timestamp, MONTH) as month,
+        count(*) as posts_count
+    FROM {{ ref('src_submissions') }}
+    GROUP BY author_id, subreddit, 3
+), all_posts AS (
+    SELECT * FROM comment_frequencies
+    UNION ALL SELECT * FROM submission_frequencies
+)
+
 SELECT
-    comments.day,
-    comments.subreddit,
-    comments.author_id,
-    comments.total_recent_post_count + submissions.total_recent_post_count AS posts_count
-FROM {{ ref('redditors_comment_monthly_frequencies') }} comments
-LEFT JOIN {{ ref('redditors_submission_monthly_frequencies') }} submissions
-    ON comments.day = submissions.day
-        AND comments.subreddit = submissions.subreddit
-        AND comments.author_id = submissions.author_id
+    author_id,
+    subreddit,
+    month,
+    SUM(posts_count) AS posts_count
+FROM all_posts
+GROUP BY 1, 2, 3
