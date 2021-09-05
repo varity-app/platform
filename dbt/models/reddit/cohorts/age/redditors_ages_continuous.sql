@@ -3,7 +3,7 @@ WITH date_sequences AS (
         author_id,
         subreddit,
         original_date,
-        GENERATE_TIMESTAMP_ARRAY(original_date, CURRENT_TIMESTAMP(), INTERVAL 28 DAY) AS months
+        GENERATE_TIMESTAMP_ARRAY(original_date, CURRENT_TIMESTAMP(), INTERVAL 30 DAY) AS months
     FROM {{ ref('redditors_first_seen') }}
 )
 
