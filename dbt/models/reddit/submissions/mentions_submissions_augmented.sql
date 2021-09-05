@@ -18,7 +18,7 @@ posts_titles_bodies AS (
         parent_id
 )
 
-SELECT
+SELECT DISTINCT
     mentions.symbol,
     mentions.timestamp,
     mentions.parent_id AS submission_id,

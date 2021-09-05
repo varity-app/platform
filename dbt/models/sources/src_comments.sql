@@ -1,6 +1,7 @@
-with source_data as (
-    select * from {{var('dataset')}}.reddit_comments_v2
-)
-
-select *
-from source_data
+select
+    comment_id,
+    submission_id,
+    subreddit,
+    author_id,
+    timestamp
+from {{var('dataset')}}.reddit_comments_v2
