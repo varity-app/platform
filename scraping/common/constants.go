@@ -15,6 +15,9 @@ const DeploymentModeProd string = "prod"
 // BigqueryDatasetScraping refers to the scraping bigquery dataset
 const BigqueryDatasetScraping string = "scraping"
 
+// BigqueryDatasetDBTScraping refers to the DBT scraping bigquery dataset
+const BigqueryDatasetDBTScraping string = "dbt_scraping"
+
 // BigqueryTableRedditSubmissions refers to the reddit submissions v2 bigquery table
 const BigqueryTableRedditSubmissions string = "reddit_submissions_v2"
 
