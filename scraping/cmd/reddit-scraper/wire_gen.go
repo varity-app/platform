@@ -7,9 +7,9 @@ package main
 
 import (
 	"context"
-	"github.com/VarityPlatform/scraping/data/kafka"
-	"github.com/VarityPlatform/scraping/scrapers"
-	"github.com/VarityPlatform/scraping/scrapers/reddit/live"
+	"github.com/varity-app/platform/scraping/internal/data/kafka"
+	"github.com/varity-app/platform/scraping/internal/scrapers"
+	"github.com/varity-app/platform/scraping/internal/scrapers/reddit/live"
 	"github.com/vartanbeno/go-reddit/v2/reddit"
 )
 

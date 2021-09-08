@@ -2,10 +2,9 @@
 FROM golang:1.16.6-alpine AS builder
 
 # Copy source
-WORKDIR /opt
-COPY scraping/ ./
+COPY scraping /src
 
-WORKDIR /opt/cmd/tiingo-scraper
+WORKDIR /src/cmd/tiingo-scraper
 RUN go mod download
 RUN go build . 
 
@@ -14,6 +13,6 @@ FROM alpine:edge AS prod
 
 # Copy binary
 WORKDIR /app
-COPY --from=builder /opt/cmd/tiingo-scraper/tiingo .
+COPY --from=builder /src/cmd/tiingo-scraper/tiingo .
 
 ENTRYPOINT ./tiingo

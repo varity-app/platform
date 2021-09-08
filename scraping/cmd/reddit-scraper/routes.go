@@ -7,10 +7,10 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/VarityPlatform/scraping/common"
-	"github.com/VarityPlatform/scraping/scrapers/reddit/live"
+	"github.com/varity-app/platform/scraping/internal/common"
+	"github.com/varity-app/platform/scraping/internal/scrapers/reddit/live"
 
-	"github.com/VarityPlatform/scraping/data/kafka"
+	"github.com/varity-app/platform/scraping/internal/data/kafka"
 
 	"github.com/labstack/echo/v4"
 )

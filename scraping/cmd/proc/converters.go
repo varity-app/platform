@@ -3,8 +3,8 @@ package main
 import (
 	"fmt"
 
-	pb "github.com/VarityPlatform/scraping/protobuf/common"
-	rpb "github.com/VarityPlatform/scraping/protobuf/reddit"
+	rpb "github.com/varity-app/platform/scraping/api/reddit/v1"
+	pb "github.com/varity-app/platform/scraping/api/ticker_mentions/v1"
 
 	"github.com/segmentio/kafka-go"
 

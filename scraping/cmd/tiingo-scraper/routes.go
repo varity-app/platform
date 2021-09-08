@@ -9,10 +9,10 @@ import (
 
 	"github.com/labstack/echo/v4"
 
-	"github.com/VarityPlatform/scraping/common"
-	"github.com/VarityPlatform/scraping/data/prices"
-	"github.com/VarityPlatform/scraping/data/tickers"
-	"github.com/VarityPlatform/scraping/scrapers/tiingo"
+	"github.com/varity-app/platform/scraping/internal/common"
+	"github.com/varity-app/platform/scraping/internal/data/prices"
+	"github.com/varity-app/platform/scraping/internal/data/tickers"
+	"github.com/varity-app/platform/scraping/internal/scrapers/tiingo"
 )
 
 const numThreads int = 10

@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/VarityPlatform/scraping/data/prices"
-	"github.com/VarityPlatform/scraping/data/tickers"
-	"github.com/VarityPlatform/scraping/scrapers/tiingo"
+	"github.com/varity-app/platform/scraping/internal/data/prices"
+	"github.com/varity-app/platform/scraping/internal/data/tickers"
+	"github.com/varity-app/platform/scraping/internal/scrapers/tiingo"
 )
 
 func pricesPipeline(ctx context.Context, scraper *tiingo.EODPricesScraper, sink *prices.EODPriceSink, allTickers []tickers.IEXTicker, startDate, endDate time.Time) (<-chan error, <-chan error) {

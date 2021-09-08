@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/VarityPlatform/scraping/common"
+	"github.com/varity-app/platform/scraping/internal/common"
 )
 
 // IexBaseURL is the base URL for the IEX Cloud API

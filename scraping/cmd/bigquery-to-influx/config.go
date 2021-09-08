@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/VarityPlatform/scraping/common"
+	"github.com/varity-app/platform/scraping/internal/common"
 
 	"github.com/spf13/viper"
 )

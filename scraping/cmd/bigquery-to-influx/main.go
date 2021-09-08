@@ -6,9 +6,9 @@ import (
 	"log"
 	"time"
 
-	"github.com/VarityPlatform/scraping/common"
-	"github.com/VarityPlatform/scraping/data/bigquery2influx"
 	"github.com/spf13/viper"
+	"github.com/varity-app/platform/scraping/internal/common"
+	"github.com/varity-app/platform/scraping/internal/data/bigquery2influx"
 
 	"github.com/go-redis/redis/v8"
 
@@ -80,6 +80,8 @@ func main() {
 	// Aggregate mentions
 	time := time.Date(year, time.Month(month), day, hour, 0, 0, 0, time.UTC)
 	points := aggregate(memberships, mentions, time)
+
+	log.Println(len(points), points[0])
 
 	// Write points to InfluxDB
 	writeAPI := influxClient.WriteAPIBlocking(viper.GetString("influxdb.org"), viper.GetString("influxdb.bucket"))

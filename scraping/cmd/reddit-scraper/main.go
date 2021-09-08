@@ -5,8 +5,8 @@ import (
 	"log"
 	"os"
 
-	"github.com/VarityPlatform/scraping/common"
-	"github.com/VarityPlatform/scraping/scrapers"
+	"github.com/varity-app/platform/scraping/internal/common"
+	"github.com/varity-app/platform/scraping/internal/scrapers"
 	"github.com/vartanbeno/go-reddit/v2/reddit"
 
 	"github.com/labstack/echo/v4"

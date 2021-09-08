@@ -4,7 +4,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/VarityPlatform/scraping/data/tickers"
+	"github.com/varity-app/platform/scraping/internal/data/tickers"
 
 	"github.com/go-pg/pg/v10"
 	"github.com/spf13/viper"

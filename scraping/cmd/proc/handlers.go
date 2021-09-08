@@ -3,9 +3,9 @@ package main
 import (
 	"fmt"
 
-	"github.com/VarityPlatform/scraping/common"
-	rpb "github.com/VarityPlatform/scraping/protobuf/reddit"
-	"github.com/VarityPlatform/scraping/transforms"
+	rpb "github.com/varity-app/platform/scraping/api/reddit/v1"
+	"github.com/varity-app/platform/scraping/internal/common"
+	"github.com/varity-app/platform/scraping/internal/transforms"
 
 	"github.com/segmentio/kafka-go"
 

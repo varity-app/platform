@@ -7,7 +7,7 @@ package main
 
 import (
 	"context"
-	"github.com/VarityPlatform/scraping/data/kafka"
+	"github.com/varity-app/platform/scraping/internal/data/kafka"
 )
 
 // Injectors from wire.go:

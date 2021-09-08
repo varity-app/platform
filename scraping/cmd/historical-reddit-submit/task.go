@@ -9,7 +9,7 @@ import (
 	cloudtasks "cloud.google.com/go/cloudtasks/apiv2"
 	taskspb "google.golang.org/genproto/googleapis/cloud/tasks/v2"
 
-	"github.com/VarityPlatform/scraping/common"
+	"github.com/varity-app/platform/scraping/internal/common"
 )
 
 type requestBody struct {

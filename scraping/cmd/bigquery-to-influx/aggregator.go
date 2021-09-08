@@ -3,8 +3,8 @@ package main
 import (
 	"time"
 
-	b2i "github.com/VarityPlatform/scraping/data/bigquery2influx"
-	"github.com/VarityPlatform/scraping/transforms"
+	b2i "github.com/varity-app/platform/scraping/internal/data/bigquery2influx"
+	"github.com/varity-app/platform/scraping/internal/transforms"
 
 	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
 	write "github.com/influxdata/influxdb-client-go/v2/api/write"
