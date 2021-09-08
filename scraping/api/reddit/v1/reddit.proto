@@ -2,9 +2,6 @@ syntax = "proto3";
 
 import "google/protobuf/timestamp.proto";
 
-// To generate run this: `cd go/scraping && protoc --go_out=$(pwd) protobuf/reddit.proto`
-option go_package = "protobuf/reddit";
-
 message RedditSubmission {
     string submission_id = 1;
     string subreddit = 2;

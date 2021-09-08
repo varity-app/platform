@@ -1,4 +1,4 @@
-package reddit
+package v1
 
 import (
 	"cloud.google.com/go/bigquery"

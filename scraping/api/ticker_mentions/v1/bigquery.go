@@ -1,4 +1,4 @@
-package common
+package v1
 
 import (
 	"cloud.google.com/go/bigquery"

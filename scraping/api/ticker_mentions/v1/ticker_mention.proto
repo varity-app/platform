@@ -2,9 +2,6 @@ syntax = "proto3";
 
 import "google/protobuf/timestamp.proto";
 
-// To generate run this: `cd go/scraping && protoc --go_out=$(pwd) protobuf/common.proto`
-option go_package = "protobuf/common";
-
 message TickerMention {
     string symbol = 1;
     string parent_source = 2;
