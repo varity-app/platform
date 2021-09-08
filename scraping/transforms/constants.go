@@ -73,4 +73,7 @@ var TickerBlacklist []string = []string{
 	"TM",
 	"TA",
 	"HA",
+	"WOW",
+	"ATH",
+	"CASH",
 }
