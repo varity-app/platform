@@ -22,6 +22,13 @@ import (
 	transforms "github.com/varity-app/platform/scraping/internal/transforms/mentions"
 )
 
+// list of every cohort table in Bigquery.
+var allCohortTables []string = []string{
+	b2i.CohortTableRedditorsAge,
+	b2i.CohortTableRedditorsFrequencies,
+	b2i.CohortTableRedditorsPopularity,
+}
+
 // InfluxOpts stores configuration parameters for an InfluxDB Client
 type InfluxOpts struct {
 	Addr   string
@@ -66,7 +73,7 @@ func NewService(ctx context.Context, opts ServiceOpts) (*echo.Echo, error) {
 // Register API routes
 func registerRoutes(web *echo.Echo, influxClient influxdb2.Client, membershipRepo *b2i.CohortMembershipRepo, mentionsRepo *b2i.MentionsRepo, opts ServiceOpts) {
 
-	web.POST("/api/v1/bigquery-to-influx", func(c echo.Context) error {
+	web.POST("/api/v1/etl/bigquery-to-influx", func(c echo.Context) error {
 
 		// Parse request body
 		var request etlv1.PubSubRequest
@@ -86,15 +93,19 @@ func registerRoutes(web *echo.Echo, influxClient influxdb2.Client, membershipRep
 		ctx := c.Request().Context()
 
 		// Fetch cohort memberships from the past month
-		tableName := wrapDBTTable(opts.DeploymentMode, b2i.CohortTableRedditorsAge)
-		memberships, err := membershipRepo.GetMemberships(ctx, tableName, spec.Year, spec.Month-1)
-		if err != nil {
-			log.Printf("membershipRepo.GetMemberships: %v", err)
-			return err
+		var allMemberships []b2i.CohortMembership
+		for _, table := range allCohortTables {
+			tableName := wrapDBTTable(opts.DeploymentMode, table)
+			memberships, err := membershipRepo.GetMemberships(ctx, tableName, spec.Year, spec.Month-1)
+			if err != nil {
+				log.Printf("membershipRepo.GetMemberships: %v", err)
+				return err
+			}
+			allMemberships = append(allMemberships, memberships...)
 		}
 
 		// Fetch mentions for the given hour
-		tableName = wrapDBTTable(opts.DeploymentMode, b2i.MentionsTableReddit)
+		tableName := wrapDBTTable(opts.DeploymentMode, b2i.MentionsTableReddit)
 		mentions, err := mentionsRepo.GetMentions(ctx, tableName, spec.Year, spec.Month, spec.Day, spec.Hour)
 		if err != nil {
 			log.Printf("mentionsRepo.GetMentions: %v", err)
@@ -103,7 +114,7 @@ func registerRoutes(web *echo.Echo, influxClient influxdb2.Client, membershipRep
 
 		// Aggregate mentions
 		ts := time.Date(spec.Year, time.Month(spec.Month), spec.Day, spec.Hour, 0, 0, 0, time.UTC)
-		points := transforms.Aggregate(memberships, mentions, ts)
+		points := transforms.Aggregate(allMemberships, mentions, ts)
 
 		// Write points to InfluxDB
 		writeAPI := influxClient.WriteAPIBlocking(opts.Influx.Org, opts.Influx.Bucket)

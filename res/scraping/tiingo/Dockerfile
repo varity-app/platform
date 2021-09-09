@@ -13,6 +13,6 @@ FROM alpine:edge AS prod
 
 # Copy binary
 WORKDIR /app
-COPY --from=builder /src/cmd/tiingo-scraper/tiingo .
+COPY --from=builder /src/cmd/tiingo-scraper/tiingo-scraper .
 
-ENTRYPOINT ./tiingo
+ENTRYPOINT ./tiingo-scraper
