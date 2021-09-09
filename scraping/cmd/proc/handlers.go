@@ -5,7 +5,7 @@ import (
 
 	rpb "github.com/varity-app/platform/scraping/api/reddit/v1"
 	"github.com/varity-app/platform/scraping/internal/common"
-	"github.com/varity-app/platform/scraping/internal/transforms"
+	transforms "github.com/varity-app/platform/scraping/internal/transforms/tickerext"
 
 	"github.com/segmentio/kafka-go"
 
@@ -40,7 +40,7 @@ func (h *RedditSubmissionHandler) Process(msg *kafka.Message) ([][]byte, error) 
 	// Serialize tickers into bytes
 	results := [][]byte{}
 	for _, mention := range mentions {
-		serializedMention, err := proto.Marshal(&mention)
+		serializedMention, err := proto.Marshal(mention)
 		if err != nil {
 			return nil, fmt.Errorf("protobuf.Marshal: %v", err)
 		}
@@ -78,7 +78,7 @@ func (h *RedditCommentHandler) Process(msg *kafka.Message) ([][]byte, error) {
 	// Serialize tickers into bytes
 	results := [][]byte{}
 	for _, mention := range mentions {
-		serializedMention, err := proto.Marshal(&mention)
+		serializedMention, err := proto.Marshal(mention)
 		if err != nil {
 			return nil, fmt.Errorf("protobuf.Marshal: %v", err)
 		}

@@ -1,4 +1,4 @@
-package transforms
+package tickerext
 
 // TickerBlacklist is a list of tickers that are not actually referring to a ticker
 // and should be discarded during ticker extraction.

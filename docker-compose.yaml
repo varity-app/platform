@@ -69,3 +69,19 @@ services:
       GOOGLE_APPLICATION_CREDENTIALS: /google/credentials.json
     volumes:
       - ${GOOGLE_APPLICATION_CREDENTIALS}:/google/credentials.json:ro
+
+  bigquery-to-influx:
+    build:
+      context: .
+      dockerfile: ./res/scraping/bigquery-to-influx/Dockerfile
+      target: prod
+    network_mode: host
+    image: bigquery-to-influx
+    environment:
+      REDIS_BIGQUERY_ENDPOINT: ${REDIS_BIGQUERY_ENDPOINT}
+      REDIS_BIGQUERY_PASSWORD: ${REDIS_BIGQUERY_PASSWORD}
+      INFLUX_URL: ${INFLUX_URL}
+      INFLUX_TOKEN: ${INFLUX_TOKEN}
+      GOOGLE_APPLICATION_CREDENTIALS: /google/credentials.json
+    volumes:
+      - ${GOOGLE_APPLICATION_CREDENTIALS}:/google/credentials.json:ro

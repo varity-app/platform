@@ -2,8 +2,8 @@ WITH comment_mentions AS (
     SELECT
         mentions.symbol,
         mentions.timestamp,
-        mentions.targeted,
-        mentions.inquisitive,
+        CASE WHEN mentions.targeted IS NULL THEN FALSE ELSE mentions.targeted END targeted,
+        CASE WHEN mentions.inquisitive IS NULL THEN FALSE ELSE mentions.inquisitive END inquisitive,
         comments.author_id,
         comments.subreddit,
         "reddit-comment" AS source
@@ -14,8 +14,8 @@ WITH comment_mentions AS (
     SELECT
         mentions.symbol,
         mentions.timestamp,
-        mentions.targeted,
-        mentions.inquisitive,
+        CASE WHEN mentions.targeted IS NULL THEN FALSE ELSE mentions.targeted END targeted,
+        CASE WHEN mentions.inquisitive IS NULL THEN FALSE ELSE mentions.inquisitive END inquisitive,
         submissions.author_id,
         submissions.subreddit,
         "reddit-submission" AS source

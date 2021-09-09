@@ -14,6 +14,7 @@ declare -a IMAGES=(
   'scraping/historical-reddit-scraper'
   'scraping/proc'
   'scraping/tiingo'
+  'scraping/bigquery-to-influx'
 )
 
 ######################

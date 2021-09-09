@@ -1,4 +1,4 @@
-package v1
+package mentionsv1
 
 import (
 	"cloud.google.com/go/bigquery"

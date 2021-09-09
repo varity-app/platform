@@ -21,13 +21,13 @@ const (
 
 // Mention represents a redditor's membership to a cohort.
 type Mention struct {
-	Symbol     string    `json:"symbol" bigquery:"symbol"`
-	Timestamp  time.Time `json:"timestamp" bigquery:"timestamp"`
-	Targeted   bool      `json:"targeted" bigquery:"targeted"`
-	Inquisitve bool      `json:"inquisitve" bigquery:"inquisitve"`
-	AuthorID   string    `json:"authorID" bigquery:"authorID"`
-	Subreddit  string    `json:"subreddit" bigquery:"subreddit"`
-	Source     string    `json:"source" bigquery:"source"`
+	Symbol      string    `json:"symbol" bigquery:"symbol"`
+	Timestamp   time.Time `json:"timestamp" bigquery:"timestamp"`
+	Targeted    bool      `json:"targeted" bigquery:"targeted"`
+	Inquisitive bool      `json:"inquisitive" bigquery:"inquisitive"`
+	AuthorID    string    `json:"author_id" bigquery:"author_id"`
+	Subreddit   string    `json:"subreddit" bigquery:"subreddit"`
+	Source      string    `json:"source" bigquery:"source"`
 }
 
 // MentionsRepoOpts is a helper object used to pass configuration parameters
@@ -54,9 +54,9 @@ func NewMentionsRepo(bqClient *bigquery.Client, redisOpts *redis.Options) *Menti
 func (r *MentionsRepo) GetMentions(ctx context.Context, tableName string, year, month, day, hour int) ([]Mention, error) {
 
 	// Check Redis cache
-	redisKey := fmt.Sprintf("%s_%d_%d", tableName, year, month)
+	redisKey := fmt.Sprintf("%s.%d.%d.%d", tableName, year, month, hour)
 	mentions, err := r.checkCache(ctx, redisKey)
-	if err == nil { // Return value tretrieved from cache
+	if err == nil { // Return value retrieved from cache
 		return mentions, nil
 	} else if err != redis.Nil {
 		return nil, fmt.Errorf("cohortMembershipRepo.CheckCache: %v", err)
@@ -92,15 +92,15 @@ func (r *MentionsRepo) GetMentions(ctx context.Context, tableName string, year, 
 	// Iterate over query results
 	mentions = []Mention{}
 	for {
-		var membership Mention
-		err = it.Next(&membership)
+		var mention Mention
+		err = it.Next(&mention)
 		if err == iterator.Done {
 			break
 		} else if err != nil {
 			return nil, fmt.Errorf("cohortMembershipRepo.QueryResults: %v", err)
 		}
 
-		mentions = append(mentions, membership)
+		mentions = append(mentions, mention)
 	}
 
 	// Save query results to redis

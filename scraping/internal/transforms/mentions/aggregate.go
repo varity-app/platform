@@ -1,10 +1,10 @@
-package main
+package mentions
 
 import (
 	"time"
 
 	b2i "github.com/varity-app/platform/scraping/internal/data/bigquery2influx"
-	"github.com/varity-app/platform/scraping/internal/transforms"
+	"github.com/varity-app/platform/scraping/internal/transforms/tickerext"
 
 	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
 	write "github.com/influxdata/influxdb-client-go/v2/api/write"
@@ -17,14 +17,24 @@ const (
 	tagSymbol    = "symbol"
 	tagSubreddit = "subreddit"
 	tagCohort    = "cohort"
+	tagSource    = "source"
 
 	fieldMentionsCount    = "mentions_count"
 	fieldTargetedCount    = "targeted_count"
 	fieldInquisitiveCount = "inquisitive_count"
 )
 
-// Aggregator aggregates a list of mentions by subreddit and cohort.
-func aggregate(memberships []b2i.CohortMembership, mentions []b2i.Mention, ts time.Time) []*write.Point {
+// Aggregate aggregates a list of mentions by symbol, subreddit, cohort, and source.
+func Aggregate(memberships []b2i.CohortMembership, mentions []b2i.Mention, ts time.Time) []*write.Point {
+
+	aggs := aggregate(memberships, mentions)
+	points := convertToPoints(aggs, ts)
+
+	return points
+}
+
+// aggregate memberships and mentions
+func aggregate(memberships []b2i.CohortMembership, mentions []b2i.Mention) map[[4]string][3]int {
 
 	// Create a mapping for an author's id to its cohort memberships
 	membershipsMap := make(map[string][]b2i.CohortMembership)
@@ -35,7 +45,7 @@ func aggregate(memberships []b2i.CohortMembership, mentions []b2i.Mention, ts ti
 	}
 
 	// Aggregate mentions by cohort and subreddit
-	cohortCounts := make(map[[3]string][3]int)
+	aggs := make(map[[4]string][3]int)
 	for _, mention := range mentions {
 		memberships := membershipsMap[mention.AuthorID]
 
@@ -43,42 +53,40 @@ func aggregate(memberships []b2i.CohortMembership, mentions []b2i.Mention, ts ti
 		memberships = append(memberships, b2i.CohortMembership{Subreddit: mention.Subreddit, Cohort: cohortAll})
 
 		// Skip mention if ticker in blacklist
-		if contains(transforms.TickerBlacklist, mention.Symbol) {
+		if contains(tickerext.TickerBlacklist, mention.Symbol) {
 			continue
 		}
 
 		// Aggregate mentions by subreddit and cohort
 		for _, membership := range memberships {
 			if membership.Subreddit == mention.Subreddit {
-				key := [3]string{mention.Symbol, mention.Subreddit, membership.Cohort}
+				key := [4]string{mention.Symbol, mention.Subreddit, membership.Cohort, mention.Source}
 
 				// Increment mention count
-				curAgg := cohortCounts[key]
-				curAgg[0] += 1
+				curAgg := aggs[key]
+				curAgg[0]++
 
 				// Optionally increment targeted count
 				if mention.Targeted {
-					curAgg[1] += 1
+					curAgg[1]++
 				}
 
 				// Optionally increment inquisitive count
-				if mention.Inquisitve {
-					curAgg[2] += 1
+				if mention.Inquisitive {
+					curAgg[2]++
 				}
 
 				// Update map
-				cohortCounts[key] = curAgg
+				aggs[key] = curAgg
 			}
 		}
 	}
 
-	points := convertToPoints(cohortCounts, ts)
-
-	return points
+	return aggs
 }
 
 // Convert aggregate map to a list of InfluxDB points
-func convertToPoints(aggs map[[3]string][3]int, ts time.Time) []*write.Point {
+func convertToPoints(aggs map[[4]string][3]int, ts time.Time) []*write.Point {
 
 	points := []*write.Point{}
 
@@ -87,6 +95,7 @@ func convertToPoints(aggs map[[3]string][3]int, ts time.Time) []*write.Point {
 			tagSymbol:    key[0],
 			tagSubreddit: key[1],
 			tagCohort:    key[2],
+			tagSource:    key[3],
 		}
 
 		fields := map[string]interface{}{
@@ -104,7 +113,7 @@ func convertToPoints(aggs map[[3]string][3]int, ts time.Time) []*write.Point {
 
 // Helper method for checking if element exists in array
 func contains(arr []string, s string) bool {
-	for _, el := range transforms.TickerBlacklist {
+	for _, el := range arr {
 		if el == s {
 			return true
 		}

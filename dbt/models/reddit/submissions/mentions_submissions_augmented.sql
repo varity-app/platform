@@ -7,7 +7,7 @@ WITH posts_titles AS (
     GROUP BY
         parent_id
 ),
-posts_titles_bodies AS (
+posts_titles_and_bodies AS (
     SELECT
         parent_id,
         count(distinct symbol) = 1 AS targeted,
@@ -22,11 +22,11 @@ SELECT DISTINCT
     mentions.symbol,
     mentions.timestamp,
     mentions.parent_id AS submission_id,
-    (posts_titles.targeted OR posts_titles_bodies.targeted) AND mentions.symbol = posts_titles_bodies.top_symbol AS targeted,
-    posts_titles_bodies.inquisitive
+    (posts_titles.targeted OR posts_titles_and_bodies.targeted) AND mentions.symbol = posts_titles_and_bodies.top_symbol AS targeted,
+    posts_titles_and_bodies.inquisitive
 FROM {{ ref('src_submissions_mentions') }} mentions
 LEFT JOIN posts_titles
     ON mentions.parent_id = posts_titles.parent_id
-LEFT JOIN posts_titles_bodies
-    ON mentions.parent_id = posts_titles_bodies.parent_id
+LEFT JOIN posts_titles_and_bodies
+    ON mentions.parent_id = posts_titles_and_bodies.parent_id
     

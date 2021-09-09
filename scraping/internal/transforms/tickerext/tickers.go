@@ -1,9 +1,9 @@
-package transforms
+package tickerext
 
 import (
 	"regexp"
 
-	pb "github.com/varity-app/platform/scraping/api/ticker_mentions/v1"
+	pb "github.com/varity-app/platform/scraping/api/mentions/v1"
 	"github.com/varity-app/platform/scraping/internal/common"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
@@ -118,9 +118,9 @@ func (extractor *TickerExtractor) CalcTickerFrequency(tickerList []common.IEXTic
 }
 
 // ExtractTickerMentions extracts every pb.TickerMention from a string
-func (extractor *TickerExtractor) ExtractTickerMentions(s string, parentID string, parentSource string, timestamp *timestamppb.Timestamp) []pb.TickerMention {
+func (extractor *TickerExtractor) ExtractTickerMentions(s string, parentID string, parentSource string, timestamp *timestamppb.Timestamp) []*pb.TickerMention {
 	if s == "" {
-		return []pb.TickerMention{}
+		return []*pb.TickerMention{}
 	}
 
 	// Extract tickers and shortname mentions from string
@@ -136,9 +136,9 @@ func (extractor *TickerExtractor) ExtractTickerMentions(s string, parentID strin
 	wordCount := len(wordRegex.FindAllString(s, -1))
 
 	// Generate list of ticker mentions
-	mentions := []pb.TickerMention{}
+	mentions := []*pb.TickerMention{}
 	for _, ticker := range uniqTickers {
-		mentions = append(mentions, pb.TickerMention{
+		mentions = append(mentions, &pb.TickerMention{
 			Symbol:            ticker.Symbol,
 			ParentId:          parentID,
 			ParentSource:      parentSource,
