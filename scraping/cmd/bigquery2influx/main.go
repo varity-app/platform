@@ -5,16 +5,16 @@ import (
 	"log"
 
 	"github.com/spf13/viper"
+	"github.com/varity-app/platform/scraping/internal/config"
+	"github.com/varity-app/platform/scraping/internal/data"
 	b2i "github.com/varity-app/platform/scraping/internal/services/bigquery2influx"
-
-	"github.com/go-redis/redis/v8"
 )
 
 // Entrypoint method
 func main() {
 
 	// Initialize viper configuration
-	err := initConfig()
+	err := config.InitConfig()
 	if err != nil {
 		log.Fatalf("viper.BindEnv: %v", err)
 	}
@@ -30,9 +30,11 @@ func main() {
 			Org:    viper.GetString("influxdb.org"),
 			Bucket: viper.GetString("influxdb.bucket"),
 		},
-		Redis: &redis.Options{
-			Addr:     viper.GetString("redis.bigquery.endpoint"),
-			Password: viper.GetString("redis.bigquery.password"),
+		Postgres: data.PostgresOpts{
+			Username: viper.GetString("postgres.username"),
+			Password: viper.GetString("postgres.password"),
+			Address:  viper.GetString("postgres.address"),
+			Database: viper.GetString("postgres.database"),
 		},
 		DeploymentMode: viper.GetString("deployment.mode"),
 	}

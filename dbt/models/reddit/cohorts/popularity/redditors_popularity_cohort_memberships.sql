@@ -3,7 +3,7 @@ WITH percentile_10 AS (
         popularities.author_id,
         popularities.subreddit,
         popularities.month,
-        "influence_lowest_10_percent" AS cohort
+        "popularity_lowest_10_percent" AS cohort
     FROM {{ ref('redditors_popularities') }} popularities
     INNER JOIN {{ ref('redditors_popularities_quantiles') }} quantiles
         ON popularities.month = quantiles.month AND popularities.subreddit = quantiles.subreddit
@@ -13,7 +13,7 @@ WITH percentile_10 AS (
         popularities.author_id,
         popularities.subreddit,
         popularities.month,
-        "influence_lowest_25_percent" AS cohort
+        "popularity_lowest_25_percent" AS cohort
     FROM {{ ref('redditors_popularities') }} popularities
     INNER JOIN {{ ref('redditors_popularities_quantiles') }} quantiles
         ON popularities.month = quantiles.month AND popularities.subreddit = quantiles.subreddit
@@ -23,7 +23,7 @@ WITH percentile_10 AS (
         popularities.author_id,
         popularities.subreddit,
         popularities.month,
-        "influence_top_50_percent" AS cohort
+        "popularity_top_50_percent" AS cohort
     FROM {{ ref('redditors_popularities') }} popularities
     INNER JOIN {{ ref('redditors_popularities_quantiles') }} quantiles
         ON popularities.month = quantiles.month AND popularities.subreddit = quantiles.subreddit
@@ -33,7 +33,7 @@ WITH percentile_10 AS (
         popularities.author_id,
         popularities.subreddit,
         popularities.month,
-        "influence_top_25_percent" AS cohort
+        "popularity_top_25_percent" AS cohort
     FROM {{ ref('redditors_popularities') }} popularities
     INNER JOIN {{ ref('redditors_popularities_quantiles') }} quantiles
         ON popularities.month = quantiles.month AND popularities.subreddit = quantiles.subreddit
@@ -43,7 +43,7 @@ WITH percentile_10 AS (
         popularities.author_id,
         popularities.subreddit,
         popularities.month,
-        "influence_top_10_percent" AS cohort
+        "popularity_top_10_percent" AS cohort
     FROM {{ ref('redditors_popularities') }} popularities
     INNER JOIN {{ ref('redditors_popularities_quantiles') }} quantiles
         ON popularities.month = quantiles.month AND popularities.subreddit = quantiles.subreddit

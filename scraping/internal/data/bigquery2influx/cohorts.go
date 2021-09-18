@@ -2,28 +2,38 @@ package bigquery2influx
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
+	"log"
 	"regexp"
 	"time"
 
 	"google.golang.org/api/iterator"
+	"gorm.io/gorm"
 
 	"cloud.google.com/go/bigquery"
-
-	"github.com/go-redis/redis/v8"
 )
 
 const (
-	// CohortTableRedditorsAge is the name of the bigquery table containing the Redditors Age cohort
-	CohortTableRedditorsAge string = "redditors_age_cohort_memberships"
+	// cohortTableRedditorsAge is the name of the bigquery table containing the Redditors Age cohort
+	cohortTableRedditorsAge string = "redditors_age_cohort_memberships"
 
-	// CohortTableRedditorsPopularity is the name of the bigquery table containing the Redditors Popularity cohort
-	CohortTableRedditorsPopularity string = "redditors_popularity_cohort_memberships"
+	// cohortTableRedditorsPopularity is the name of the bigquery table containing the Redditors Popularity cohort
+	cohortTableRedditorsPopularity string = "redditors_popularity_cohort_memberships"
 
-	// CohortTableRedditorsFrequencies is the name of the bigquery table containing the Redditors Posting Frequencies cohort
-	CohortTableRedditorsFrequencies string = "redditors_frequencies_cohort_memberships"
+	// cohortTableRedditorsFrequencies is the name of the bigquery table containing the Redditors Posting Frequencies cohort
+	cohortTableRedditorsFrequencies string = "redditors_frequencies_cohort_memberships"
+
+	// Batch size to use when inserting cohort memberships into Postgres
+	cohortsBatchSize = 1000
 )
+
+// Map a table to it's corresponding cohort prefix.
+// E.g. redditors_age_cohort_memberships -> "age*"
+var cohortsTableMap map[string]string = map[string]string{
+	cohortTableRedditorsAge:         "age",
+	cohortTableRedditorsPopularity:  "popularity",
+	cohortTableRedditorsFrequencies: "post_frequency",
+}
 
 // CohortMembership represents a redditor's membership to a cohort.
 type CohortMembership struct {
@@ -33,45 +43,61 @@ type CohortMembership struct {
 	Cohort    string    `json:"cohort" bigquery:"cohort"`
 }
 
-// CohortMembershipRepoOpts is a helper object used to pass configuration parameters
-// to NewCohortMembershipRepo()
-type CohortMembershipRepoOpts struct {
-}
-
 // CohortMembershipRepo is an abstraction layer for retreiving CohortMebership objects from BigQuery.
 type CohortMembershipRepo struct {
-	bqClient *bigquery.Client
-	rdb      *redis.Client
+	bqClient       *bigquery.Client
+	pdb            *gorm.DB
+	deploymentMode string
 }
 
 // NewCohortMembershipRepo is a constructor that returns a new CohortMebershipRepo
-func NewCohortMembershipRepo(bqClient *bigquery.Client, redisOpts *redis.Options) *CohortMembershipRepo {
+func NewCohortMembershipRepo(bqClient *bigquery.Client, pdb *gorm.DB, deploymentMode string) *CohortMembershipRepo {
 	return &CohortMembershipRepo{
-		bqClient: bqClient,
-		rdb:      redis.NewClient(redisOpts),
+		bqClient:       bqClient,
+		pdb:            pdb,
+		deploymentMode: deploymentMode,
 	}
 }
 
 // GetMemberships fetches all memberships for a specific cohort table for a specific month.
 // tableName should be a full table reference of the format `project.dataset.tablename`
-func (r *CohortMembershipRepo) GetMemberships(ctx context.Context, tableName string, year, month int) ([]CohortMembership, error) {
+func (r *CohortMembershipRepo) GetMemberships(ctx context.Context, year, month int) ([]CohortMembership, error) {
 
-	// Check Redis cache
-	redisKey := fmt.Sprintf("%s_%d_%d", tableName, year, month)
-	memberships, err := r.checkCache(ctx, redisKey)
-	if err == nil { // Return value tretrieved from cache
-		return memberships, nil
-	} else if err != redis.Nil {
+	var allMemberships []CohortMembership
+
+	// Query each individual table
+	for table, _ := range cohortsTableMap {
+		memberships, err := r.queryCohort(ctx, table, year, month)
+		if err != nil {
+			return nil, err
+		}
+
+		allMemberships = append(allMemberships, memberships...)
+	}
+
+	return allMemberships, nil
+}
+
+func (r *CohortMembershipRepo) queryCohort(ctx context.Context, table string, year, month int) ([]CohortMembership, error) {
+	cohortPrefix := cohortsTableMap[table]
+	memberships, err := r.checkCache(ctx, cohortPrefix, year, month)
+	if err != nil {
 		return nil, fmt.Errorf("cohortMembershipRepo.CheckCache: %v", err)
 	}
 
-	// Check that tableName is of valid format
-	matched, err := regexp.Match(`\w+[.]\w+[.]\w+`, []byte(tableName))
+	if len(memberships) != 0 {
+		return memberships, nil
+	}
+
+	log.Println("querying bigquery...")
+
+	// Check that table is of valid format
+	matched, err := regexp.Match(`\w+`, []byte(table))
 	if err != nil {
 		return nil, fmt.Errorf("regexp.Match: %v", err)
 	}
 	if !matched {
-		return nil, fmt.Errorf("cohortMembership.CheckTableName: invalid tableName: %s", tableName)
+		return nil, fmt.Errorf("cohortMembership.CheckTableName: invalid table name: %s", table)
 	}
 
 	// Formulate query
@@ -81,7 +107,7 @@ func (r *CohortMembershipRepo) GetMemberships(ctx context.Context, tableName str
 		FROM %s
 		WHERE
 			month = @month;
-	`, tableName))
+	`, wrapDBTTable(r.deploymentMode, table)))
 	query.Parameters = []bigquery.QueryParameter{
 		{Name: "month", Value: fmt.Sprintf("%d-%d-01", year, month)},
 	}
@@ -107,7 +133,7 @@ func (r *CohortMembershipRepo) GetMemberships(ctx context.Context, tableName str
 	}
 
 	// Save query results to redis
-	err = r.saveCache(ctx, redisKey, memberships)
+	err = r.saveCache(memberships)
 	if err != nil {
 		return nil, fmt.Errorf("cohortMembershipRepo.SaveCache: %v", err)
 	}
@@ -115,35 +141,25 @@ func (r *CohortMembershipRepo) GetMemberships(ctx context.Context, tableName str
 	return memberships, nil
 }
 
-// checkCache queries the Redis cache to see if a query's results have been stored.
-func (r *CohortMembershipRepo) checkCache(ctx context.Context, key string) ([]CohortMembership, error) {
+// checkCache queries the Firestore cache to see if a queries results have been stored.
+func (r *CohortMembershipRepo) checkCache(ctx context.Context, cohortPrefix string, year, month int) ([]CohortMembership, error) {
 
-	val, err := r.rdb.Get(ctx, key).Result()
-	if err != nil {
-		return nil, err
-	}
+	// Create time.Time representation of month
+	ts := time.Date(year, time.Month(month), 1, 0, 0, 0, 0, time.UTC)
 
+	// Query postgres
 	var memberships []CohortMembership
-	err = json.Unmarshal([]byte(val), &memberships)
-	if err != nil {
-		return nil, fmt.Errorf("cohortMemberships.UnmarshalJSON: %v", err)
+	result := r.pdb.Where("month = ? AND cohort LIKE ?", ts, cohortPrefix+"%").Find(&memberships)
+	if result.Error != nil {
+		return nil, fmt.Errorf("postgres.Get: %v", result.Error)
 	}
 
 	return memberships, nil
 }
 
-// saveCache saves a query's results to the Redis cache.
-func (r *CohortMembershipRepo) saveCache(ctx context.Context, key string, memberships []CohortMembership) error {
+// saveCache saves a query's results to the Firestore cache.
+func (r *CohortMembershipRepo) saveCache(memberships []CohortMembership) error {
+	result := r.pdb.CreateInBatches(memberships, cohortsBatchSize)
 
-	result, err := json.Marshal(memberships)
-	if err != nil {
-		return fmt.Errorf("cohortMemberships.MarshalJSON: %v", err)
-	}
-
-	err = r.rdb.Set(ctx, key, result, 0).Err()
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return result.Error
 }

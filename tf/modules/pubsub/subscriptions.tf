@@ -1,27 +1,21 @@
-resource "google_pubsub_subscription" "submissions_proc" {
-  name    = "reddit-submissions-proc-${var.deployment}"
-  topic   = google_pubsub_topic.reddit_submissions.name
+resource "google_pubsub_subscription" "etl_bigquery_to_influx_main" {
+  name    = "etl-bigquery-to-influx-main-${var.deployment}"
+  topic   = google_pubsub_topic.etl_bigquery_to_influx.name
   project = var.project
 
-  labels = {
-    deployment = var.deployment
+  ack_deadline_seconds = 60
+
+  push_config {
+    oidc_token {
+      service_account_email = google_service_account.pubsub_invoker.email
+    }
+
+    push_endpoint = "${var.etl_bigquery_to_influx_url}/api/v1/etl/bigquery-to-influx"
+
+    attributes = {
+      x-goog-version = "v1"
+    }
   }
-}
-
-resource "google_pubsub_subscription" "comments_proc" {
-  name    = "reddit-comments-proc-${var.deployment}"
-  topic   = google_pubsub_topic.reddit_comments.name
-  project = var.project
-
-  labels = {
-    deployment = var.deployment
-  }
-}
-
-resource "google_pubsub_subscription" "ticker_mentions_proc" {
-  name    = "ticker-mentions-proc-${var.deployment}"
-  topic   = google_pubsub_topic.ticker_mentions.name
-  project = var.project
 
   labels = {
     deployment = var.deployment

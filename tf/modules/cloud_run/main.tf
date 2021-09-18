@@ -394,3 +394,45 @@ resource "google_cloud_run_service" "tiingo" {
     ]
   }
 }
+
+resource "google_cloud_run_service" "etl_bigquery_to_influx" {
+  name     = "etl-bigquery-to-influx-${var.deployment}"
+  location = var.region
+  project  = var.project
+  provider = google-beta
+
+  template {
+    spec {
+      container_concurrency = 10
+      containers {
+        image = "${var.container_registry}/${var.project}/${var.deployment}/scraping/bigquery-to-influx:${var.release}"
+
+      }
+    }
+
+    metadata {
+      annotations = {
+        "autoscaling.knative.dev/maxScale"      = "5"
+      }
+    }
+  }
+
+  metadata {
+    annotations = {
+      generated-by                      = "magic-modules"
+      "run.googleapis.com/launch-stage" = "BETA"
+    }
+  }
+  traffic {
+    percent         = 100
+    latest_revision = true
+  }
+
+  autogenerate_revision_name = true
+
+  lifecycle {
+    ignore_changes = [
+      metadata.0.annotations,
+    ]
+  }
+}
