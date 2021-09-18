@@ -1,4 +1,4 @@
-package bigquery2influx
+package bigquery
 
 import (
 	"context"
@@ -59,9 +59,8 @@ func NewCohortMembershipRepo(bqClient *bigquery.Client, pdb *gorm.DB, deployment
 	}
 }
 
-// GetMemberships fetches all memberships for a specific cohort table for a specific month.
-// tableName should be a full table reference of the format `project.dataset.tablename`
-func (r *CohortMembershipRepo) GetMemberships(ctx context.Context, year, month int) ([]CohortMembership, error) {
+// Get fetches all cohort memberships for a specific month.
+func (r *CohortMembershipRepo) Get(ctx context.Context, year, month int) ([]CohortMembership, error) {
 
 	var allMemberships []CohortMembership
 

@@ -19,12 +19,12 @@ import (
 	etlv1 "github.com/varity-app/platform/scraping/api/etl/v1"
 	"github.com/varity-app/platform/scraping/internal/common"
 	"github.com/varity-app/platform/scraping/internal/data"
-	b2i "github.com/varity-app/platform/scraping/internal/data/bigquery2influx"
+	bq "github.com/varity-app/platform/scraping/internal/data/bigquery"
 	transforms "github.com/varity-app/platform/scraping/internal/transforms/mentions"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
-	"gorm.io/logger"
+	"gorm.io/gorm/logger"
 )
 
 // InfluxOpts stores configuration parameters for an InfluxDB Client
@@ -66,21 +66,31 @@ func NewService(ctx context.Context, opts ServiceOpts) (*echo.Echo, error) {
 	}
 
 	// Init repos
-	membershipRepo := b2i.NewCohortMembershipRepo(bqClient, db, opts.DeploymentMode)
-	mentionsRepo := b2i.NewMentionsRepo(bqClient, opts.DeploymentMode)
+	membershipRepo := bq.NewCohortMembershipRepo(bqClient, db, opts.DeploymentMode)
+	submissionsRepo := bq.NewRedditSubmissionsRepo(bqClient, opts.DeploymentMode)
+	commentsRepo := bq.NewRedditCommentsRepo(bqClient, opts.DeploymentMode)
+	mentionsRepo := bq.NewMentionsRepo(bqClient, opts.DeploymentMode)
 
 	// Init Echo
 	web := echo.New()
 	web.HideBanner = true
-	registerRoutes(web, influxClient, membershipRepo, mentionsRepo, opts)
+	registerRoutes(web, influxClient, membershipRepo, submissionsRepo, commentsRepo, mentionsRepo, opts)
 
 	return web, nil
 }
 
 // Register API routes
-func registerRoutes(web *echo.Echo, influxClient influxdb2.Client, membershipRepo *b2i.CohortMembershipRepo, mentionsRepo *b2i.MentionsRepo, opts ServiceOpts) {
+func registerRoutes(
+	web *echo.Echo,
+	influxClient influxdb2.Client,
+	membershipRepo *bq.CohortMembershipRepo,
+	submissionsRepo *bq.RedditSubmissionsRepo,
+	commentsRepo *bq.RedditCommentsRepo,
+	mentionsRepo *bq.MentionsRepo,
+	opts ServiceOpts,
+) {
 
-	web.POST("/api/v1/etl/bigquery-to-influx", func(c echo.Context) error {
+	web.POST("/api/etl/bigquery-to-influx/v1/", func(c echo.Context) error {
 
 		// Parse request body
 		var request etlv1.PubSubRequest
@@ -108,22 +118,39 @@ func registerRoutes(web *echo.Echo, influxClient influxdb2.Client, membershipRep
 		ctx := c.Request().Context()
 
 		// Fetch cohort memberships from the past month
-		memberships, err := membershipRepo.GetMemberships(ctx, spec.Year, spec.Month-1)
+		memberships, err := membershipRepo.Get(ctx, spec.Year, spec.Month-1)
 		if err != nil {
 			log.Printf("membershipRepo.GetMemberships: %v", err)
 			return echo.ErrInternalServerError
 		}
 
 		// Fetch mentions for the given hour
-		mentions, err := mentionsRepo.GetMentions(ctx, spec.Year, spec.Month, spec.Day, spec.Hour)
+		mentions, err := mentionsRepo.Get(ctx, spec.Year, spec.Month, spec.Day, spec.Hour)
 		if err != nil {
 			log.Printf("mentionsRepo.GetMentions: %v", err)
 			return echo.ErrInternalServerError
 		}
 
+		// Fetch submissions for the given hour
+		submissions, err := submissionsRepo.Get(ctx, spec.Year, spec.Month, spec.Day, spec.Hour)
+		if err != nil {
+			log.Printf("submissionsRepo.GetMentions: %v", err)
+			return echo.ErrInternalServerError
+		}
+
+		// Fetch comments for the given hour
+		comments, err := commentsRepo.Get(ctx, spec.Year, spec.Month, spec.Day, spec.Hour)
+		if err != nil {
+			log.Printf("commentsRepo.GetMentions: %v", err)
+			return echo.ErrInternalServerError
+		}
+
+		// Augment tickers
+		augmented := transforms.AugmentMentions(mentions, submissions, comments)
+
 		// Aggregate mentions
 		ts := time.Date(spec.Year, time.Month(spec.Month), spec.Day, spec.Hour, 0, 0, 0, time.UTC)
-		points := transforms.Aggregate(memberships, mentions, ts)
+		points := transforms.Aggregate(memberships, augmented, ts)
 
 		// Write points to InfluxDB
 		writeAPI := influxClient.WriteAPIBlocking(opts.Influx.Org, opts.Influx.Bucket)

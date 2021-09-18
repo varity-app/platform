@@ -5,7 +5,7 @@ import (
 
 	"gotest.tools/assert"
 
-	b2i "github.com/varity-app/platform/scraping/internal/data/bigquery2influx"
+	"github.com/varity-app/platform/scraping/internal/data/bigquery"
 )
 
 const (
@@ -15,8 +15,8 @@ const (
 
 // TestNoMentions tests the aggregate function with no mentions
 func TestNoMentions(t *testing.T) {
-	memberships := []b2i.CohortMembership{}
-	mentions := []b2i.Mention{}
+	memberships := []bigquery.CohortMembership{}
+	mentions := []AugmentedMention{}
 
 	aggs := aggregate(memberships, mentions)
 
@@ -27,8 +27,8 @@ func TestNoMentions(t *testing.T) {
 
 // TestNoMemberships is a unit test
 func TestNoMemberships(t *testing.T) {
-	memberships := []b2i.CohortMembership{}
-	mentions := []b2i.Mention{
+	memberships := []bigquery.CohortMembership{}
+	mentions := []AugmentedMention{
 		{Symbol: "AAPL", Subreddit: subredditDummy, Source: sourceDummy, Targeted: true, Inquisitive: false},
 		{Symbol: "AAPL", Subreddit: subredditDummy, Source: sourceDummy, Targeted: true, Inquisitive: true},
 		{Symbol: "GOOGL", Subreddit: subredditDummy, Source: sourceDummy, Targeted: true, Inquisitive: true},
@@ -46,10 +46,10 @@ func TestNoMemberships(t *testing.T) {
 
 // TestOneMembership is a unit test
 func TestOneMembership(t *testing.T) {
-	memberships := []b2i.CohortMembership{
+	memberships := []bigquery.CohortMembership{
 		{AuthorID: "author1", Subreddit: subredditDummy, Cohort: "cohort1"},
 	}
-	mentions := []b2i.Mention{
+	mentions := []AugmentedMention{
 		{Symbol: "AAPL", Subreddit: subredditDummy, Source: sourceDummy, Targeted: true, Inquisitive: false, AuthorID: "author1"},
 		{Symbol: "GOOGL", Subreddit: subredditDummy, Source: sourceDummy, Targeted: true, Inquisitive: true},
 		{Symbol: "GOOGL", Subreddit: subredditDummy, Source: sourceDummy, Targeted: true, Inquisitive: true},
@@ -68,12 +68,12 @@ func TestOneMembership(t *testing.T) {
 
 // TestThreeMembership is a unit test
 func TestThreeMembership(t *testing.T) {
-	memberships := []b2i.CohortMembership{
+	memberships := []bigquery.CohortMembership{
 		{AuthorID: "author1", Subreddit: subredditDummy, Cohort: "cohort1"},
 		{AuthorID: "author1", Subreddit: subredditDummy, Cohort: "cohort2"},
 		{AuthorID: "author1", Subreddit: subredditDummy, Cohort: "cohort3"},
 	}
-	mentions := []b2i.Mention{
+	mentions := []AugmentedMention{
 		{Symbol: "AAPL", Subreddit: subredditDummy, Source: sourceDummy, Targeted: true, Inquisitive: false, AuthorID: "author1"},
 		{Symbol: "AAPL", Subreddit: subredditDummy, Source: sourceDummy, Targeted: true, Inquisitive: true, AuthorID: "author2"},
 		{Symbol: "GOOGL", Subreddit: subredditDummy, Source: sourceDummy, Targeted: true, Inquisitive: true, AuthorID: "author3"},

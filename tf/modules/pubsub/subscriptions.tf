@@ -10,7 +10,7 @@ resource "google_pubsub_subscription" "etl_bigquery_to_influx_main" {
       service_account_email = google_service_account.pubsub_invoker.email
     }
 
-    push_endpoint = "${var.etl_bigquery_to_influx_url}/api/v1/etl/bigquery-to-influx"
+    push_endpoint = "${var.etl_bigquery_to_influx_url}/api/etl/bigquery-to-influx/v1/"
 
     attributes = {
       x-goog-version = "v1"

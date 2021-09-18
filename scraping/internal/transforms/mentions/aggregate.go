@@ -3,7 +3,7 @@ package mentions
 import (
 	"time"
 
-	b2i "github.com/varity-app/platform/scraping/internal/data/bigquery2influx"
+	"github.com/varity-app/platform/scraping/internal/data/bigquery"
 	"github.com/varity-app/platform/scraping/internal/transforms/tickerext"
 
 	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
@@ -25,7 +25,7 @@ const (
 )
 
 // Aggregate aggregates a list of mentions by symbol, subreddit, cohort, and source.
-func Aggregate(memberships []b2i.CohortMembership, mentions []b2i.Mention, ts time.Time) []*write.Point {
+func Aggregate(memberships []bigquery.CohortMembership, mentions []AugmentedMention, ts time.Time) []*write.Point {
 
 	aggs := aggregate(memberships, mentions)
 	points := convertToPoints(aggs, ts)
@@ -34,10 +34,10 @@ func Aggregate(memberships []b2i.CohortMembership, mentions []b2i.Mention, ts ti
 }
 
 // aggregate memberships and mentions
-func aggregate(memberships []b2i.CohortMembership, mentions []b2i.Mention) map[[4]string][3]int {
+func aggregate(memberships []bigquery.CohortMembership, mentions []AugmentedMention) map[[4]string][3]int {
 
 	// Create a mapping for an author's id to its cohort memberships
-	membershipsMap := make(map[string][]b2i.CohortMembership)
+	membershipsMap := make(map[string][]bigquery.CohortMembership)
 	for _, membership := range memberships {
 		authorMemberships := membershipsMap[membership.AuthorID]
 
@@ -50,7 +50,7 @@ func aggregate(memberships []b2i.CohortMembership, mentions []b2i.Mention) map[[
 		memberships := membershipsMap[mention.AuthorID]
 
 		// Always add a minimum membership to a fake "all" cohort.
-		memberships = append(memberships, b2i.CohortMembership{Subreddit: mention.Subreddit, Cohort: cohortAll})
+		memberships = append(memberships, bigquery.CohortMembership{Subreddit: mention.Subreddit, Cohort: cohortAll})
 
 		// Skip mention if ticker in blacklist
 		if contains(tickerext.TickerBlacklist, mention.Symbol) {
