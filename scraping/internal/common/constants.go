@@ -60,3 +60,6 @@ const CloudTasksSvcAccount string = "varity-tasks-svc-%s@varity.iam.gserviceacco
 
 // CloudTasksQueueB2I is the name of the bigquery-to-influx ETL Cloud Tasks queue.
 const CloudTasksQueueB2I string = "bigquery-to-influx"
+
+// CloudTasksQueueRedditHistorical is the name of the reddit historical Cloud Tasks queue.
+const CloudTasksQueueRedditHistorical string = "reddit-historical"

@@ -4,11 +4,12 @@ import (
 	"time"
 )
 
-// generateDates generates a pair of arrays representing time intervals between two timestamps
-func generateDates(start, end time.Time, minuteInterval int) ([]time.Time, []time.Time) {
+// generateMinuteRanges generates a pair of arrays (start, end) representing time intervals.
+// Ranges are calculated down to the minute.
+func generateMinuteRanges(start, end time.Time, minuteInterval int) ([]time.Time, []time.Time) {
 
-	befores := []time.Time{}
-	afters := []time.Time{}
+	ends := []time.Time{}
+	starts := []time.Time{}
 
 	for year := start.Year(); year <= end.Year(); year++ {
 		// Calculate max month
@@ -41,13 +42,11 @@ func generateDates(start, end time.Time, minuteInterval int) ([]time.Time, []tim
 
 					// Iterate over each interval of minutes
 					for minute := start.Minute(); minute <= maxMinute; minute += minuteInterval {
-						after := time.Date(year, month, day, hour, minute, 0, 0, time.UTC)
-						before := after.Add(time.Duration(minuteInterval) * time.Minute)
+						start := time.Date(year, month, day, hour, minute, 0, 0, time.UTC)
+						end := start.Add(time.Duration(minuteInterval) * time.Minute)
 
-						afters = append(afters, after)
-						befores = append(befores, before)
-
-						// fmt.Println(after.Format(time.RFC3339), before.Format(time.RFC3339))
+						starts = append(starts, start)
+						ends = append(ends, end)
 					}
 				}
 
@@ -55,7 +54,7 @@ func generateDates(start, end time.Time, minuteInterval int) ([]time.Time, []tim
 		}
 	}
 
-	return befores, afters
+	return starts, ends
 }
 
 // Parse a date string

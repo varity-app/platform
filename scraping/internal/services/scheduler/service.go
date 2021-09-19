@@ -35,7 +35,7 @@ type Service struct {
 // NewService creates a new Bigquery->InfluxDB service in the form of an Echo server.
 func NewService(ctx context.Context, opts ServiceOpts) (*Service, error) {
 
-	// Init bigquery client
+	// Init cloud tasks client
 	ctClient, err := cloudtasks.NewClient(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("pubsub.NewClient: %v", err)
