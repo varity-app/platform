@@ -1,8 +1,8 @@
 package etlv1
 
-// BigqueryToInfluxSpec defines a request to pull data from Bigquery, aggregate,
+// BigqueryToInfluxRequest defines a request to pull data from Bigquery, aggregate,
 // and store in InfluxDB.  This should be delivered via the body of a PubSub message.
-type BigqueryToInfluxSpec struct {
+type BigqueryToInfluxRequest struct {
 	Year  int `json:"year"`
 	Month int `json:"month"`
 	Day   int `json:"day"`

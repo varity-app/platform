@@ -26,5 +26,10 @@ func initPostgres() error {
 		return err
 	}
 
+	err = viper.BindEnv("postgres.network", "POSTGRES_NETWORK")
+	if err != nil {
+		return err
+	}
+
 	return nil
 }

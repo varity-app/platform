@@ -5,7 +5,7 @@ import (
 	"github.com/varity-app/platform/scraping/internal/common"
 )
 
-// Initialize all viper configuration settings
+// InitConfig initializes all viper configuration settings
 func InitConfig() error {
 	viper.AutomaticEnv()
 
@@ -20,6 +20,16 @@ func InitConfig() error {
 	}
 
 	err = initPostgres()
+	if err != nil {
+		return err
+	}
+
+	err = initURLs()
+	if err != nil {
+		return err
+	}
+
+	err = initLogging()
 	if err != nil {
 		return err
 	}

@@ -11,8 +11,13 @@ resource "google_sql_database_instance" "main_instance" {
   database_version = "POSTGRES_13"
 
   settings {
-    tier      = "db-f1-micro"
+    tier      = "db-g1-small"
     disk_size = 25
+
+    database_flags {
+      name = "max_connections"
+      value = 1000
+    }
   }
 
   deletion_protection = "true"

@@ -303,3 +303,48 @@ resource "google_bigquery_table" "eod_prices" {
 EOF
 
 }
+
+resource "google_bigquery_table" "cohort_memberships_cached" {
+  project    = var.project
+  dataset_id = google_bigquery_dataset.scraping.dataset_id
+  table_id   = "cohort_memberships_cached"
+
+  time_partitioning {
+    type  = "DAY"
+    field = "month"
+  }
+
+  labels = {
+    deployment = var.deployment
+  }
+
+  lifecycle {
+    prevent_destroy = true
+  }
+
+  schema = <<EOF
+[
+  {
+    "name": "author_id",
+    "type": "STRING",
+    "mode": "REQUIRED"
+  },
+  {
+    "name": "subreddit",
+    "type": "STRING",
+    "mode": "REQUIRED"
+  },
+  {
+    "name": "month",
+    "type": "TIMESTAMP",
+    "mode": "REQUIRED"
+  },
+  {
+    "name": "cohort",
+    "type": "STRING",
+    "mode": "REQUIRED"
+  }
+]
+EOF
+
+}

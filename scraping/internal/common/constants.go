@@ -30,6 +30,9 @@ const BigqueryTableTickerMentions string = "ticker_mentions_v2"
 // BigqueryTableEODPrices refers to the eod_prices bigquery table
 const BigqueryTableEODPrices string = "eod_prices"
 
+// BigqueryTableEODPrices refers to the cached cohort memberships bigquery table
+const BigqueryTableMemberships string = "cohort_memberships_cached"
+
 // RedditSubmissions is just a general placeholder for "reddit-submissions"
 const RedditSubmissions string = "reddit-submissions"
 
@@ -51,3 +54,8 @@ const ParentSourceRedditSubmissionTitle string = "reddit-submission-title"
 
 // ParentSourceRedditSubmissionBody is a placeholder for the "reddit-submission-body" parent source
 const ParentSourceRedditSubmissionBody string = "reddit-submission-body"
+
+// CloudTasksSvcAccount is the template for the name of the cloud tasks service account.
+const CloudTasksSvcAccount string = "varity-tasks-svc-%s@varity.iam.gserviceaccount.com"
+
+const CloudTasksQueueB2I string = "bigquery-to-influx"

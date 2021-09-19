@@ -4,32 +4,38 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"time"
 
-	"cloud.google.com/go/pubsub"
+	cloudtasks "cloud.google.com/go/cloudtasks/apiv2"
+	taskspb "google.golang.org/genproto/googleapis/cloud/tasks/v2"
 
 	"github.com/labstack/echo/v4"
 
-	"github.com/varity-app/platform/scraping/internal/common"
-
 	etlv1 "github.com/varity-app/platform/scraping/api/etl/v1"
+	"github.com/varity-app/platform/scraping/internal/common"
+	"github.com/varity-app/platform/scraping/internal/logging"
 )
-
-// PubSub topic to publish BigQuery->InfluxDB ETL requests to.
-const pubsubB2ITopic = "etl-bigquery-to-influx"
 
 // ServiceOpts stores configuration parameters for a Bigquery->InfluxDB service
 type ServiceOpts struct {
 	DeploymentMode string
+	B2IUrl         string
+}
+
+// Service is microservice served via HTTP
+type Service struct {
+	ctClient       *cloudtasks.Client
+	web            *echo.Echo
+	deploymentMode string
+	logger         *logging.Logger
 }
 
 // NewService creates a new Bigquery->InfluxDB service in the form of an Echo server.
-func NewService(ctx context.Context, opts ServiceOpts) (*echo.Echo, error) {
+func NewService(ctx context.Context, logger *logging.Logger, opts ServiceOpts) (*Service, error) {
 
 	// Init bigquery client
-	psClient, err := pubsub.NewClient(ctx, common.GCPProjectID)
+	ctClient, err := cloudtasks.NewClient(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("pubsub.NewClient: %v", err)
 	}
@@ -37,22 +43,42 @@ func NewService(ctx context.Context, opts ServiceOpts) (*echo.Echo, error) {
 	// Init Echo
 	web := echo.New()
 	web.HideBanner = true
-	registerRoutes(web, psClient, opts)
 
-	return web, nil
+	// Create service instance
+	service := &Service{
+		ctClient:       ctClient,
+		web:            web,
+		deploymentMode: opts.DeploymentMode,
+		logger:         logger,
+	}
+
+	// Register routes
+	service.registerRoutes(opts.B2IUrl)
+
+	return service, nil
+}
+
+// Close connections
+func (s *Service) Close() error {
+	return s.ctClient.Close()
+}
+
+// Start the service's HTTP web server
+func (s *Service) Start(address string) {
+	s.web.Logger.Fatal(s.web.Start(address))
 }
 
 // Register API routes
-func registerRoutes(web *echo.Echo, psClient *pubsub.Client, opts ServiceOpts) {
+func (s *Service) registerRoutes(b2iURL string) {
 
-	web.POST("/api/scheduler/v1/etl/bigquery-to-influx/recent", func(c echo.Context) error {
+	s.web.POST("/api/scheduler/v1/etl/bigquery-to-influx/recent", func(c echo.Context) error {
 
 		// Get request context
 		ctx := c.Request().Context()
 
 		// Create bigquery to influx message spec
 		now := time.Now()
-		spec := etlv1.BigqueryToInfluxSpec{
+		spec := etlv1.BigqueryToInfluxRequest{
 			Year:  now.Year(),
 			Month: int(now.Month()),
 			Day:   now.Day(),
@@ -62,22 +88,68 @@ func registerRoutes(web *echo.Echo, psClient *pubsub.Client, opts ServiceOpts) {
 		// Serialize spec
 		serializedSpec, err := json.Marshal(spec)
 		if err != nil {
-			log.Printf("json.Marshal: %v", err)
+			s.logger.Error(fmt.Errorf("json.Marshal: %v", err))
 			return err
 		}
 
-		// Publish message
-		topicName := fmt.Sprintf("%s-%s", pubsubB2ITopic, opts.DeploymentMode)
-		log.Printf("Sending message: %s to %s", serializedSpec, topicName)
-		topic := psClient.Topic(topicName)
+		// Create cloud tasks request
+		queueID := fmt.Sprintf("%s-%s", common.CloudTasksQueueB2I, s.deploymentMode)
+		b2iEndpoint := b2iURL + "/api/etl/bigquery-to-influx/v1/"
+		req := s.createTaskRequest(queueID, b2iEndpoint, serializedSpec)
+		s.logger.Debug(fmt.Sprintf("Submitting task that will send to `%s`.", b2iEndpoint))
 
-		msg := pubsub.Message{Data: serializedSpec}
-		if _, err = topic.Publish(ctx, &msg).Get(ctx); err != nil {
-			log.Printf("pubsub.Publish: %v", err)
+		// Submit cloud tasks request
+		_, err = s.ctClient.CreateTask(ctx, req)
+		if err != nil {
+			s.logger.Error(fmt.Errorf("cloudtasks.CreateTask: %v", err))
 			return err
 		}
+		s.logger.Debug(fmt.Sprintf("Successfully submitted task with spec: %s", serializedSpec))
 
-		return c.JSON(http.StatusOK, map[string]string{})
+		return c.JSON(http.StatusOK, map[string]string{
+			"message": "Task created successfully!",
+		})
 	})
+
+}
+
+// createTaskRequest constructs a full Cloud Tasks request
+func (s *Service) createTaskRequest(queueID string, endpoint string, body []byte) *taskspb.CreateTaskRequest {
+
+	// Build service account email
+	email := fmt.Sprintf(common.CloudTasksSvcAccount, s.deploymentMode)
+
+	// Build the Task queue path.
+	queuePath := fmt.Sprintf(
+		"projects/%s/locations/%s/queues/%s",
+		common.GCPProjectID,
+		common.GCPRegion,
+		queueID,
+	)
+
+	// Build the request
+	req := &taskspb.CreateTaskRequest{
+		Parent: queuePath,
+		Task: &taskspb.Task{
+			// https://godoc.org/google.golang.org/genproto/googleapis/cloud/tasks/v2#HttpRequest
+			MessageType: &taskspb.Task_HttpRequest{
+				HttpRequest: &taskspb.HttpRequest{
+					HttpMethod: taskspb.HttpMethod_POST,
+					Url:        endpoint,
+					AuthorizationHeader: &taskspb.HttpRequest_OidcToken{
+						OidcToken: &taskspb.OidcToken{
+							ServiceAccountEmail: email,
+						},
+					},
+					Headers: map[string]string{
+						"Content-Type": "application/json",
+					},
+					Body: body,
+				},
+			},
+		},
+	}
+
+	return req
 
 }

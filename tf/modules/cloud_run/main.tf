@@ -370,7 +370,7 @@ resource "google_cloud_run_service" "tiingo" {
     metadata {
       annotations = {
         "autoscaling.knative.dev/maxScale"      = "10"
-        "run.googleapis.com/cloudsql-instances" = var.cloud_sql_connection_name
+        "run.googleapis.com/cloudsql-instances" = "${var.cloud_sql_connection_name}"
       }
     }
   }
@@ -407,12 +407,84 @@ resource "google_cloud_run_service" "etl_bigquery_to_influx" {
       containers {
         image = "${var.container_registry}/${var.project}/${var.deployment}/scraping/bigquery-to-influx:${var.release}"
 
+        resources {
+          limits = {
+            memory = "2Gi"
+            cpu = "1000m"
+          }
+        }
+
+        env {
+          name = "LOG_LEVEL"
+          value = "DEBUG"
+        }
+
+        env {
+          name = "DEPLOYMENT_MODE"
+          value = var.deployment
+        }
+
+        env {
+          name  = "POSTGRES_ADDRESS"
+          value = "/cloudsql/${var.cloud_sql_connection_name}"
+        }
+
+        env {
+          name  = "POSTGRES_NETWORK"
+          value = "unix"
+        }
+
+        env {
+          name  = "POSTGRES_DB"
+          value = "finance"
+        }
+
+        env {
+          name = "POSTGRES_USERNAME"
+          value_from {
+            secret_key_ref {
+              name = module.secrets.postgres_username_secret_id
+              key  = "latest"
+            }
+          }
+        }
+
+        env {
+          name = "POSTGRES_PASSWORD"
+          value_from {
+            secret_key_ref {
+              name = module.secrets.postgres_password_secret_id
+              key  = "latest"
+            }
+          }
+        }
+
+        env {
+          name = "INFLUX_URL"
+          value_from {
+            secret_key_ref {
+              name = data.google_secret_manager_secret_version.influx_url.secret
+              key  = "latest"
+            }
+          }
+        }
+
+        env {
+          name = "INFLUX_TOKEN"
+          value_from {
+            secret_key_ref {
+              name = data.google_secret_manager_secret_version.influx_token.secret
+              key  = "latest"
+            }
+          }
+        }
       }
     }
 
     metadata {
       annotations = {
-        "autoscaling.knative.dev/maxScale"      = "5"
+        "autoscaling.knative.dev/maxScale"      = "10"
+        "run.googleapis.com/cloudsql-instances" = var.cloud_sql_connection_name
       }
     }
   }

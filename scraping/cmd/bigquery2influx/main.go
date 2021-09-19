@@ -6,7 +6,7 @@ import (
 
 	"github.com/spf13/viper"
 	"github.com/varity-app/platform/scraping/internal/config"
-	"github.com/varity-app/platform/scraping/internal/data"
+	"github.com/varity-app/platform/scraping/internal/logging"
 	b2i "github.com/varity-app/platform/scraping/internal/services/bigquery2influx"
 )
 
@@ -19,6 +19,9 @@ func main() {
 		log.Fatalf("viper.BindEnv: %v", err)
 	}
 
+	// Create logger
+	logger := logging.NewLogger(viper.GetString("logging.level"))
+
 	// Init bigquery client
 	ctx := context.Background()
 
@@ -30,22 +33,17 @@ func main() {
 			Org:    viper.GetString("influxdb.org"),
 			Bucket: viper.GetString("influxdb.bucket"),
 		},
-		Postgres: data.PostgresOpts{
-			Username: viper.GetString("postgres.username"),
-			Password: viper.GetString("postgres.password"),
-			Address:  viper.GetString("postgres.address"),
-			Database: viper.GetString("postgres.database"),
-		},
 		DeploymentMode: viper.GetString("deployment.mode"),
 	}
 
-	web, err := b2i.NewService(ctx, opts)
+	service, err := b2i.NewService(ctx, logger, opts)
 	if err != nil {
-		log.Fatal(err)
+		logger.Fatal(err)
 	}
+	defer service.Close()
 
 	// Start webserver
 	port := viper.GetString("port")
-	web.Logger.Fatal(web.Start(":" + port))
+	service.Start(":" + port)
 
 }

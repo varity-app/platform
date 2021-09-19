@@ -29,7 +29,7 @@ type AugmentedMention struct {
 	Source      string
 }
 
-// AugmentedMentions aggregates a given hour's ticker mentions, reddit submissions, and comments
+// AugmentMentions aggregates a given hour's ticker mentions, reddit submissions, and comments
 // and generates the Targeted and Inquisitive annotations for each mention.
 func AugmentMentions(
 	mentions []bigquery.Mention,
@@ -199,7 +199,7 @@ func augmentSubmissions(submissionMentions map[string][]bigquery.Mention, submis
 	return augmented
 }
 
-// Find the msot frequently mentioned ticker from a map of frequencies
+// Find the most frequently mentioned ticker from a map of frequencies
 func getMostFrequent(frequencies map[string]int) string {
 	mostFrequent := ""
 

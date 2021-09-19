@@ -50,11 +50,3 @@ module "cloud_run" {
   kafka_key_secret_id    = module.confluent.kafka_key_secret_id
   kafka_secret_secret_id = module.confluent.kafka_secret_secret_id
 }
-
-module "pubsub" {
-  source = "../modules/pubsub"
-
-  deployment = var.deployment
-
-  etl_bigquery_to_influx_url = module.cloud_run.etl_bigquery_to_influx_url
-}
