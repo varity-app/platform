@@ -205,6 +205,8 @@ resource "google_cloud_scheduler_job" "proc_ticker_mentions_sink" {
   }
 }
 
+/* Tiingo scraper */
+
 resource "google_cloud_scheduler_job" "recent_prices" {
   name             = "update-recent-prices-${var.deployment}"
   description      = "Update EOD prices from the Tiingo API"
@@ -215,6 +217,24 @@ resource "google_cloud_scheduler_job" "recent_prices" {
   http_target {
     http_method = "GET"
     uri         = "${google_cloud_run_service.tiingo.status[0].url}/scraping/tiingo/prices/3d"
+
+    oidc_token {
+      service_account_email = google_service_account.scheduler_svc.email
+    }
+  }
+}
+
+/* Scheduler microservice */
+resource "google_cloud_scheduler_job" "schedule_biquery_to_influx_etl" {
+  name             = "schedule-bigquery-to-influx-etl-${var.deployment}"
+  description      = "Schedule an ETL for Bigquery -> InfluxDB"
+  schedule         = "30 * * * *"
+  time_zone        = "America/New_York"
+  attempt_deadline = "120s"
+
+  http_target {
+    http_method = "POST"
+    uri         = "${google_cloud_run_service.scheduler.status[0].url}/api/scheduler/v1/etl/bigquery-to-influx/recent"
 
     oidc_token {
       service_account_email = google_service_account.scheduler_svc.email

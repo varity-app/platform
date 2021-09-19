@@ -14,6 +14,8 @@ type PostgresOpts struct {
 	Network  string
 }
 
+// ParsePostgresDSN parses a postgres configuration and returns a DSN ready to
+// be used by an ORM like gorm.
 func ParsePostgresDSN(opts PostgresOpts) string {
 	// Escape fields which may have unfriendly characters
 	escapedUsername := url.QueryEscape(opts.Username)

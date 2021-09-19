@@ -15,6 +15,7 @@ declare -a IMAGES=(
   'scraping/proc'
   'scraping/tiingo'
   'scraping/bigquery-to-influx'
+  'scraping/scheduler'
 )
 
 ######################

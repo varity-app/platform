@@ -16,6 +16,8 @@ import (
 	"cloud.google.com/go/bigquery"
 )
 
+var logger = logging.NewLogger()
+
 const (
 	// cohortTableRedditorsAge is the name of the bigquery table containing the Redditors Age cohort
 	cohortTableRedditorsAge string = "redditors_age_cohort_memberships"
@@ -48,11 +50,10 @@ type CohortMembershipRepo struct {
 	bqClient       *bigquery.Client
 	lru            *lru.Cache
 	deploymentMode string
-	logger         *logging.Logger
 }
 
 // NewCohortMembershipRepo is a constructor that returns a new CohortMebershipRepo
-func NewCohortMembershipRepo(bqClient *bigquery.Client, logger *logging.Logger, deploymentMode string) (*CohortMembershipRepo, error) {
+func NewCohortMembershipRepo(bqClient *bigquery.Client, deploymentMode string) (*CohortMembershipRepo, error) {
 
 	// Create LRU cache
 	lruCache, err := lru.New(12)
@@ -64,7 +65,6 @@ func NewCohortMembershipRepo(bqClient *bigquery.Client, logger *logging.Logger, 
 		bqClient:       bqClient,
 		lru:            lruCache,
 		deploymentMode: deploymentMode,
-		logger:         logger,
 	}, nil
 }
 
@@ -79,7 +79,7 @@ func (r *CohortMembershipRepo) Get(ctx context.Context, year, month int) ([]Coho
 		if err != nil {
 			return nil, err
 		}
-		r.logger.Debug(fmt.Sprintf("Found %d cohort memberships in table %s", len(memberships), table))
+		logger.Debug(fmt.Sprintf("Found %d cohort memberships in table %s", len(memberships), table))
 
 		allMemberships = append(allMemberships, memberships...)
 	}
@@ -141,7 +141,7 @@ func (r *CohortMembershipRepo) checkCache(ctx context.Context, cohortPrefix stri
 		}
 		return memberships, nil
 	}
-	r.logger.Debug("Memberships not found in LRU cache.  Querying bigquery...")
+	logger.Debug("Memberships not found in LRU cache.  Querying bigquery...")
 
 	// Formulate query
 	query := r.bqClient.Query(fmt.Sprintf(`

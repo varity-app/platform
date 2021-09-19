@@ -19,14 +19,13 @@ func main() {
 		log.Fatalf("viper.BindEnv: %v", err)
 	}
 
-	// Create logger
-	logger := logging.NewLogger(viper.GetString("logging.level"))
+	logger := logging.NewLogger()
 
 	// Create background context
 	ctx := context.Background()
 
 	// Initialize service
-	service, err := scheduler.NewService(ctx, logger, scheduler.ServiceOpts{
+	service, err := scheduler.NewService(ctx, scheduler.ServiceOpts{
 		DeploymentMode: viper.GetString("deployment.mode"),
 		B2IUrl:         viper.GetString("urls.b2i"),
 	})

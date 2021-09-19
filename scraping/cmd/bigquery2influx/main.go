@@ -20,7 +20,7 @@ func main() {
 	}
 
 	// Create logger
-	logger := logging.NewLogger(viper.GetString("logging.level"))
+	logger := logging.NewLogger()
 
 	// Init bigquery client
 	ctx := context.Background()
@@ -36,7 +36,7 @@ func main() {
 		DeploymentMode: viper.GetString("deployment.mode"),
 	}
 
-	service, err := b2i.NewService(ctx, logger, opts)
+	service, err := b2i.NewService(ctx, opts)
 	if err != nil {
 		logger.Fatal(err)
 	}

@@ -425,41 +425,6 @@ resource "google_cloud_run_service" "etl_bigquery_to_influx" {
         }
 
         env {
-          name  = "POSTGRES_ADDRESS"
-          value = "/cloudsql/${var.cloud_sql_connection_name}"
-        }
-
-        env {
-          name  = "POSTGRES_NETWORK"
-          value = "unix"
-        }
-
-        env {
-          name  = "POSTGRES_DB"
-          value = "finance"
-        }
-
-        env {
-          name = "POSTGRES_USERNAME"
-          value_from {
-            secret_key_ref {
-              name = module.secrets.postgres_username_secret_id
-              key  = "latest"
-            }
-          }
-        }
-
-        env {
-          name = "POSTGRES_PASSWORD"
-          value_from {
-            secret_key_ref {
-              name = module.secrets.postgres_password_secret_id
-              key  = "latest"
-            }
-          }
-        }
-
-        env {
           name = "INFLUX_URL"
           value_from {
             secret_key_ref {
@@ -477,6 +442,69 @@ resource "google_cloud_run_service" "etl_bigquery_to_influx" {
               key  = "latest"
             }
           }
+        }
+      }
+    }
+
+    metadata {
+      annotations = {
+        "autoscaling.knative.dev/maxScale"      = "10"
+      }
+    }
+  }
+
+  metadata {
+    annotations = {
+      generated-by                      = "magic-modules"
+      "run.googleapis.com/launch-stage" = "BETA"
+    }
+  }
+  traffic {
+    percent         = 100
+    latest_revision = true
+  }
+
+  autogenerate_revision_name = true
+
+  lifecycle {
+    ignore_changes = [
+      metadata.0.annotations,
+    ]
+  }
+}
+
+resource "google_cloud_run_service" "scheduler" {
+  name     = "scheduler-${var.deployment}"
+  location = var.region
+  project  = var.project
+  provider = google-beta
+
+  template {
+    spec {
+      container_concurrency = 10
+      containers {
+        image = "${var.container_registry}/${var.project}/${var.deployment}/scraping/scheduler:${var.release}"
+
+        resources {
+          limits = {
+            memory = "2Gi"
+            cpu = "1000m"
+          }
+        }
+
+        env {
+          name = "LOG_LEVEL"
+          value = "DEBUG"
+        }
+
+        env { 
+          name = "URL_BIGQUERY_TO_INFLUX"
+          value = google_cloud_run_service.etl_bigquery_to_influx.status[0].url
+        }
+
+        env {
+          name = "DEPLOYMENT_MODE"
+          value = var.deployment
         }
       }
     }

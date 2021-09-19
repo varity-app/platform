@@ -17,6 +17,8 @@ import (
 	"github.com/varity-app/platform/scraping/internal/logging"
 )
 
+var logger = logging.NewLogger()
+
 // ServiceOpts stores configuration parameters for a Bigquery->InfluxDB service
 type ServiceOpts struct {
 	DeploymentMode string
@@ -28,11 +30,10 @@ type Service struct {
 	ctClient       *cloudtasks.Client
 	web            *echo.Echo
 	deploymentMode string
-	logger         *logging.Logger
 }
 
 // NewService creates a new Bigquery->InfluxDB service in the form of an Echo server.
-func NewService(ctx context.Context, logger *logging.Logger, opts ServiceOpts) (*Service, error) {
+func NewService(ctx context.Context, opts ServiceOpts) (*Service, error) {
 
 	// Init bigquery client
 	ctClient, err := cloudtasks.NewClient(ctx)
@@ -49,7 +50,6 @@ func NewService(ctx context.Context, logger *logging.Logger, opts ServiceOpts) (
 		ctClient:       ctClient,
 		web:            web,
 		deploymentMode: opts.DeploymentMode,
-		logger:         logger,
 	}
 
 	// Register routes
@@ -88,7 +88,7 @@ func (s *Service) registerRoutes(b2iURL string) {
 		// Serialize spec
 		serializedSpec, err := json.Marshal(spec)
 		if err != nil {
-			s.logger.Error(fmt.Errorf("json.Marshal: %v", err))
+			logger.Error(fmt.Errorf("json.Marshal: %v", err))
 			return err
 		}
 
@@ -96,15 +96,15 @@ func (s *Service) registerRoutes(b2iURL string) {
 		queueID := fmt.Sprintf("%s-%s", common.CloudTasksQueueB2I, s.deploymentMode)
 		b2iEndpoint := b2iURL + "/api/etl/bigquery-to-influx/v1/"
 		req := s.createTaskRequest(queueID, b2iEndpoint, serializedSpec)
-		s.logger.Debug(fmt.Sprintf("Submitting task that will send to `%s`.", b2iEndpoint))
+		logger.Debug(fmt.Sprintf("Submitting task that will send to `%s`.", b2iEndpoint))
 
 		// Submit cloud tasks request
 		_, err = s.ctClient.CreateTask(ctx, req)
 		if err != nil {
-			s.logger.Error(fmt.Errorf("cloudtasks.CreateTask: %v", err))
-			return err
+			logger.Error(fmt.Errorf("cloudtasks.CreateTask: %v", err))
+			return echo.ErrInternalServerError
 		}
-		s.logger.Debug(fmt.Sprintf("Successfully submitted task with spec: %s", serializedSpec))
+		logger.Debug(fmt.Sprintf("Successfully submitted task with spec: %s", serializedSpec))
 
 		return c.JSON(http.StatusOK, map[string]string{
 			"message": "Task created successfully!",

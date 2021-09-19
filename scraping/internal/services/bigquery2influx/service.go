@@ -20,6 +20,8 @@ import (
 	transforms "github.com/varity-app/platform/scraping/internal/transforms/mentions"
 )
 
+var logger = logging.NewLogger()
+
 // InfluxOpts stores configuration parameters for an InfluxDB Client
 type InfluxOpts struct {
 	Addr   string
@@ -38,12 +40,10 @@ type ServiceOpts struct {
 type Service struct {
 	bqClient *bigquery.Client
 	web      *echo.Echo
-	logger   *logging.Logger
 }
 
 // NewService creates a new Bigquery->InfluxDB service in the form of an Echo server.
-func NewService(ctx context.Context, logger *logging.Logger, opts ServiceOpts) (*Service, error) {
-
+func NewService(ctx context.Context, opts ServiceOpts) (*Service, error) {
 	// Init bigquery client
 	bqClient, err := bigquery.NewClient(ctx, common.GCPProjectID)
 	if err != nil {
@@ -54,7 +54,7 @@ func NewService(ctx context.Context, logger *logging.Logger, opts ServiceOpts) (
 	influxClient := influxdb2.NewClient(opts.Influx.Addr, opts.Influx.Token)
 
 	// Init repos
-	membershipRepo, err := bq.NewCohortMembershipRepo(bqClient, logger, opts.DeploymentMode)
+	membershipRepo, err := bq.NewCohortMembershipRepo(bqClient, opts.DeploymentMode)
 	if err != nil {
 		return nil, fmt.Errorf("cohortMembershipsRepo.New: %v", err)
 	}
@@ -70,7 +70,6 @@ func NewService(ctx context.Context, logger *logging.Logger, opts ServiceOpts) (
 	service := &Service{
 		bqClient: bqClient,
 		web:      web,
-		logger:   logger,
 	}
 	service.registerRoutes(web, influxClient, membershipRepo, submissionsRepo, commentsRepo, mentionsRepo, opts)
 
@@ -102,7 +101,7 @@ func (s *Service) registerRoutes(
 		// Parse request body
 		var spec etlv1.BigqueryToInfluxRequest
 		if err := c.Bind(&spec); err != nil {
-			log.Printf("echo.BindRequestBody: %v", err)
+			logger.Error(fmt.Errorf("echo.BindRequestBody: %v", err))
 			return echo.ErrInternalServerError
 		}
 
@@ -112,38 +111,38 @@ func (s *Service) registerRoutes(
 		// Fetch mentions for the given hour
 		mentions, err := mentionsRepo.Get(ctx, spec.Year, spec.Month, spec.Day, spec.Hour)
 		if err != nil {
-			s.logger.Error(fmt.Errorf("mentionsRepo.GetMentions: %v", err))
+			logger.Error(fmt.Errorf("mentionsRepo.GetMentions: %v", err))
 			return echo.ErrInternalServerError
 		}
-		s.logger.Debug(fmt.Sprintf("Fetched %d ticker mentions.", len(mentions)))
+		logger.Debug(fmt.Sprintf("Fetched %d ticker mentions.", len(mentions)))
 
 		// Fetch submissions for the given hour
 		submissions, err := submissionsRepo.Get(ctx, spec.Year, spec.Month, spec.Day, spec.Hour)
 		if err != nil {
-			s.logger.Error(fmt.Errorf("submissionsRepo.GetMentions: %v", err))
+			logger.Error(fmt.Errorf("submissionsRepo.GetMentions: %v", err))
 			return echo.ErrInternalServerError
 		}
-		s.logger.Debug(fmt.Sprintf("Fetched %d submissions.", len(submissions)))
+		logger.Debug(fmt.Sprintf("Fetched %d submissions.", len(submissions)))
 
 		// Fetch comments for the given hour
 		comments, err := commentsRepo.Get(ctx, spec.Year, spec.Month, spec.Day, spec.Hour)
 		if err != nil {
-			s.logger.Error(fmt.Errorf("commentsRepo.GetMentions: %v", err))
+			logger.Error(fmt.Errorf("commentsRepo.GetMentions: %v", err))
 			return echo.ErrInternalServerError
 		}
-		s.logger.Debug(fmt.Sprintf("Fetched %d comments.", len(comments)))
+		logger.Debug(fmt.Sprintf("Fetched %d comments.", len(comments)))
 
 		// Augment tickers
 		augmented := transforms.AugmentMentions(mentions, submissions, comments)
-		s.logger.Debug(fmt.Sprintf("Created %d augmented ticker mentions.", len(augmented)))
+		logger.Debug(fmt.Sprintf("Created %d augmented ticker mentions.", len(augmented)))
 
 		// Fetch cohort memberships from the past month
 		memberships, err := membershipRepo.Get(ctx, spec.Year, spec.Month-1)
 		if err != nil {
-			s.logger.Error(fmt.Errorf("membershipRepo.GetMemberships: %v", err))
+			logger.Error(fmt.Errorf("membershipRepo.GetMemberships: %v", err))
 			return echo.ErrInternalServerError
 		}
-		s.logger.Debug(fmt.Sprintf("Fetched %d cohort memberships.", len(memberships)))
+		logger.Debug(fmt.Sprintf("Fetched %d cohort memberships.", len(memberships)))
 
 		// Aggregate mentions
 		ts := time.Date(spec.Year, time.Month(spec.Month), spec.Day, spec.Hour, 0, 0, 0, time.UTC)
@@ -153,10 +152,10 @@ func (s *Service) registerRoutes(
 		writeAPI := influxClient.WriteAPIBlocking(opts.Influx.Org, opts.Influx.Bucket)
 
 		if err := writeAPI.WritePoint(ctx, points...); err != nil {
-			s.logger.Error(fmt.Errorf("influxdb.WritePoint: %v", err))
+			logger.Error(fmt.Errorf("influxdb.WritePoint: %v", err))
 			return echo.ErrInternalServerError
 		}
-		s.logger.Debug(fmt.Sprintf("Wrote %d points to InfluxDB.", len(points)))
+		logger.Debug(fmt.Sprintf("Wrote %d points to InfluxDB.", len(points)))
 
 		return c.JSON(http.StatusOK, etlv1.BigqueryToInfluxResponse{PointsCount: len(points)})
 	})

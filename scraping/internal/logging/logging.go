@@ -2,11 +2,13 @@ package logging
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"log"
 	"os"
+	"runtime"
 	"time"
+
+	"github.com/spf13/viper"
 )
 
 // For more details regarding log levels, see link below:
@@ -27,9 +29,7 @@ const (
 	SeverityDebug = "DEBUG"
 )
 
-var ErrorInvalidLevel = errors.New("invalid log level")
-
-// map a log level to a numerical representation. This makes it easy to compare levels.
+// Map a log level to a numerical representation. This makes it easy to compare levels.
 var levelMap = map[string]int{
 	SeverityCritical: 600,
 	SeverityError:    500,
@@ -41,9 +41,10 @@ var levelMap = map[string]int{
 
 // LogEntry is a structured log entry.
 type LogEntry struct {
+	Timestamp   time.Time `json:"timestamp"`
 	Severity    string    `json:"severity"`
 	TextPayload string    `json:"textPayload"`
-	Timestamp   time.Time `json:"timestamp"`
+	Source      string    `json:"source"`
 }
 
 // Logger is a structured, leveled logger.
@@ -52,7 +53,8 @@ type Logger struct {
 }
 
 // NewLogger constructs a new structured Logger
-func NewLogger(minLevel string) *Logger {
+func NewLogger() *Logger {
+	minLevel := viper.GetString("logging.level")
 	return &Logger{minLevel: levelMap[minLevel]}
 }
 
@@ -63,6 +65,7 @@ func (l *Logger) Fatal(err error) {
 		Severity:    SeverityCritical,
 		TextPayload: err.Error(),
 		Timestamp:   time.Now(),
+		Source:      getSource(),
 	}
 
 	// Serialize entry
@@ -91,6 +94,7 @@ func (l *Logger) Error(err error) {
 		Severity:    SeverityError,
 		TextPayload: err.Error(),
 		Timestamp:   time.Now(),
+		Source:      getSource(),
 	}
 
 	// Serialize entry
@@ -116,6 +120,7 @@ func (l *Logger) Warning(message string) {
 		Severity:    SeverityWarning,
 		TextPayload: message,
 		Timestamp:   time.Now(),
+		Source:      getSource(),
 	}
 
 	// Serialize entry
@@ -141,6 +146,7 @@ func (l *Logger) Info(message string) {
 		Severity:    SeverityInfo,
 		TextPayload: message,
 		Timestamp:   time.Now(),
+		Source:      getSource(),
 	}
 
 	// Serialize entry
@@ -166,6 +172,7 @@ func (l *Logger) Debug(message string) {
 		Severity:    SeverityDebug,
 		TextPayload: message,
 		Timestamp:   time.Now(),
+		Source:      getSource(),
 	}
 
 	// Serialize entry
@@ -176,4 +183,10 @@ func (l *Logger) Debug(message string) {
 
 	// Write entry to stdout
 	fmt.Println(string(serializedEntry))
+}
+
+// Helper method for getting source file calling the log
+func getSource() string {
+	_, filename, _, _ := runtime.Caller(2)
+	return filename
 }
