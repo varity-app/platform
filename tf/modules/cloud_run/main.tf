@@ -521,7 +521,7 @@ resource "google_cloud_run_service" "scheduler" {
 
   template {
     spec {
-      container_concurrency = 10
+      container_concurrency = 50
       containers {
         image = "${var.container_registry}/${var.project}/${var.deployment}/scraping/scheduler:${var.release}"
 
@@ -551,7 +551,7 @@ resource "google_cloud_run_service" "scheduler" {
 
     metadata {
       annotations = {
-        "autoscaling.knative.dev/maxScale"      = "10"
+        "autoscaling.knative.dev/maxScale"      = "5"
         "run.googleapis.com/cloudsql-instances" = var.cloud_sql_connection_name
       }
     }

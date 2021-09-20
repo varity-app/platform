@@ -77,12 +77,12 @@ func (s *Service) registerRoutes(b2iURL string) {
 		ctx := c.Request().Context()
 
 		// Create bigquery to influx message spec
-		now := time.Now()
+		ts := time.Now().Add(-time.Hour)
 		spec := etlv1.BigqueryToInfluxRequest{
-			Year:  now.Year(),
-			Month: int(now.Month()),
-			Day:   now.Day(),
-			Hour:  now.Hour() - 1,
+			Year:  ts.Year(),
+			Month: int(ts.Month()),
+			Day:   ts.Day(),
+			Hour:  ts.Hour(),
 		}
 
 		// Serialize spec
