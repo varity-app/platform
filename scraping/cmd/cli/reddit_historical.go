@@ -49,11 +49,12 @@ var historicalCommentsCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 
 		// Init cloud tasks client
-		ctx := context.Background() // Init bigquery client
+		ctx := context.Background()
 		ctClient, err := cloudtasks.NewClient(ctx)
 		if err != nil {
 			return fmt.Errorf("pubsub.NewClient: %v", err)
 		}
+		defer ctClient.Close()
 
 		// Parse flags
 		subreddit, deployment, url, err := parseHistoricalFlags()
@@ -91,7 +92,7 @@ var historicalCommentsCmd = &cobra.Command{
 		// Create worker threads
 		var errcList []<-chan error
 		chunkSize := len(ends) / numCloudTaskWorkers
-		for i := 0; i < numCloudTaskWorkers; i += chunkSize {
+		for i := 0; i < len(starts); i += chunkSize {
 
 			// Define chunks
 			endsChunk := ends[i:min(i+chunkSize, len(ends))]
@@ -144,7 +145,6 @@ var historicalCommentsCmd = &cobra.Command{
 }
 
 // Scrape submissions command
-// Example Usage:
 var historicalSubmissionsCmd = &cobra.Command{
 	Use:   "submissions [start date] [end date]",
 	Short: "Scrape historical submissions from PSAW",
@@ -152,11 +152,12 @@ var historicalSubmissionsCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 
 		// Init cloud tasks client
-		ctx := context.Background() // Init bigquery client
+		ctx := context.Background()
 		ctClient, err := cloudtasks.NewClient(ctx)
 		if err != nil {
 			return fmt.Errorf("pubsub.NewClient: %v", err)
 		}
+		defer ctClient.Close()
 
 		// Parse flags
 		subreddit, deployment, url, err := parseHistoricalFlags()
@@ -194,7 +195,7 @@ var historicalSubmissionsCmd = &cobra.Command{
 		// Create worker threads
 		var errcList []<-chan error
 		chunkSize := len(ends)/numCloudTaskWorkers + 1
-		for i := 0; i < numCloudTaskWorkers; i += chunkSize {
+		for i := 0; i < len(starts); i += chunkSize {
 
 			// Define chunks
 			endsChunk := ends[i:min(i+chunkSize, len(ends))]
@@ -250,7 +251,7 @@ var historicalSubmissionsCmd = &cobra.Command{
 func parseHistoricalFlags() (string, string, string, error) {
 	subreddit := strings.ToLower(viper.GetString("subreddit"))
 	deployment := viper.GetString("deployment")
-	url := viper.GetString("url")
+	url := viper.GetString("urls.reddit_historical")
 
 	// Check for valid deployment flag
 	if deployment != common.DeploymentModeDev && deployment != common.DeploymentModeProd {
@@ -275,11 +276,9 @@ func initRedditHistorical(rootCmd *cobra.Command) {
 
 	// Create flags
 	historicalCmd.PersistentFlags().StringP("subreddit", "s", "", "subreddit to scrape")
-	historicalCmd.PersistentFlags().StringP("deployment", "d", "dev", "deployment to publish to")
 	historicalCmd.PersistentFlags().StringP("url", "u", "", "url to publish to")
 	viper.BindPFlag("subreddit", historicalCmd.PersistentFlags().Lookup("subreddit"))
-	viper.BindPFlag("deployment", historicalCmd.PersistentFlags().Lookup("deployment"))
-	viper.BindPFlag("url", historicalCmd.PersistentFlags().Lookup("url"))
+	viper.BindPFlag("urls.reddit_historical", historicalCmd.PersistentFlags().Lookup("url"))
 
 	if err := historicalCmd.MarkPersistentFlagRequired("subreddit"); err != nil {
 		log.Fatal(err)
