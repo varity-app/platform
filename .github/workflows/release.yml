@@ -17,7 +17,7 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        python -m pip install install pylint pytest
+        python -m pip install install pylint pytest pylint_pytest
     - name: Analysing the code with pylint
       run: cd src && python -m pylint *
 
@@ -48,7 +48,7 @@ jobs:
       run: cd scraping && go test ./...
 
   build-images:
-    needs: [test-python, lint-go]
+    # needs: [test-python, lint-go]
     name: Build and Publish to GCR
     runs-on: ubuntu-latest
     steps:
