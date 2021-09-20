@@ -7,15 +7,16 @@ package main
 
 import (
 	"context"
-	"github.com/VarityPlatform/scraping/data/kafka"
-	"github.com/VarityPlatform/scraping/scrapers"
-	"github.com/VarityPlatform/scraping/scrapers/reddit/historical"
+	"github.com/go-redis/redis/v8"
+	"github.com/varity-app/platform/scraping/internal/data/kafka"
+	"github.com/varity-app/platform/scraping/internal/scrapers"
+	"github.com/varity-app/platform/scraping/internal/scrapers/reddit/historical"
 )
 
 // Injectors from wire.go:
 
-func initSubmissionsScraper(ctx context.Context, memoryOpts scrapers.MemoryOpts) (*historical.SubmissionsScraper, error) {
-	memory, err := scrapers.NewMemory(ctx, memoryOpts)
+func initSubmissionsScraper(ctx context.Context, rdb *redis.Client) (*historical.SubmissionsScraper, error) {
+	memory, err := scrapers.NewMemory(ctx, rdb)
 	if err != nil {
 		return nil, err
 	}
@@ -26,8 +27,8 @@ func initSubmissionsScraper(ctx context.Context, memoryOpts scrapers.MemoryOpts)
 	return submissionsScraper, nil
 }
 
-func initCommentsScraper(ctx context.Context, memoryOpts scrapers.MemoryOpts) (*historical.CommentsScraper, error) {
-	memory, err := scrapers.NewMemory(ctx, memoryOpts)
+func initCommentsScraper(ctx context.Context, rdb *redis.Client) (*historical.CommentsScraper, error) {
+	memory, err := scrapers.NewMemory(ctx, rdb)
 	if err != nil {
 		return nil, err
 	}

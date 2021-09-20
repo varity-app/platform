@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	rpb "github.com/VarityPlatform/scraping/protobuf/reddit"
+	rpb "github.com/varity-app/platform/scraping/api/reddit/v1"
 	"google.golang.org/protobuf/proto"
 )
 

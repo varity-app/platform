@@ -21,8 +21,8 @@ resource "google_cloud_scheduler_job" "scrape_reddit_submissions_wallstreetbets"
   attempt_deadline = "320s"
 
   http_target {
-    http_method = "GET"
-    uri         = "${google_cloud_run_service.scrape_reddit.status[0].url}/scraping/reddit/submissions/wallstreetbets"
+    http_method = "POST"
+    uri         = "${google_cloud_run_service.scrape_reddit.status[0].url}/api/scraping/reddit/live/v1/submissions/wallstreetbets"
 
     oidc_token {
       service_account_email = google_service_account.scheduler_svc.email
@@ -38,8 +38,8 @@ resource "google_cloud_scheduler_job" "scrape_reddit_submissions_smallstreetbets
   attempt_deadline = "320s"
 
   http_target {
-    http_method = "GET"
-    uri         = "${google_cloud_run_service.scrape_reddit.status[0].url}/scraping/reddit/submissions/smallstreetbets"
+    http_method = "POST"
+    uri         = "${google_cloud_run_service.scrape_reddit.status[0].url}/api/scraping/reddit/live/v1/submissions/smallstreetbets"
 
     oidc_token {
       service_account_email = google_service_account.scheduler_svc.email
@@ -55,8 +55,8 @@ resource "google_cloud_scheduler_job" "scrape_reddit_submissions_stocks" {
   attempt_deadline = "320s"
 
   http_target {
-    http_method = "GET"
-    uri         = "${google_cloud_run_service.scrape_reddit.status[0].url}/scraping/reddit/submissions/stocks"
+    http_method = "POST"
+    uri         = "${google_cloud_run_service.scrape_reddit.status[0].url}/api/scraping/reddit/live/v1/submissions/stocks"
 
     oidc_token {
       service_account_email = google_service_account.scheduler_svc.email
@@ -72,8 +72,8 @@ resource "google_cloud_scheduler_job" "scrape_reddit_comments_wallstreetbets" {
   attempt_deadline = "320s"
 
   http_target {
-    http_method = "GET"
-    uri         = "${google_cloud_run_service.scrape_reddit.status[0].url}/scraping/reddit/comments/wallstreetbets"
+    http_method = "POST"
+    uri         = "${google_cloud_run_service.scrape_reddit.status[0].url}/api/scraping/reddit/live/v1/comments/wallstreetbets"
 
     oidc_token {
       service_account_email = google_service_account.scheduler_svc.email
@@ -90,8 +90,8 @@ resource "google_cloud_scheduler_job" "scrape_reddit_comments_smallstreetbets" {
   attempt_deadline = "320s"
 
   http_target {
-    http_method = "GET"
-    uri         = "${google_cloud_run_service.scrape_reddit.status[0].url}/scraping/reddit/comments/smallstreetbets"
+    http_method = "POST"
+    uri         = "${google_cloud_run_service.scrape_reddit.status[0].url}/api/scraping/reddit/live/v1/comments/smallstreetbets"
 
     oidc_token {
       service_account_email = google_service_account.scheduler_svc.email
@@ -107,8 +107,8 @@ resource "google_cloud_scheduler_job" "scrape_reddit_comments_stocks" {
   attempt_deadline = "320s"
 
   http_target {
-    http_method = "GET"
-    uri         = "${google_cloud_run_service.scrape_reddit.status[0].url}/scraping/reddit/comments/stocks"
+    http_method = "POST"
+    uri         = "${google_cloud_run_service.scrape_reddit.status[0].url}/api/scraping/reddit/live/v1/comments/stocks"
 
     oidc_token {
       service_account_email = google_service_account.scheduler_svc.email
@@ -198,6 +198,43 @@ resource "google_cloud_scheduler_job" "proc_ticker_mentions_sink" {
   http_target {
     http_method = "GET"
     uri         = "${google_cloud_run_service.proc.status[0].url}/scraping/proc/tickerMentions/sink"
+
+    oidc_token {
+      service_account_email = google_service_account.scheduler_svc.email
+    }
+  }
+}
+
+/* Tiingo scraper */
+
+resource "google_cloud_scheduler_job" "recent_prices" {
+  name             = "update-recent-prices-${var.deployment}"
+  description      = "Update EOD prices from the Tiingo API"
+  schedule         = "0 0 * * * "
+  time_zone        = "America/New_York"
+  attempt_deadline = "900s"
+
+  http_target {
+    http_method = "GET"
+    uri         = "${google_cloud_run_service.tiingo.status[0].url}/scraping/tiingo/prices/3d"
+
+    oidc_token {
+      service_account_email = google_service_account.scheduler_svc.email
+    }
+  }
+}
+
+/* Scheduler microservice */
+resource "google_cloud_scheduler_job" "schedule_biquery_to_influx_etl" {
+  name             = "schedule-bigquery-to-influx-etl-${var.deployment}"
+  description      = "Schedule an ETL for Bigquery -> InfluxDB"
+  schedule         = "30 * * * *"
+  time_zone        = "America/New_York"
+  attempt_deadline = "120s"
+
+  http_target {
+    http_method = "POST"
+    uri         = "${google_cloud_run_service.scheduler.status[0].url}/api/scheduler/v1/etl/bigquery-to-influx/recent"
 
     oidc_token {
       service_account_email = google_service_account.scheduler_svc.email

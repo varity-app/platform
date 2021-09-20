@@ -2,35 +2,46 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 
-	"github.com/VarityPlatform/scraping/common"
-	"github.com/VarityPlatform/scraping/scrapers"
+	"github.com/varity-app/platform/scraping/internal/config"
+	"github.com/varity-app/platform/scraping/internal/logging"
 
 	"github.com/spf13/viper"
 
 	"github.com/labstack/echo/v4"
+
+	"github.com/go-redis/redis/v8"
 )
+
+var logger = logging.NewLogger()
 
 // Entrypoint method
 func main() {
-	initConfig()
+	err := config.InitConfig()
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	ctx := context.Background()
 
-	// Initialize scrapers
-	submissionsScraper, err := initSubmissionsScraper(ctx, scrapers.MemoryOpts{
-		CollectionName: common.RedditSubmissions + "-" + viper.GetString("deploymentMode"),
+	// Initialize Redis client
+	rdb := redis.NewClient(&redis.Options{
+		Addr:     viper.GetString("redis.scraping.address"),
+		Password: viper.GetString("redis.scraping.password"),
 	})
+	defer rdb.Close()
+
+	// Initialize scrapers
+	submissionsScraper, err := initSubmissionsScraper(ctx, rdb)
 	if err != nil {
-		log.Fatalf("scraper.Init: %v", err)
+		logger.Fatal(fmt.Errorf("scraper.Init: %v", err))
 	}
 
-	commentsScraper, err := initCommentsScraper(ctx, scrapers.MemoryOpts{
-		CollectionName: common.RedditComments + "-" + viper.GetString("deploymentMode"),
-	})
+	commentsScraper, err := initCommentsScraper(ctx, rdb)
 	if err != nil {
-		log.Fatalf("scraper.Init: %v", err)
+		logger.Fatal(fmt.Errorf("scraper.Init: %v", err))
 	}
 
 	// Initialize webserver

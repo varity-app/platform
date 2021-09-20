@@ -13,6 +13,9 @@ declare -a IMAGES=(
   'scraping/reddit-scraper'
   'scraping/historical-reddit-scraper'
   'scraping/proc'
+  'scraping/tiingo'
+  'scraping/bigquery-to-influx'
+  'scraping/scheduler'
 )
 
 ######################

@@ -4,16 +4,10 @@ FROM golang:1.16.6-alpine AS builder
 RUN apk add --no-cache build-base
 
 # Copy source
-WORKDIR /opt
-COPY scraping/common/ ./common/
-COPY scraping/protobuf/ ./protobuf/
-COPY scraping/transforms/ ./transforms/
-COPY scraping/data/kafka/ ./data/kafka/
-COPY scraping/cmd/proc/ ./cmd/proc/
+COPY scraping /src
 
-WORKDIR /opt/cmd/proc
+WORKDIR /src/cmd/proc
 RUN go mod download
-RUN go test . 
 RUN go build . 
 
 # Prod module
@@ -21,6 +15,6 @@ FROM alpine:edge AS prod
 
 # Copy binary
 WORKDIR /app
-COPY --from=builder /opt/cmd/proc/proc .
+COPY --from=builder /src/cmd/proc/proc .
 
 ENTRYPOINT ./proc

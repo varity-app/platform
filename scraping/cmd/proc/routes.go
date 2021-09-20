@@ -6,9 +6,9 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/VarityPlatform/scraping/common"
-	"github.com/VarityPlatform/scraping/data/kafka"
 	"github.com/spf13/viper"
+	"github.com/varity-app/platform/scraping/internal/common"
+	"github.com/varity-app/platform/scraping/internal/data/kafka"
 
 	"github.com/labstack/echo/v4"
 )

@@ -203,3 +203,148 @@ resource "google_bigquery_table" "ticker_mentions" {
 EOF
 
 }
+
+resource "google_bigquery_table" "eod_prices" {
+  project    = var.project
+  dataset_id = google_bigquery_dataset.scraping.dataset_id
+  table_id   = "eod_prices"
+
+  time_partitioning {
+    type  = "DAY"
+    field = "date"
+  }
+
+  labels = {
+    deployment = var.deployment
+  }
+
+  lifecycle {
+    prevent_destroy = true
+  }
+
+  schema = <<EOF
+[
+  {
+    "name": "symbol",
+    "type": "STRING",
+    "mode": "REQUIRED"
+  },
+  {
+    "name": "date",
+    "type": "TIMESTAMP",
+    "mode": "REQUIRED"
+  },
+  {
+    "name": "open",
+    "type": "FLOAT",
+    "mode": "REQUIRED"
+  },
+  {
+    "name": "high",
+    "type": "FLOAT",
+    "mode": "REQUIRED"
+  },
+  {
+    "name": "low",
+    "type": "FLOAT",
+    "mode": "REQUIRED"
+  },
+  {
+    "name": "close",
+    "type": "FLOAT",
+    "mode": "REQUIRED"
+  },
+  {
+    "name": "volume",
+    "type": "INT64",
+    "mode": "REQUIRED"
+  },
+  {
+    "name": "adj_open",
+    "type": "FLOAT",
+    "mode": "REQUIRED"
+  },
+  {
+    "name": "adj_high",
+    "type": "FLOAT",
+    "mode": "REQUIRED"
+  },
+  {
+    "name": "adj_low",
+    "type": "FLOAT",
+    "mode": "REQUIRED"
+  },
+  {
+    "name": "adj_close",
+    "type": "FLOAT",
+    "mode": "REQUIRED"
+  },
+  {
+    "name": "adj_volume",
+    "type": "INT64",
+    "mode": "REQUIRED"
+  },
+  {
+    "name": "dividend",
+    "type": "FLOAT",
+    "mode": "REQUIRED"
+  },
+  {
+    "name": "split",
+    "type": "FLOAT",
+    "mode": "REQUIRED"
+  },
+  {
+    "name": "scraped_on",
+    "type": "TIMESTAMP",
+    "mode": "REQUIRED"
+  }
+]
+EOF
+
+}
+
+resource "google_bigquery_table" "cohort_memberships_cached" {
+  project    = var.project
+  dataset_id = google_bigquery_dataset.scraping.dataset_id
+  table_id   = "cohort_memberships_cached"
+
+  time_partitioning {
+    type  = "DAY"
+    field = "month"
+  }
+
+  labels = {
+    deployment = var.deployment
+  }
+
+  lifecycle {
+    prevent_destroy = true
+  }
+
+  schema = <<EOF
+[
+  {
+    "name": "author_id",
+    "type": "STRING",
+    "mode": "REQUIRED"
+  },
+  {
+    "name": "subreddit",
+    "type": "STRING",
+    "mode": "REQUIRED"
+  },
+  {
+    "name": "month",
+    "type": "TIMESTAMP",
+    "mode": "REQUIRED"
+  },
+  {
+    "name": "cohort",
+    "type": "STRING",
+    "mode": "REQUIRED"
+  }
+]
+EOF
+
+}

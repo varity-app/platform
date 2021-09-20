@@ -157,3 +157,5 @@ notebooks
 # PyCharm
 **/.idea
 
+# DBT
+.dbt

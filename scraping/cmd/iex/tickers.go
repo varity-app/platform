@@ -10,8 +10,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/VarityPlatform/scraping/common"
 	"github.com/go-pg/pg/v10"
+	"github.com/varity-app/platform/scraping/internal/common"
 )
 
 // ShortNameFrequency is the maximum amount of times a word can be seen in the corpus

@@ -16,6 +16,24 @@ resource "google_cloud_tasks_queue" "historical_reddit_queue" {
   }
 }
 
+resource "google_cloud_tasks_queue" "bigquery_to_influx" {
+  name = "bigquery-to-influx-${var.deployment}"
+  location = var.region
+  project  = var.project
+
+  rate_limits {
+    max_concurrent_dispatches = 50
+    max_dispatches_per_second = 10
+  }
+
+  retry_config {
+    max_attempts = 100
+    max_retry_duration = "10s"
+    max_backoff = "3600s"
+    min_backoff = "10s"
+  }
+}
+
 resource "google_project_iam_member" "tasks_svc_invoker" {
   project = var.project
   role    = "roles/run.invoker"
