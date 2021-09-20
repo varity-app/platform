@@ -10,6 +10,7 @@ import (
 	rpb "github.com/varity-app/platform/scraping/api/reddit/v1"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"github.com/varity-app/platform/scraping/internal/common"
 	"github.com/varity-app/platform/scraping/internal/scrapers"
 )
 
@@ -32,11 +33,6 @@ func NewRedditCommentsScraper(redditCredentials reddit.Credentials, memory *scra
 	}, nil
 }
 
-// Close disconnects the scraper connection
-func (scraper *RedditCommentsScraper) Close() error {
-	return scraper.memory.Close()
-}
-
 // Scrape scrapes new submissions from reddit
 func (scraper *RedditCommentsScraper) Scrape(ctx context.Context, subreddit string, limit int) ([]*rpb.RedditComment, error) {
 	comments, _, err := scraper.fetchComments(ctx, subreddit, &reddit.ListOptions{
@@ -55,7 +51,7 @@ func (scraper *RedditCommentsScraper) Scrape(ctx context.Context, subreddit stri
 	}
 
 	// Check memory for which comments have been seen
-	unseenIdxs, err := scraper.memory.CheckNewItems(ctx, ids)
+	unseenIdxs, err := scraper.memory.CheckNewItems(ctx, common.RedditComments, ids)
 	if err != nil {
 		return nil, fmt.Errorf("redditCommentScraper.CheckMemory: %v", err)
 	}
@@ -77,7 +73,7 @@ func (scraper *RedditCommentsScraper) CommitSeen(ctx context.Context, comments [
 		ids = append(ids, comments.GetCommentId())
 	}
 
-	err := scraper.memory.SaveItems(ctx, ids)
+	err := scraper.memory.SaveItems(ctx, common.RedditComments, ids)
 	if err != nil {
 		return fmt.Errorf("redditCommentsScraper.CommitMemory: %v", err)
 	}

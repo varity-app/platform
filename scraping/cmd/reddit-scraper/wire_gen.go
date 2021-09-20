@@ -7,6 +7,7 @@ package main
 
 import (
 	"context"
+	"github.com/go-redis/redis/v8"
 	"github.com/varity-app/platform/scraping/internal/data/kafka"
 	"github.com/varity-app/platform/scraping/internal/scrapers"
 	"github.com/varity-app/platform/scraping/internal/scrapers/reddit/live"
@@ -15,8 +16,8 @@ import (
 
 // Injectors from wire.go:
 
-func initSubmissionsScraper(ctx context.Context, redditCredentials reddit.Credentials, memoryOpts scrapers.MemoryOpts) (*live.RedditSubmissionsScraper, error) {
-	memory, err := scrapers.NewMemory(ctx, memoryOpts)
+func initSubmissionsScraper(ctx context.Context, redditCredentials reddit.Credentials, rdb *redis.Client) (*live.RedditSubmissionsScraper, error) {
+	memory, err := scrapers.NewMemory(ctx, rdb)
 	if err != nil {
 		return nil, err
 	}
@@ -27,8 +28,8 @@ func initSubmissionsScraper(ctx context.Context, redditCredentials reddit.Creden
 	return redditSubmissionsScraper, nil
 }
 
-func initCommentsScraper(ctx context.Context, redditCredentials reddit.Credentials, memoryOpts scrapers.MemoryOpts) (*live.RedditCommentsScraper, error) {
-	memory, err := scrapers.NewMemory(ctx, memoryOpts)
+func initCommentsScraper(ctx context.Context, redditCredentials reddit.Credentials, rdb *redis.Client) (*live.RedditCommentsScraper, error) {
+	memory, err := scrapers.NewMemory(ctx, rdb)
 	if err != nil {
 		return nil, err
 	}

@@ -2,53 +2,63 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
-	"os"
 
-	"github.com/varity-app/platform/scraping/internal/common"
-	"github.com/varity-app/platform/scraping/internal/scrapers"
+	"github.com/varity-app/platform/scraping/internal/config"
+	"github.com/varity-app/platform/scraping/internal/logging"
+
 	"github.com/vartanbeno/go-reddit/v2/reddit"
 
 	"github.com/labstack/echo/v4"
 
 	"github.com/spf13/viper"
+
+	"github.com/go-redis/redis/v8"
 )
+
+var logger = logging.NewLogger()
 
 // Entrypoint method
 func main() {
-	err := initConfig()
+	err := config.InitConfig()
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	ctx := context.Background()
 
+	// Initialize Redis client
+	rdb := redis.NewClient(&redis.Options{
+		Addr:     viper.GetString("redis.scraping.address"),
+		Password: viper.GetString("redis.scraping.password"),
+	})
+	defer rdb.Close()
+
 	// Initialize the reddit scrapers
 	credentials := reddit.Credentials{
-		ID:       os.Getenv("REDDIT_CLIENT_ID"),
-		Secret:   os.Getenv("REDDIT_CLIENT_SECRET"),
-		Username: os.Getenv("REDDIT_USERNAME"),
-		Password: os.Getenv("REDDIT_PASSWORD"),
+		ID:       viper.GetString("reddit.client_id"),
+		Secret:   viper.GetString("reddit.client_secret"),
+		Username: viper.GetString("reddit.username"),
+		Password: viper.GetString("reddit.password"),
 	}
 	submissionsScraper, err := initSubmissionsScraper(
 		ctx,
 		credentials,
-		scrapers.MemoryOpts{CollectionName: common.RedditSubmissions + "-v2-" + viper.GetString("deploymentMode")},
+		rdb,
 	)
 	if err != nil {
-		log.Fatalf("initSubmissionsScraper: %v", err)
+		logger.Fatal(fmt.Errorf("initSubmissionsScraper: %v", err))
 	}
-	defer submissionsScraper.Close()
 
 	commentsScraper, err := initCommentsScraper(
 		ctx,
 		credentials,
-		scrapers.MemoryOpts{CollectionName: common.RedditComments + "-v2-" + viper.GetString("deploymentMode")},
+		rdb,
 	)
 	if err != nil {
-		log.Fatalf("initCommentsScraper: %v", err)
+		logger.Fatal(fmt.Errorf("initCommentsScraper: %v", err))
 	}
-	defer commentsScraper.Close()
 
 	// Initialize webserver
 	web := echo.New()

@@ -34,6 +34,21 @@ func InitConfig() error {
 		return err
 	}
 
+	err = initReddit()
+	if err != nil {
+		return err
+	}
+
+	err = initRedis()
+	if err != nil {
+		return err
+	}
+
+	err = initKafka()
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 

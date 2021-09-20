@@ -9,6 +9,7 @@ import (
 	rpb "github.com/varity-app/platform/scraping/api/reddit/v1"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"github.com/varity-app/platform/scraping/internal/common"
 	"github.com/varity-app/platform/scraping/internal/scrapers"
 )
 
@@ -31,11 +32,6 @@ func NewRedditSubmissionsScraper(redditCredentials reddit.Credentials, memory *s
 	}, nil
 }
 
-// Close disconnects the scraper connection
-func (scraper *RedditSubmissionsScraper) Close() error {
-	return scraper.memory.Close()
-}
-
 // Scrape Scrape new submissions from reddit
 func (scraper *RedditSubmissionsScraper) Scrape(ctx context.Context, subreddit string, limit int) ([]*rpb.RedditSubmission, error) {
 	submissions, _, err := scraper.redditClient.Subreddit.NewPosts(ctx, subreddit, &reddit.ListOptions{
@@ -54,7 +50,7 @@ func (scraper *RedditSubmissionsScraper) Scrape(ctx context.Context, subreddit s
 	}
 
 	// Check memory for which submissions have been seen
-	unseenIdxs, err := scraper.memory.CheckNewItems(ctx, ids)
+	unseenIdxs, err := scraper.memory.CheckNewItems(ctx, common.RedditSubmissions, ids)
 	if err != nil {
 		return nil, fmt.Errorf("redditSubmissionsScraper.CheckMemory: %v", err)
 	}
@@ -76,7 +72,7 @@ func (scraper *RedditSubmissionsScraper) CommitSeen(ctx context.Context, submiss
 		ids = append(ids, submission.GetSubmissionId())
 	}
 
-	err := scraper.memory.SaveItems(ctx, ids)
+	err := scraper.memory.SaveItems(ctx, common.RedditSubmissions, ids)
 	if err != nil {
 		return fmt.Errorf("redditSubmissionsScraper.CommitMemory: %v", err)
 	}

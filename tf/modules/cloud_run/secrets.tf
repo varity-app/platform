@@ -100,3 +100,26 @@ resource "google_secret_manager_secret_iam_member" "influx_token_access" {
   role      = "roles/secretmanager.secretAccessor"
   member    = "serviceAccount:${data.google_project.project.number}-compute@developer.gserviceaccount.com"
 }
+
+/*  Redis  */
+data "google_secret_manager_secret_version" "scraping_redis_address" {
+  secret  = "redis-scraping-address-${var.deployment}"
+  project = var.project
+}
+
+data "google_secret_manager_secret_version" "scraping_redis_password" {
+  secret  = "redis-scraping-password-${var.deployment}"
+  project = var.project
+}
+
+resource "google_secret_manager_secret_iam_member" "scraping_redis_address_access" {
+  secret_id = data.google_secret_manager_secret_version.scraping_redis_address.secret
+  role      = "roles/secretmanager.secretAccessor"
+  member    = "serviceAccount:${data.google_project.project.number}-compute@developer.gserviceaccount.com"
+}
+
+resource "google_secret_manager_secret_iam_member" "scraping_redis_password_access" {
+  secret_id = data.google_secret_manager_secret_version.scraping_redis_password.secret
+  role      = "roles/secretmanager.secretAccessor"
+  member    = "serviceAccount:${data.google_project.project.number}-compute@developer.gserviceaccount.com"
+}

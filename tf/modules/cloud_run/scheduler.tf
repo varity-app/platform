@@ -21,8 +21,8 @@ resource "google_cloud_scheduler_job" "scrape_reddit_submissions_wallstreetbets"
   attempt_deadline = "320s"
 
   http_target {
-    http_method = "GET"
-    uri         = "${google_cloud_run_service.scrape_reddit.status[0].url}/scraping/reddit/submissions/wallstreetbets"
+    http_method = "POST"
+    uri         = "${google_cloud_run_service.scrape_reddit.status[0].url}/api/scraping/reddit/live/v1/submissions/wallstreetbets"
 
     oidc_token {
       service_account_email = google_service_account.scheduler_svc.email
@@ -38,8 +38,8 @@ resource "google_cloud_scheduler_job" "scrape_reddit_submissions_smallstreetbets
   attempt_deadline = "320s"
 
   http_target {
-    http_method = "GET"
-    uri         = "${google_cloud_run_service.scrape_reddit.status[0].url}/scraping/reddit/submissions/smallstreetbets"
+    http_method = "POST"
+    uri         = "${google_cloud_run_service.scrape_reddit.status[0].url}/api/scraping/reddit/live/v1/submissions/smallstreetbets"
 
     oidc_token {
       service_account_email = google_service_account.scheduler_svc.email
@@ -55,8 +55,8 @@ resource "google_cloud_scheduler_job" "scrape_reddit_submissions_stocks" {
   attempt_deadline = "320s"
 
   http_target {
-    http_method = "GET"
-    uri         = "${google_cloud_run_service.scrape_reddit.status[0].url}/scraping/reddit/submissions/stocks"
+    http_method = "POST"
+    uri         = "${google_cloud_run_service.scrape_reddit.status[0].url}/api/scraping/reddit/live/v1/submissions/stocks"
 
     oidc_token {
       service_account_email = google_service_account.scheduler_svc.email
@@ -72,8 +72,8 @@ resource "google_cloud_scheduler_job" "scrape_reddit_comments_wallstreetbets" {
   attempt_deadline = "320s"
 
   http_target {
-    http_method = "GET"
-    uri         = "${google_cloud_run_service.scrape_reddit.status[0].url}/scraping/reddit/comments/wallstreetbets"
+    http_method = "POST"
+    uri         = "${google_cloud_run_service.scrape_reddit.status[0].url}/api/scraping/reddit/live/v1/comments/wallstreetbets"
 
     oidc_token {
       service_account_email = google_service_account.scheduler_svc.email
@@ -90,8 +90,8 @@ resource "google_cloud_scheduler_job" "scrape_reddit_comments_smallstreetbets" {
   attempt_deadline = "320s"
 
   http_target {
-    http_method = "GET"
-    uri         = "${google_cloud_run_service.scrape_reddit.status[0].url}/scraping/reddit/comments/smallstreetbets"
+    http_method = "POST"
+    uri         = "${google_cloud_run_service.scrape_reddit.status[0].url}/api/scraping/reddit/live/v1/comments/smallstreetbets"
 
     oidc_token {
       service_account_email = google_service_account.scheduler_svc.email
@@ -107,8 +107,8 @@ resource "google_cloud_scheduler_job" "scrape_reddit_comments_stocks" {
   attempt_deadline = "320s"
 
   http_target {
-    http_method = "GET"
-    uri         = "${google_cloud_run_service.scrape_reddit.status[0].url}/scraping/reddit/comments/stocks"
+    http_method = "POST"
+    uri         = "${google_cloud_run_service.scrape_reddit.status[0].url}/api/scraping/reddit/live/v1/comments/stocks"
 
     oidc_token {
       service_account_email = google_service_account.scheduler_svc.email

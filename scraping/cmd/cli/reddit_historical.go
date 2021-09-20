@@ -74,7 +74,7 @@ var historicalCommentsCmd = &cobra.Command{
 
 		// Define cloud tasks queue
 		queueID := fmt.Sprintf("%s-%s", common.CloudTasksQueueRedditHistorical, deployment)
-		endpoint := url + "/scraping/reddit/historical/comments"
+		endpoint := url + "/api/scraping/reddit/historical/v1/comments"
 
 		// Generate list of ranges
 		intervalMultiple := commentsIntervalMinutes
@@ -177,7 +177,7 @@ var historicalSubmissionsCmd = &cobra.Command{
 
 		// Define cloud tasks queue
 		queueID := fmt.Sprintf("%s-%s", common.CloudTasksQueueRedditHistorical, deployment)
-		endpoint := url + "/scraping/reddit/historical/submissions"
+		endpoint := url + "/api/scraping/reddit/historical/v1/submissions"
 
 		// Generate list of ranges
 		intervalMultiple := submissionsIntervalMinutes

@@ -8,13 +8,13 @@ require (
 	cloud.google.com/go/firestore v1.5.0
 	github.com/fsnotify/fsnotify v1.5.1 // indirect
 	github.com/go-pg/pg/v10 v10.10.5
+	github.com/go-redis/redis/v8 v8.11.3
 	github.com/google/go-querystring v1.1.0
 	github.com/google/wire v0.5.0
 	github.com/hashicorp/golang-lru v0.5.1
 	github.com/influxdata/influxdb-client-go/v2 v2.5.0
 	github.com/labstack/echo/v4 v4.5.0
 	github.com/mitchellh/mapstructure v1.4.2 // indirect
-	github.com/onsi/gomega v1.15.0 // indirect
 	github.com/pelletier/go-toml v1.9.4 // indirect
 	github.com/segmentio/kafka-go v0.4.18
 	github.com/spf13/cast v1.4.1 // indirect

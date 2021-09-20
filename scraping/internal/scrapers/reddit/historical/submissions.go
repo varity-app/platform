@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/varity-app/platform/scraping/internal/common"
 	"github.com/varity-app/platform/scraping/internal/scrapers"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -91,7 +92,7 @@ func (scraper *SubmissionsScraper) CommitSeen(ctx context.Context, submissions [
 		ids = append(ids, submission.GetSubmissionId())
 	}
 
-	err := scraper.memory.SaveItems(ctx, ids)
+	err := scraper.memory.SaveItems(ctx, common.RedditSubmissions, ids)
 	if err != nil {
 		return fmt.Errorf("submissionsScraper.CommitMemory: %v", err)
 	}
@@ -109,7 +110,7 @@ func (scraper *SubmissionsScraper) filter(ctx context.Context, submissions []*rp
 	}
 
 	// Check memory for which submissions have been seen
-	unseenIdxs, err := scraper.memory.CheckNewItems(ctx, ids)
+	unseenIdxs, err := scraper.memory.CheckNewItems(ctx, common.RedditSubmissions, ids)
 	if err != nil {
 		return nil, fmt.Errorf("submissionsScraper.CheckMemory: %v", err)
 	}

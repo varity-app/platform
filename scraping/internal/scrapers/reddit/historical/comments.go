@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/varity-app/platform/scraping/internal/common"
 	"github.com/varity-app/platform/scraping/internal/scrapers"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -89,7 +90,7 @@ func (scraper *CommentsScraper) CommitSeen(ctx context.Context, comments []*rpb.
 		ids = append(ids, comment.GetCommentId())
 	}
 
-	err := scraper.memory.SaveItems(ctx, ids)
+	err := scraper.memory.SaveItems(ctx, common.RedditComments, ids)
 	if err != nil {
 		return fmt.Errorf("commentsScraper.CommitMemory: %v", err)
 	}
@@ -107,7 +108,7 @@ func (scraper *CommentsScraper) filter(ctx context.Context, comments []*rpb.Redd
 	}
 
 	// Check memory for which comments have been seen
-	unseenIdxs, err := scraper.memory.CheckNewItems(ctx, ids)
+	unseenIdxs, err := scraper.memory.CheckNewItems(ctx, common.RedditComments, ids)
 	if err != nil {
 		return nil, fmt.Errorf("commentsScraper.CheckMemory: %v", err)
 	}

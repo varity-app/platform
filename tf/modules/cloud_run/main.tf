@@ -173,7 +173,7 @@ resource "google_cloud_run_service" "scrape_reddit" {
 
         env {
           name  = "REDDIT_USER_AGENT"
-          value = "varity.app@v0.8.0"
+          value = "varity.app@${var.release}"
         }
 
         env {
@@ -201,6 +201,26 @@ resource "google_cloud_run_service" "scrape_reddit" {
           value_from {
             secret_key_ref {
               name = var.kafka_secret_secret_id
+              key  = "latest"
+            }
+          }
+        }
+
+        env {
+          name = "REDIS_SCRAPING_ADDRESS"
+          value_from {
+            secret_key_ref {
+              name = data.google_secret_manager_secret_version.scraping_redis_address.secret
+              key  = "latest"
+            }
+          }
+        }
+
+        env {
+          name = "REDIS_SCRAPING_PASSWORD"
+          value_from {
+            secret_key_ref {
+              name = data.google_secret_manager_secret_version.scraping_redis_password.secret
               key  = "latest"
             }
           }
@@ -272,6 +292,26 @@ resource "google_cloud_run_service" "scrape_reddit_historical" {
           value_from {
             secret_key_ref {
               name = var.kafka_secret_secret_id
+              key  = "latest"
+            }
+          }
+        }
+
+        env {
+          name = "REDIS_SCRAPING_ADDRESS"
+          value_from {
+            secret_key_ref {
+              name = data.google_secret_manager_secret_version.scraping_redis_address.secret
+              key  = "latest"
+            }
+          }
+        }
+
+        env {
+          name = "REDIS_SCRAPING_PASSWORD"
+          value_from {
+            secret_key_ref {
+              name = data.google_secret_manager_secret_version.scraping_redis_password.secret
               key  = "latest"
             }
           }
