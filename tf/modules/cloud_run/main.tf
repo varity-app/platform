@@ -483,6 +483,11 @@ resource "google_cloud_run_service" "etl_bigquery_to_influx" {
             }
           }
         }
+
+        env {
+          name = "INFLUX_BUCKET"
+          value = var.deployment
+        }
       }
     }
 

@@ -105,7 +105,7 @@ build_image() {
   for image_name in $image_names; do
     local tag_name=${DOCKER_REPO_BASE}/${deployment}/${image_name}:${release}
 
-    DOCKERKIT=1 docker build -t ${tag_name} --target prod -f ${SCRIPT_DIR}/res/${image_name}/Dockerfile .
+    DOCKER_BUILDKIT=1 docker build -t ${tag_name} --target prod -f ${SCRIPT_DIR}/res/${image_name}/Dockerfile .
     if [[ -n "${publish}" ]]; then
       echo 'Pushing image...'
       docker push ${tag_name}
